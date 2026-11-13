@@ -7,6 +7,7 @@ import ResultCard from '@/components/ResultCard.vue'
 import FinancingCard from '@/components/FinancingCard.vue'
 import CalcDetail from '@/components/CalcDetail.vue'
 import ProfitChart from '@/components/ProfitChart.vue'
+import TaxChart from '@/components/TaxChart.vue'
 import RegimeSection from '@/components/RegimeSection.vue'
 import AppModal from '@/components/AppModal.vue'
 import TaxExplanation from '@/components/TaxExplanation.vue'
@@ -119,6 +120,13 @@ const { result, fieldErrors, error, evaluateNow } = useDebouncedEval(
 
 /** Errors from the live evaluation and from the last save attempt. */
 const errors = computed(() => ({ ...fieldErrors.value, ...saveFieldErrors.value }))
+
+// « Impôt au fil des années »: always under LMNP au réel, otherwise only when
+// the tax changes over the years (a loan's interest under the réel regimes).
+const showTaxChart = computed(() => {
+  const years = result.value?.yearlyTax ?? []
+  return form.taxRegime === 'lmnp_reel' || new Set(years.map((y) => y.annualTaxCents)).size > 1
+})
 
 function fill(p: PropertyDetail) {
   Object.assign(form, {
@@ -313,7 +321,7 @@ async function remove() {
           id="bien-copro"
           v-model="form.annualCondoFeesCents"
           label="Charges de copropriété non récupérables (par an)"
-          hint="La part des appels du syndic qui reste à votre charge. La part refacturée au locataire va dans « Charges récupérables »."
+          hint="Uniquement la part déductible : honoraires du syndic, assurance de l'immeuble, entretien et réparations courantes. Pas la part refacturée au locataire (à mettre dans « Charges récupérables »), ni le fonds de travaux ni les travaux d'agrandissement."
           :error="errors.annualCondoFeesCents"
         />
         <MoneyInput
@@ -486,6 +494,7 @@ async function remove() {
           :condo-fees-cents="form.annualCondoFeesCents ?? 0"
           :insurance-cents="form.annualLandlordInsuranceCents ?? 0"
         />
+        <TaxChart v-if="showTaxChart && result?.yearlyTax" :years="result.yearlyTax" />
         <ProfitChart
           v-if="result?.timeline"
           :timeline="result.timeline"

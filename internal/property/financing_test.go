@@ -29,12 +29,12 @@ var smallLoan = loan.Params{
 
 func TestFiguresOfALoan(t *testing.T) {
 	big := figures(t, bigLoan)
-	if big.MonthlyTotalCents != 79_176 || big.FirstYearInterest != 593_509 || big.FirstYearInsurance != 0 ||
+	if big.MonthlyTotalCents != 79_176 || big.YearlyInterest[0] != 593_509 || big.YearlyInsurance[0] != 0 ||
 		big.PrincipalCents != 15_000_000 || big.FeesCents != 0 {
 		t.Errorf("big loan figures = %+v", big)
 	}
 	small := figures(t, smallLoan)
-	if small.MonthlyTotalCents != 28_980 || small.FirstYearInterest != 147_466 || small.FirstYearInsurance != 15_000 ||
+	if small.MonthlyTotalCents != 28_980 || small.YearlyInterest[0] != 147_466 || small.YearlyInsurance[0] != 15_000 ||
 		small.FeesCents != 100_000 {
 		t.Errorf("small loan figures = %+v", small)
 	}
@@ -42,7 +42,7 @@ func TestFiguresOfALoan(t *testing.T) {
 
 func TestFiguresOfAOneYearLoanUseItsOwnInstallments(t *testing.T) {
 	f := figures(t, loan.Params{PrincipalCents: 1_200_000, AnnualRatePct: 0, DurationMonths: 12})
-	if f.FirstYearInterest != 0 || f.MonthlyTotalCents != 100_000 {
+	if f.YearlyInterest[0] != 0 || f.MonthlyTotalCents != 100_000 {
 		t.Errorf("figures = %+v", f)
 	}
 }
@@ -53,13 +53,13 @@ func TestFiguresOfAnInvalidLoan(t *testing.T) {
 	}
 }
 
-func TestReelDeductsFirstYearInterestAndInsurance(t *testing.T) {
+func TestReelDeductsFirstYearInterestInsuranceAndFees(t *testing.T) {
 	small := figures(t, smallLoan)
 
 	res := Evaluate(referenceFlat(ReelFoncier, false), referenceSettings, &small)
 
-	// R 5 400 € − interest 1 474,66 € − insurance 150 € = 3 775,34 €.
-	if res.TaxableIncomeCents != 377_534 || res.AnnualTaxCents != 178_196 || res.NetAnnualIncomeCents != 361_804 {
+	// R 5 400 € − interest 1 474,66 € − insurance 150 € − fees 1 000 € = 2 775,34 €.
+	if res.TaxableIncomeCents != 277_534 || res.AnnualTaxCents != 130_996 || res.NetAnnualIncomeCents != 409_004 {
 		t.Errorf("taxable = %d, tax = %d, RN = %d", res.TaxableIncomeCents, res.AnnualTaxCents, res.NetAnnualIncomeCents)
 	}
 }
@@ -98,7 +98,7 @@ func TestFinancingFigures(t *testing.T) {
 	want := Financing{
 		MonthlyPaymentCents:    28_980,
 		CashFlowBeforeTaxCents: 16_020,     // 450 € − 289,80 €
-		CashFlowAfterTaxCents:  1_170,      // 301,50 € − 289,80 €
+		CashFlowAfterTaxCents:  5_104,      // 340,84 € − 289,80 € (loan fees deducted from the tax)
 		OwnContributionCents:   11_375_000, // 162 750 € + 1 000 € fees − 50 000 €
 		// (16 551,57 € interest + 3 000 € insurance + 1 000 € fees) / 20 years.
 		AnnualCreditCostCents: 102_758,
@@ -108,8 +108,8 @@ func TestFinancingFigures(t *testing.T) {
 	if got != want {
 		t.Errorf("financing = %+v\nwant        %+v", got, want)
 	}
-	if f.ReturnOnContributionPct == nil || *f.ReturnOnContributionPct != 0.12 {
-		t.Errorf("rendement sur apport = %v, want 0,12", f.ReturnOnContributionPct)
+	if f.ReturnOnContributionPct == nil || *f.ReturnOnContributionPct != 0.54 {
+		t.Errorf("rendement sur apport = %v, want 0,54", f.ReturnOnContributionPct)
 	}
 }
 
@@ -119,12 +119,12 @@ func TestReferenceCaseWithTheReferenceLoan(t *testing.T) {
 	res := Evaluate(referenceFlat(MicroFoncier, false), referenceSettings, &big)
 
 	f := res.Financing
-	if f.MonthlyPaymentCents != 79_176 || f.CashFlowBeforeTaxCents != -34_176 || f.CashFlowAfterTaxCents != -55_377 ||
+	if f.MonthlyPaymentCents != 79_176 || f.CashFlowBeforeTaxCents != -34_176 || f.CashFlowAfterTaxCents != -56_891 ||
 		f.OwnContributionCents != 1_275_000 {
 		t.Errorf("financing = %+v", *f)
 	}
-	if f.ReturnOnContributionPct == nil || *f.ReturnOnContributionPct != -52.12 {
-		t.Errorf("rendement sur apport = %v, want -52,12", f.ReturnOnContributionPct)
+	if f.ReturnOnContributionPct == nil || *f.ReturnOnContributionPct != -53.54 {
+		t.Errorf("rendement sur apport = %v, want -53,54", f.ReturnOnContributionPct)
 	}
 }
 

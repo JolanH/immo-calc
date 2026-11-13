@@ -1017,8 +1017,50 @@ a.app-header__name {
   stroke-width: 2;
 }
 
-.detail > .profit-chart {
+.detail > .profit-chart,
+.detail > .tax-chart {
   margin-top: 1.5rem;
+}
+
+.tax-chart h2 {
+  margin: 0;
+}
+
+.tax-chart__net,
+.tax-chart__tax {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tax-chart__net {
+  stroke: var(--chart-capital);
+}
+
+.tax-chart__tax {
+  stroke: var(--chart-interest);
+}
+
+.tax-chart__key--net {
+  background: var(--chart-capital);
+}
+
+.tax-chart__key--tax {
+  background: var(--chart-interest);
+}
+
+.tax-chart__dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.tax-chart__dot--net {
+  fill: var(--chart-capital);
+}
+
+.tax-chart__dot--tax {
+  fill: var(--chart-interest);
 }
 
 .check-col {

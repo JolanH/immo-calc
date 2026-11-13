@@ -133,9 +133,9 @@ func TestEvaluateEndpoint(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
 	for key, want := range map[string]float64{
 		"acquisitionCostCents": 16275000, "collectedRentCents": 770000, "ownerChargesCents": 230000,
-		"incomeBeforeTaxCents": 540000, "taxableIncomeCents": 539000, "annualTaxCents": 254408,
-		"netAnnualIncomeCents": 285592, "monthlyGrossIncomeCents": 70000, "monthlyNetIncomeCents": 23799,
-		"grossYieldPct": 5.16, "netYieldPct": 3.32, "netAfterTaxYieldPct": 1.75,
+		"incomeBeforeTaxCents": 540000, "taxableIncomeCents": 577500, "annualTaxCents": 272580,
+		"netAnnualIncomeCents": 267420, "monthlyGrossIncomeCents": 70000, "monthlyNetIncomeCents": 22285,
+		"grossYieldPct": 5.16, "netYieldPct": 3.32, "netAfterTaxYieldPct": 1.64,
 	} {
 		if body[key] != want {
 			t.Errorf("%s = %v, want %v", key, body[key], want)
@@ -163,8 +163,8 @@ func TestEvaluateWithALoanUsesCurrentSettings(t *testing.T) {
 
 	var res Result
 	_ = json.Unmarshal(rec.Body.Bytes(), &res)
-	// Taxable 3 775,34 € at 11 % + 17,2 % = 1 064,65 €.
-	if rec.Code != http.StatusOK || res.TaxableIncomeCents != 377_534 || res.AnnualTaxCents != 106_465 {
+	// Taxable 2 775,34 € (interest, insurance and 1 000 € of fees deducted) at 11 % + 17,2 % = 782,65 €.
+	if rec.Code != http.StatusOK || res.TaxableIncomeCents != 277_534 || res.AnnualTaxCents != 78_265 {
 		t.Errorf("status = %d, res = %+v", rec.Code, res)
 	}
 	if res.Financing == nil || res.Financing.MonthlyPaymentCents != 28_980 {

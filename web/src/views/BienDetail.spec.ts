@@ -549,6 +549,8 @@ describe('BienDetail tax regimes and furniture', () => {
   const regimes = [
     {
       regime: 'micro_foncier',
+      furnished: false,
+      eligible: true,
       taxableIncomeCents: 277_200,
       annualTaxCents: 130_838,
       netAnnualIncomeCents: 125_162,
@@ -558,15 +560,19 @@ describe('BienDetail tax regimes and furniture', () => {
     },
     {
       regime: 'reel_foncier',
+      furnished: false,
+      eligible: true,
       taxableIncomeCents: 256_000,
       annualTaxCents: 120_832,
       netAnnualIncomeCents: 135_168,
       netAfterTaxYieldPct: 3.66,
       current: false,
-      best: false,
+      best: true,
     },
     {
       regime: 'micro_bic',
+      furnished: true,
+      eligible: true,
       taxableIncomeCents: 198_000,
       annualTaxCents: 96_228,
       netAnnualIncomeCents: 159_772,
@@ -576,6 +582,8 @@ describe('BienDetail tax regimes and furniture', () => {
     },
     {
       regime: 'lmnp_reel',
+      furnished: true,
+      eligible: true,
       taxableIncomeCents: 150_033,
       annualTaxCents: 72_916,
       netAnnualIncomeCents: 183_084,
@@ -595,7 +603,7 @@ describe('BienDetail tax regimes and furniture', () => {
     const dialog = wrapper.get('[role="dialog"]')
     expect(dialog.get('h2').text()).toBe('Régime fiscal')
     const section = dialog.get('[data-test="regime-section"]')
-    expect(plain(section.text())).toContain('70 % des loyers encaissés')
+    expect(plain(section.text())).toContain('70 % des recettes')
     const rows = section.findAll('[data-test="regime-table"] tbody tr')
     expect(rows.map((r) => r.get('th').text().split(/\s+/)[0])).toEqual([
       'Micro-foncier',
@@ -607,9 +615,11 @@ describe('BienDetail tax regimes and furniture', () => {
     expect(micro.find('[data-test="tag-current"]').exists()).toBe(true)
     expect(plain(micro.text())).toContain('1 308,38 €')
     const lmnp = wrapper.get('[data-test="regime-lmnp_reel"]')
-    expect(lmnp.find('[data-test="tag-best"]').text()).toBe('le plus avantageux')
+    expect(lmnp.find('[data-test="tag-best"]').text()).toBe('le plus avantageux en meublé')
     expect(plain(lmnp.text())).toContain('4,96 %')
-    expect(wrapper.findAll('[data-test="tag-best"]')).toHaveLength(1)
+    const reel = wrapper.get('[data-test="regime-reel_foncier"]')
+    expect(reel.find('[data-test="tag-best"]').text()).toBe('le plus avantageux en location nue')
+    expect(wrapper.findAll('[data-test="tag-best"]')).toHaveLength(2)
 
     await dialog.trigger('keydown', { key: 'Escape' })
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
@@ -621,6 +631,8 @@ describe('BienDetail tax regimes and furniture', () => {
     socialChargesPct: 17.2,
     loanInterestCents: 0,
     loanInsuranceCents: 0,
+    loanFeesCents: 0,
+    reimbursedChargesCents: 0,
     loanCostsCents: 0,
     rawTaxableCents: 539_000,
     incomeTaxCents: 161_700,
@@ -656,6 +668,53 @@ describe('BienDetail tax regimes and furniture', () => {
 
     await dialog.get('[data-test="modal-close"]').trigger('click')
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  describe('tax over the years', () => {
+    const flat = Array.from({ length: 10 }, (_, i) => ({
+      year: i + 1,
+      annualTaxCents: 100_000,
+      netAnnualIncomeCents: 200_000,
+    }))
+    const rising = flat.map((y, i) => ({
+      ...y,
+      annualTaxCents: 100_000 + i * 10_000,
+      netAnnualIncomeCents: 200_000 - i * 10_000,
+    }))
+
+    it('shows the chart when the tax changes from year to year', async () => {
+      stubApi(() => json({ ...result, yearlyTax: rising }))
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      expect(wrapper.find('[data-test="tax-chart"]').exists()).toBe(true)
+    })
+
+    it('hides it when the tax never changes', async () => {
+      stubApi(() => json({ ...result, yearlyTax: flat }))
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      expect(wrapper.find('[data-test="tax-chart"]').exists()).toBe(false)
+    })
+
+    it('always shows it under LMNP au réel', async () => {
+      stubApi(() => json({ ...result, yearlyTax: flat }))
+      const wrapper = await mountNew()
+      await wrapper.get('#bien-regime').setValue('lmnp_reel')
+      await fillReferenceFlat(wrapper)
+
+      expect(wrapper.find('[data-test="tax-chart"]').exists()).toBe(true)
+    })
+  })
+
+  it('tells which condo charges to enter', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+
+    const text = plain(wrapper.text())
+    expect(text).toContain('Uniquement la part déductible')
+    expect(text).toContain('fonds de travaux')
   })
 
   it('offers no tax explanation until there are results', async () => {

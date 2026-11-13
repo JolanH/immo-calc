@@ -10,19 +10,19 @@ defineProps<{ regimes: RegimeComparison[]; financed?: boolean }>()
 const EXPLANATIONS: Record<TaxRegime, { kind: string; text: string }> = {
   micro_foncier: {
     kind: 'Location nue',
-    text: "Imposable : 70 % des loyers encaissés (abattement forfaitaire de 30 %), sans déduire les charges réelles ni les intérêts. Réservé aux loyers nus jusqu'à 15 000 € par an.",
+    text: "Imposable : 70 % des recettes, loyers encaissés et charges remboursées par le locataire (abattement forfaitaire de 30 %), sans déduire les charges réelles ni les intérêts. Réservé aux loyers nus jusqu'à 15 000 € par an.",
   },
   reel_foncier: {
     kind: 'Location nue',
-    text: "Imposable : loyers − charges réelles (taxe foncière, copropriété non récupérable, assurance, gestion) − intérêts et assurance de l'emprunt de la 1re année. Plus avantageux dès que ces déductions dépassent 30 % des loyers.",
+    text: "Imposable : loyers − charges réelles (taxe foncière, copropriété non récupérable, assurance, gestion) − intérêts, assurance et frais de dossier et de garantie de l'emprunt de la 1re année. Plus avantageux dès que ces déductions dépassent 30 % des loyers.",
   },
   micro_bic: {
     kind: 'Location meublée',
-    text: "Imposable : 50 % des loyers encaissés (abattement forfaitaire de 50 %). Réservé aux recettes meublées jusqu'à 83 600 € par an.",
+    text: "Imposable : 50 % des recettes, loyers encaissés et charges remboursées par le locataire (abattement forfaitaire de 50 %). Réservé aux recettes meublées jusqu'à 83 600 € par an.",
   },
   lmnp_reel: {
     kind: 'Location meublée',
-    text: "Imposable : loyers − charges réelles − intérêts et assurance de l'emprunt − amortissements (bâti hors 15 % de terrain sur 30 ans, mobilier sur 7 ans). Les amortissements ne créent jamais de déficit.",
+    text: "Imposable : loyers − charges réelles − intérêts, assurance et frais de l'emprunt − amortissements (bâti hors 15 % de terrain sur 30 ans, mobilier sur 7 ans). Les amortissements ne créent jamais de déficit.",
   },
 }
 </script>
@@ -71,7 +71,10 @@ const EXPLANATIONS: Record<TaxRegime, { kind: string; text: string }> = {
               {{ REGIME_LABELS[r.regime] }}
               <span v-if="r.current" class="tag" data-test="tag-current">actuel</span>
               <span v-if="r.best" class="tag tag--best" data-test="tag-best">
-                le plus avantageux
+                le plus avantageux en {{ r.furnished ? 'meublé' : 'location nue' }}
+              </span>
+              <span v-if="!r.eligible" class="tag" data-test="tag-ineligible">
+                plafond dépassé
               </span>
             </th>
             <td class="num">{{ formatEuros(r.taxableIncomeCents) }}</td>
@@ -83,8 +86,10 @@ const EXPLANATIONS: Record<TaxRegime, { kind: string; text: string }> = {
       </table>
     </div>
     <p class="placeholder">
-      Location nue et meublée ne sont pas interchangeables : le meublé suppose un logement équipé.
-      Impôt de la 1re année, conservé dans le temps.
+      Location nue et meublée ne sont pas interchangeables : le meublé suppose un logement équipé et
+      se loue souvent à un autre loyer, donc le régime le plus avantageux est désigné séparément
+      pour chacune. Un régime micro dont le plafond est dépassé ne peut pas être choisi. Impôt de la
+      1re année ; il évolue ensuite avec les intérêts de l'emprunt (dates de rentabilité).
     </p>
   </div>
 </template>

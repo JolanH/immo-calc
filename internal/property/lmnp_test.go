@@ -102,7 +102,8 @@ func TestRegimeComparison(t *testing.T) {
 		if c.Current != (c.Regime == MicroFoncier) {
 			t.Errorf("%s: current = %v", c.Regime, c.Current)
 		}
-		if c.Best != (c.Regime == LMNPReel) {
+		// The best regime of each kind of rental: nue (réel) and meublée (LMNP).
+		if c.Best != (c.Regime == ReelFoncier || c.Regime == LMNPReel) {
 			t.Errorf("%s: best = %v", c.Regime, c.Best)
 		}
 	}
@@ -111,7 +112,7 @@ func TestRegimeComparison(t *testing.T) {
 		t.Errorf("micro-foncier entry = %+v, result tax %d", r.Regimes[0], r.AnnualTaxCents)
 	}
 	// Values from docs/tax-regimes.md.
-	if taxes[MicroFoncier] != 130_838 || taxes[ReelFoncier] != 120_832 || taxes[MicroBIC] != 96_228 || taxes[LMNPReel] != 72_916 {
+	if taxes[MicroFoncier] != 149_010 || taxes[ReelFoncier] != 120_832 || taxes[MicroBIC] != 109_593 || taxes[LMNPReel] != 72_916 {
 		t.Errorf("taxes = %v", taxes)
 	}
 	if r.Regimes[3].NetAfterTaxYieldPct != 4.96 {

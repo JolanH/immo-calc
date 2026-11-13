@@ -47,7 +47,7 @@ func TestPropertyCRUDEndpoints(t *testing.T) {
 		t.Fatalf("create: status = %d, body = %s", created.Code, created.Body.String())
 	}
 	c := decodeBody[propertyJSON](t, created)
-	if c.ID == "" || c.Result.NetAnnualIncomeCents != 285_592 || c.Loan != nil {
+	if c.ID == "" || c.Result.NetAnnualIncomeCents != 267_420 || c.Loan != nil {
 		t.Errorf("created = %+v", c)
 	}
 
@@ -68,7 +68,7 @@ func TestPropertyCRUDEndpoints(t *testing.T) {
 
 	list := serveProperty(h, apiRequest(http.MethodGet, "/api/properties", ""))
 	items := decodeBody[[]map[string]any](t, list)
-	if list.Code != http.StatusOK || len(items) != 2 || items[0]["netAfterTaxYieldPct"] != 1.75 {
+	if list.Code != http.StatusOK || len(items) != 2 || items[0]["netAfterTaxYieldPct"] != 1.64 {
 		t.Errorf("list: status = %d, body = %s", list.Code, list.Body.String())
 	}
 

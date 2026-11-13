@@ -53,15 +53,41 @@ type Params struct {
 
 // LoanFigures is what the evaluation needs from a linked loan.
 type LoanFigures struct {
-	PrincipalCents     int64
-	FeesCents          int64 // application + guarantee fees
-	MonthlyTotalCents  int64 // monthly payment, insurance included
-	FirstYearInterest  int64 // interest of the first 12 installments
-	FirstYearInsurance int64 // borrower insurance of the first 12 installments
-	FirstPaymentMonth  loan.Month
-	Payments           []int64 // each installment, insurance included
-	TotalCostCents     int64   // coût total du crédit: interest + insurance + fees
-	DurationMonths     int
+	PrincipalCents    int64
+	FeesCents         int64 // application + guarantee fees
+	MonthlyTotalCents int64 // monthly payment, insurance included
+	// YearlyInterest and YearlyInsurance hold the interest and the borrower
+	// insurance of each block of 12 installments (year 1 first).
+	YearlyInterest    []int64
+	YearlyInsurance   []int64
+	FirstPaymentMonth loan.Month
+	Payments          []int64 // each installment, insurance included
+	TotalCostCents    int64   // coût total du crédit: interest + insurance + fees
+	DurationMonths    int
+}
+
+// yearCosts are the loan costs deductible under the réel regimes in one year
+// of the loan.
+type yearCosts struct{ interest, insurance, fees int64 }
+
+// costsOfYear returns the deductible loan costs of year (0 = the first year of
+// the loan). Application and guarantee fees are deducted in year 1 only. A nil
+// receiver (no loan) and the years after the loan cost nothing.
+func (lf *LoanFigures) costsOfYear(year int) yearCosts {
+	if lf == nil {
+		return yearCosts{}
+	}
+	var c yearCosts
+	if year < len(lf.YearlyInterest) {
+		c.interest = lf.YearlyInterest[year]
+	}
+	if year < len(lf.YearlyInsurance) {
+		c.insurance = lf.YearlyInsurance[year]
+	}
+	if year == 0 {
+		c.fees = lf.FeesCents
+	}
+	return c
 }
 
 // Warning is shown above a property's results.
@@ -74,8 +100,11 @@ type Warning struct {
 // Result is everything derived from Params and Settings. Amounts are cents,
 // yields are percentages rounded to 2 decimals.
 type Result struct {
-	AcquisitionCostCents    int64 `json:"acquisitionCostCents"`    // A
-	CollectedRentCents      int64 `json:"collectedRentCents"`      // E
+	AcquisitionCostCents int64 `json:"acquisitionCostCents"` // A
+	CollectedRentCents   int64 `json:"collectedRentCents"`   // E
+	// ReimbursedChargesCents is C × (12 − v), the recoverable charges the tenant
+	// pays back. They are receipts of the micro regimes (neutral under réel).
+	ReimbursedChargesCents  int64 `json:"reimbursedChargesCents"`
 	AgencyFeesCents         int64 `json:"agencyFeesCents"`         // E × g%
 	VacancyChargesCents     int64 `json:"vacancyChargesCents"`     // C × v
 	OwnerChargesCents       int64 `json:"ownerChargesCents"`       // CH
@@ -98,12 +127,22 @@ type Result struct {
 	FurnitureDepreciationCents int64 `json:"furnitureDepreciationCents"`
 	// Regimes compares the four regimes on this bien (« Régime fiscal »).
 	Regimes []RegimeComparison `json:"regimes"`
+	// YearlyTax is the tax and the net income of each year (year 1 first), up to
+	// a few years after the figures stop changing (« Impôt au fil des années »).
+	YearlyTax []YearTax `json:"yearlyTax"`
 	// TaxDetail explains how AnnualTaxCents is produced, step by step.
 	TaxDetail TaxDetail `json:"taxDetail"`
 
 	Financing *Financing `json:"financing"` // with a linked loan only
 	Timeline  *Timeline  `json:"timeline"`  // profitability dates, with a dated loan only
 	Warnings  []Warning  `json:"warnings"`
+}
+
+// YearTax is one year of the « Impôt au fil des années » chart.
+type YearTax struct {
+	Year                 int   `json:"year"` // 1 = the first year of the loan, or of the activity
+	AnnualTaxCents       int64 `json:"annualTaxCents"`
+	NetAnnualIncomeCents int64 `json:"netAnnualIncomeCents"` // R − tax
 }
 
 // TaxDetail is the breakdown of the annual tax (« Comment est calculé
@@ -117,7 +156,10 @@ type TaxDetail struct {
 	// only (0 under the micro regimes and without a loan).
 	LoanInterestCents  int64 `json:"loanInterestCents"`
 	LoanInsuranceCents int64 `json:"loanInsuranceCents"`
-	LoanCostsCents     int64 `json:"loanCostsCents"` // interest + insurance
+	LoanFeesCents      int64 `json:"loanFeesCents"`  // application + guarantee fees
+	LoanCostsCents     int64 `json:"loanCostsCents"` // interest + insurance + fees
+	// ReimbursedChargesCents is added to the rent under the micro regimes.
+	ReimbursedChargesCents int64 `json:"reimbursedChargesCents"`
 	// RawTaxableCents is the base before the floor at 0 (negative = deficit).
 	RawTaxableCents    int64 `json:"rawTaxableCents"`
 	IncomeTaxCents     int64 `json:"incomeTaxCents"`     // IR = taxable × TMI
@@ -153,6 +195,7 @@ func Evaluate(p Params, s Settings, lf *LoanFigures) Result {
 	// bought on top is paid with own funds.
 	r.AcquisitionCostCents = p.PriceCents + notaryFees(p, s) + p.FurnitureAddedCents
 	r.CollectedRentCents = roundCents(float64(p.MonthlyRentCents) * (12 - s.VacancyMonthsPerYear))
+	r.ReimbursedChargesCents = roundCents(float64(p.MonthlyRecoverableChargesCents) * (12 - s.VacancyMonthsPerYear))
 	if p.AgencyManaged {
 		r.AgencyFeesCents = roundCents(float64(r.CollectedRentCents) * s.AgencyFeePct / 100)
 	}
@@ -162,10 +205,12 @@ func Evaluate(p Params, s Settings, lf *LoanFigures) Result {
 		r.AgencyFeesCents + r.VacancyChargesCents
 	r.IncomeBeforeTaxCents = r.CollectedRentCents - r.OwnerChargesCents
 
-	t := taxFor(p.TaxRegime, p, s, r, lf)
+	net := yearlyNet(p, s, r, lf)
+	r.YearlyTax = yearlyTax(r.IncomeBeforeTaxCents, net)
+	t := taxFor(p.TaxRegime, p, s, r, lf, 0)
 	r.TaxableIncomeCents, r.AnnualTaxCents = t.taxable, t.tax
 	r.BuildingDepreciationCents, r.FurnitureDepreciationCents = t.building, t.furniture
-	r.TaxDetail = taxDetail(p.TaxRegime, s, t)
+	r.TaxDetail = taxDetail(p.TaxRegime, s, r, t)
 	r.NetAnnualIncomeCents = r.IncomeBeforeTaxCents - r.AnnualTaxCents
 	r.MonthlyGrossIncomeCents = p.MonthlyRentCents
 	r.MonthlyNetIncomeCents = roundCents(float64(r.NetAnnualIncomeCents) / 12)
@@ -179,16 +224,12 @@ func Evaluate(p Params, s Settings, lf *LoanFigures) Result {
 		r.Financing = financing(r, *lf)
 		r.NetAfterCreditYieldPct = pct(r.NetAnnualIncomeCents-r.Financing.AnnualCreditCostCents, r.AcquisitionCostCents)
 		if !lf.FirstPaymentMonth.IsZero() && len(lf.Payments) > 0 {
-			unfinanced := p
-			unfinanced.StartMonth = loan.Month{} // only its monthly income is needed
-			after := Evaluate(unfinanced, s, nil).MonthlyNetIncomeCents
-			r.Timeline = timeline(r.MonthlyNetIncomeCents, after, r.Financing.OwnContributionCents,
+			r.Timeline = timeline(net, r.Financing.OwnContributionCents,
 				lf.Payments, lf.FirstPaymentMonth)
 		}
 	} else if !p.StartMonth.IsZero() {
 		// Without a loan everything is paid with own funds: apport = A.
-		r.Timeline = timeline(r.MonthlyNetIncomeCents, r.MonthlyNetIncomeCents, r.AcquisitionCostCents,
-			nil, p.StartMonth)
+		r.Timeline = timeline(net, r.AcquisitionCostCents, nil, p.StartMonth)
 	}
 
 	r.Regimes = compareRegimes(p, s, r, lf)
@@ -220,50 +261,63 @@ func notaryFees(p Params, s Settings) int64 {
 	return roundCents(float64(p.PriceCents-p.FurnitureIncludedCents) * s.NotaryFeePct / 100)
 }
 
-// taxOutcome is a regime's taxable income and tax for one bien.
+// taxOutcome is a regime's taxable income and tax for one bien and one year.
 type taxOutcome struct {
 	taxable, tax        int64
 	building, furniture int64 // LMNP au réel depreciation
 	rawTaxable          int64 // before the floor at 0
-	interest, insurance int64 // year-1 loan costs actually deducted
+	costs               yearCosts
 }
 
 // taxDetail builds the breakdown of a regime's tax outcome.
-func taxDetail(regime Regime, s Settings, t taxOutcome) TaxDetail {
+func taxDetail(regime Regime, s Settings, r Result, t taxOutcome) TaxDetail {
 	ir := roundCents(float64(t.taxable) * s.MarginalTaxRatePct / 100)
-	return TaxDetail{
+	d := TaxDetail{
 		Regime: regime, MarginalTaxRatePct: s.MarginalTaxRatePct, SocialChargesPct: socialChargesPct(regime, s),
-		LoanInterestCents: t.interest, LoanInsuranceCents: t.insurance, LoanCostsCents: t.interest + t.insurance,
+		LoanInterestCents: t.costs.interest, LoanInsuranceCents: t.costs.insurance, LoanFeesCents: t.costs.fees,
+		LoanCostsCents:  t.costs.interest + t.costs.insurance + t.costs.fees,
 		RawTaxableCents: t.rawTaxable, IncomeTaxCents: ir, SocialChargesCents: t.tax - ir,
 	}
+	if isMicro(regime) {
+		d.ReimbursedChargesCents = r.ReimbursedChargesCents
+	}
+	return d
 }
 
+func isMicro(r Regime) bool { return r == MicroFoncier || r == MicroBIC }
+
+// microReceipts are the gross receipts a micro regime taxes: the rent
+// collected plus the charges the tenant reimburses (the allowance replaces
+// every deduction).
+func microReceipts(r Result) int64 { return r.CollectedRentCents + r.ReimbursedChargesCents }
+
 // taxFor applies a regime's rule (SPEC-property.md rule 5) to an evaluated
-// bien (E, CH and R already computed in r).
-func taxFor(regime Regime, p Params, s Settings, r Result, lf *LoanFigures) taxOutcome {
+// bien (E, CH and R already computed in r) for one year (0 = the first year
+// of the loan, or of the activity without a loan).
+func taxFor(regime Regime, p Params, s Settings, r Result, lf *LoanFigures, year int) taxOutcome {
 	var t taxOutcome
-	var interest, insurance int64
-	if lf != nil {
-		interest, insurance = lf.FirstYearInterest, lf.FirstYearInsurance
-	}
-	loanCosts := interest + insurance
 	switch regime {
 	case MicroBIC:
-		t.taxable = roundCents(float64(r.CollectedRentCents) * microBICTaxableShare)
+		t.taxable = roundCents(float64(microReceipts(r)) * microBICTaxableShare)
 	case ReelFoncier:
-		// Year-1 interest and borrower insurance are deductible; a deficit is
+		// Interest, borrower insurance and loan fees are deductible; a deficit is
 		// floored at 0 below, not carried over.
-		t.taxable = r.IncomeBeforeTaxCents - loanCosts
-		t.interest, t.insurance = interest, insurance
+		t.costs = lf.costsOfYear(year)
+		t.taxable = r.IncomeBeforeTaxCents - t.costs.interest - t.costs.insurance - t.costs.fees
 	case LMNPReel:
-		t.building = roundCents((float64(p.PriceCents-p.FurnitureIncludedCents)*lmnpBuildingShare +
-			float64(notaryFees(p, s))) / lmnpBuildingYears)
-		t.furniture = roundCents(float64(p.FurnitureIncludedCents+p.FurnitureAddedCents) / lmnpFurnitureYears)
+		t.costs = lf.costsOfYear(year)
+		// Depreciation stops when its period is over.
+		if year < lmnpBuildingYears {
+			t.building = roundCents((float64(p.PriceCents-p.FurnitureIncludedCents)*lmnpBuildingShare +
+				float64(notaryFees(p, s))) / lmnpBuildingYears)
+		}
+		if year < lmnpFurnitureYears {
+			t.furniture = roundCents(float64(p.FurnitureIncludedCents+p.FurnitureAddedCents) / lmnpFurnitureYears)
+		}
 		// Depreciation is used only up to the result: it never creates a deficit.
-		t.taxable = r.IncomeBeforeTaxCents - loanCosts - t.building - t.furniture
-		t.interest, t.insurance = interest, insurance
+		t.taxable = r.IncomeBeforeTaxCents - t.costs.interest - t.costs.insurance - t.costs.fees - t.building - t.furniture
 	default:
-		t.taxable = roundCents(float64(r.CollectedRentCents) * microFoncierTaxableShare)
+		t.taxable = roundCents(float64(microReceipts(r)) * microFoncierTaxableShare)
 	}
 	t.rawTaxable = t.taxable
 	t.taxable = max(t.taxable, 0)
@@ -271,33 +325,89 @@ func taxFor(regime Regime, p Params, s Settings, r Result, lf *LoanFigures) taxO
 	return t
 }
 
+// yearlyTax lists the tax and net income of each year, keeping the years up
+// to three after the last change (at least 10), so the chart shows the
+// plateau without 50 identical years.
+func yearlyTax(income int64, net []int64) []YearTax {
+	last := 0
+	for y := 1; y < len(net); y++ {
+		if net[y] != net[y-1] {
+			last = y
+		}
+	}
+	n := min(len(net), max(10, last+4))
+	out := make([]YearTax, n)
+	for y := range out {
+		out[y] = YearTax{Year: y + 1, AnnualTaxCents: income - net[y], NetAnnualIncomeCents: net[y]}
+	}
+	return out
+}
+
+// yearlyNet is the net annual income of each year of the timeline (50 years):
+// the tax changes with the loan's interest and with the end of the LMNP
+// depreciation. Rents and charges are not indexed.
+func yearlyNet(p Params, s Settings, r Result, lf *LoanFigures) []int64 {
+	out := make([]int64, horizonMonths/12)
+	for y := range out {
+		out[y] = r.IncomeBeforeTaxCents - taxFor(p.TaxRegime, p, s, r, lf, y).tax
+	}
+	return out
+}
+
 // RegimeComparison is one regime applied to the bien (« Régime fiscal »).
 type RegimeComparison struct {
 	Regime               Regime  `json:"regime"`
+	Furnished            bool    `json:"furnished"` // location meublée (micro-BIC, LMNP) or nue
 	TaxableIncomeCents   int64   `json:"taxableIncomeCents"`
 	AnnualTaxCents       int64   `json:"annualTaxCents"`
 	NetAnnualIncomeCents int64   `json:"netAnnualIncomeCents"`
 	NetAfterTaxYieldPct  float64 `json:"netAfterTaxYieldPct"`
 	Current              bool    `json:"current"` // the bien's own regime
-	Best                 bool    `json:"best"`    // lowest tax (first one on a tie)
+	// Eligible is false when the bien's receipts are above the regime's micro ceiling.
+	Eligible bool `json:"eligible"`
+	// Best marks the lowest tax among the eligible regimes of the same kind of
+	// rental (nue or meublée; first one on a tie): the two kinds are not
+	// interchangeable, so they are not ranked against each other.
+	Best bool `json:"best"`
 }
 
 var allRegimes = []Regime{MicroFoncier, ReelFoncier, MicroBIC, LMNPReel}
 
+func isFurnished(r Regime) bool { return r == MicroBIC || r == LMNPReel }
+
+// microEligible reports whether the bien's receipts fit the regime's ceiling.
+func microEligible(regime Regime, r Result) bool {
+	switch regime {
+	case MicroFoncier:
+		return microReceipts(r) <= MicroFoncierCeilingCents
+	case MicroBIC:
+		return microReceipts(r) <= MicroBICCeilingCents
+	}
+	return true
+}
+
 func compareRegimes(p Params, s Settings, r Result, lf *LoanFigures) []RegimeComparison {
 	out := make([]RegimeComparison, len(allRegimes))
-	best := 0
+	best := map[bool]int{false: -1, true: -1} // by furnished
 	for i, regime := range allRegimes {
-		t := taxFor(regime, p, s, r, lf)
+		t := taxFor(regime, p, s, r, lf, 0)
 		net := r.IncomeBeforeTaxCents - t.tax
 		out[i] = RegimeComparison{
-			Regime: regime, TaxableIncomeCents: t.taxable, AnnualTaxCents: t.tax, NetAnnualIncomeCents: net,
-			NetAfterTaxYieldPct: pct(net, r.AcquisitionCostCents), Current: regime == p.TaxRegime,
+			Regime: regime, Furnished: isFurnished(regime), TaxableIncomeCents: t.taxable, AnnualTaxCents: t.tax,
+			NetAnnualIncomeCents: net, NetAfterTaxYieldPct: pct(net, r.AcquisitionCostCents),
+			Current: regime == p.TaxRegime, Eligible: microEligible(regime, r),
 		}
-		if t.tax < out[best].AnnualTaxCents {
-			best = i
+		if !out[i].Eligible {
+			continue
+		}
+		if b := best[out[i].Furnished]; b < 0 || t.tax < out[b].AnnualTaxCents {
+			best[out[i].Furnished] = i
 		}
 	}
-	out[best].Best = true
+	for _, b := range best {
+		if b >= 0 {
+			out[b].Best = true
+		}
+	}
 	return out
 }

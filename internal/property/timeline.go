@@ -22,11 +22,11 @@ type Timeline struct {
 }
 
 // timeline walks month by month from start (the loan's first installment,
-// or the month after today without a loan): the monthly net income minus
-// that month's installment while payments last, then the net income without
-// the loan. The points run a year past the last date found (or to the
-// horizon).
-func timeline(netDuring, netAfter, apport int64, payments []int64, start loan.Month) *Timeline {
+// or the month after today without a loan): the monthly net income of that
+// month's year (yearlyNet: the tax changes as the interest falls) minus that
+// month's installment while payments last. The points run a year past the
+// last date found (or to the horizon).
+func timeline(yearlyNet []int64, apport int64, payments []int64, start loan.Month) *Timeline {
 	t := &Timeline{StartMonth: start.String(), PaybackAtStart: apport <= 0}
 	if t.PaybackAtStart {
 		t.PaybackMonth = t.StartMonth
@@ -34,9 +34,9 @@ func timeline(netDuring, netAfter, apport int64, payments []int64, start loan.Mo
 	cumulative := -apport
 	last := horizonMonths
 	for k := 1; k <= last && k <= horizonMonths; k++ {
-		cashFlow := netAfter
+		cashFlow := roundCents(float64(yearlyNet[(k-1)/12]) / 12)
 		if k <= len(payments) {
-			cashFlow = netDuring - payments[k-1]
+			cashFlow -= payments[k-1]
 		}
 		cumulative += cashFlow
 		month := start.Add(k - 1).String()

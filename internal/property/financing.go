@@ -33,9 +33,13 @@ func FiguresOf(p loan.Params) (LoanFigures, error) {
 		DurationMonths:    p.DurationMonths,
 		Payments:          paymentsOf(res),
 	}
-	for _, inst := range res.Schedule[:min(12, len(res.Schedule))] {
-		f.FirstYearInterest += inst.InterestCents
-		f.FirstYearInsurance += inst.InsuranceCents
+	for i, inst := range res.Schedule {
+		if i%12 == 0 {
+			f.YearlyInterest = append(f.YearlyInterest, 0)
+			f.YearlyInsurance = append(f.YearlyInsurance, 0)
+		}
+		f.YearlyInterest[i/12] += inst.InterestCents
+		f.YearlyInsurance[i/12] += inst.InsuranceCents
 	}
 	return f, nil
 }

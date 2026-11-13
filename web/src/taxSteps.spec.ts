@@ -9,7 +9,7 @@ const plain = (s: string) => s.replace(/[  ]/g, ' ')
 function input(regime: TaxRegime, patch: Partial<PropertyResult> = {}): TaxStepsInput {
   const micro = regime === 'micro_foncier' || regime === 'micro_bic'
   const share = regime === 'micro_bic' ? 0.5 : 0.7
-  const taxable = micro ? 770_000 * share : 540_000
+  const taxable = micro ? 825_000 * share : 540_000 // rent 7 700 € + 550 € of reimbursed charges
   const ps = regime === 'micro_bic' || regime === 'lmnp_reel' ? 18.6 : 17.2
   const ir = Math.round((taxable * 30) / 100)
   const tax = Math.round((taxable * (30 + ps)) / 100)
@@ -26,6 +26,7 @@ function input(regime: TaxRegime, patch: Partial<PropertyResult> = {}): TaxSteps
     result: {
       acquisitionCostCents: 16_275_000,
       collectedRentCents: 770_000,
+      reimbursedChargesCents: 55_000,
       agencyFeesCents: 0,
       vacancyChargesCents: 5_000,
       ownerChargesCents: 230_000,
@@ -39,7 +40,9 @@ function input(regime: TaxRegime, patch: Partial<PropertyResult> = {}): TaxSteps
         socialChargesPct: ps,
         loanInterestCents: 0,
         loanInsuranceCents: 0,
+        loanFeesCents: 0,
         loanCostsCents: 0,
+        reimbursedChargesCents: micro ? 55_000 : 0,
         rawTaxableCents: taxable,
         incomeTaxCents: ir,
         socialChargesCents: tax - ir,
@@ -79,12 +82,13 @@ describe('taxSections', () => {
     expect(without.lines.map((l) => l.label)).not.toContain('Frais de gestion locative')
   })
 
-  it('micro-foncier: a 30 % allowance on the collected rent, charges not deducted', () => {
+  it('micro-foncier: a 30 % allowance on the rent and the reimbursed charges, real charges not deducted', () => {
     const taxable = taxSections(input('micro_foncier'))[1]
     expect(lines(taxable)).toEqual([
       ['', 'Loyers encaissés', 770_000],
-      ['−', 'Abattement forfaitaire de 30 %', 231_000],
-      ['=', 'Revenu imposable', 539_000],
+      ['+', 'Charges remboursées par le locataire', 55_000],
+      ['−', 'Abattement forfaitaire de 30 %', 247_500],
+      ['=', 'Revenu imposable', 577_500],
     ])
     expect(plain(taxable.note ?? '')).toContain('charges réelles ne sont pas déduites')
   })
@@ -93,8 +97,9 @@ describe('taxSections', () => {
     const taxable = taxSections(input('micro_bic'))[1]
     expect(lines(taxable)).toEqual([
       ['', 'Loyers encaissés', 770_000],
-      ['−', 'Abattement forfaitaire de 50 %', 385_000],
-      ['=', 'Revenu imposable', 385_000],
+      ['+', 'Charges remboursées par le locataire', 55_000],
+      ['−', 'Abattement forfaitaire de 50 %', 412_500],
+      ['=', 'Revenu imposable', 412_500],
     ])
   })
 
@@ -104,16 +109,18 @@ describe('taxSections', () => {
       ...i.result.taxDetail!,
       loanInterestCents: 100_000,
       loanInsuranceCents: 20_000,
-      loanCostsCents: 120_000,
-      rawTaxableCents: 420_000,
+      loanFeesCents: 30_000,
+      loanCostsCents: 150_000,
+      rawTaxableCents: 390_000,
     }
-    i.result.taxableIncomeCents = 420_000
+    i.result.taxableIncomeCents = 390_000
     const taxable = taxSections(i)[1]
     expect(lines(taxable)).toEqual([
       ['', 'Revenu annuel avant impôts', 540_000],
       ['−', "Intérêts de l'emprunt (1re année)", 100_000],
       ['−', "Assurance de l'emprunt (1re année)", 20_000],
-      ['=', 'Revenu imposable', 420_000],
+      ['−', "Frais de dossier et de garantie de l'emprunt (1re année)", 30_000],
+      ['=', 'Revenu imposable', 390_000],
     ])
   })
 
@@ -150,17 +157,17 @@ describe('taxSections', () => {
     const sections = taxSections(input('micro_foncier'))
     const tax = sections[2]
     expect(lines(tax)).toEqual([
-      ['', 'Impôt sur le revenu (IR)', 161_700],
-      ['+', 'Prélèvements sociaux (PS)', 92_708],
-      ['=', 'Impôt annuel', 254_408],
+      ['', 'Impôt sur le revenu (IR)', 173_250],
+      ['+', 'Prélèvements sociaux (PS)', 99_330],
+      ['=', 'Impôt annuel', 272_580],
     ])
-    expect(plain(tax.lines[0].detail ?? '')).toBe('5 390,00 € × 30 %')
-    expect(plain(tax.lines[1].detail ?? '')).toBe('5 390,00 € × 17,2 %')
+    expect(plain(tax.lines[0].detail ?? '')).toBe('5 775,00 € × 30 %')
+    expect(plain(tax.lines[1].detail ?? '')).toBe('5 775,00 € × 17,2 %')
     const net = sections[3]
     expect(lines(net)).toEqual([
       ['', 'Revenu annuel avant impôts', 540_000],
-      ['−', 'Impôt annuel', 254_408],
-      ['=', 'Revenu annuel net', 285_592],
+      ['−', 'Impôt annuel', 272_580],
+      ['=', 'Revenu annuel net', 267_420],
     ])
   })
 })

@@ -119,13 +119,18 @@ function taxableSection(i: TaxStepsInput, d: NonNullable<PropertyResult['taxDeta
       lines: [
         { op: '', label: 'Loyers encaissés', cents: r.collectedRentCents },
         {
+          op: '+',
+          label: 'Charges remboursées par le locataire',
+          cents: d.reimbursedChargesCents,
+        },
+        {
           op: '−',
           label: `Abattement forfaitaire de ${allowance} %`,
-          cents: r.collectedRentCents - r.taxableIncomeCents,
+          cents: r.collectedRentCents + d.reimbursedChargesCents - r.taxableIncomeCents,
         },
         result,
       ],
-      note: `Avec le micro, les charges réelles ne sont pas déduites : l'abattement de ${allowance} % les remplace.`,
+      note: `Avec le micro, les recettes comprennent les charges que le locataire rembourse, et les charges réelles ne sont pas déduites : l'abattement de ${allowance} % les remplace.`,
     }
   }
 
@@ -138,6 +143,13 @@ function taxableSection(i: TaxStepsInput, d: NonNullable<PropertyResult['taxDeta
       { op: '−', label: "Intérêts de l'emprunt (1re année)", cents: d.loanInterestCents },
       { op: '−', label: "Assurance de l'emprunt (1re année)", cents: d.loanInsuranceCents },
     )
+    if (d.loanFeesCents > 0) {
+      lines.push({
+        op: '−',
+        label: "Frais de dossier et de garantie de l'emprunt (1re année)",
+        cents: d.loanFeesCents,
+      })
+    }
   } else {
     notes.push("Aucun prêt lié : pas d'intérêts ni d'assurance d'emprunt à déduire.")
   }
