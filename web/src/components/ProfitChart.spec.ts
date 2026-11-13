@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ProfitChart from './ProfitChart.vue'
 import type { Timeline } from '@/api/properties'
@@ -104,5 +104,25 @@ describe('ProfitChart', () => {
     expect(wrapper.get('svg').attributes('aria-label')).toContain(
       'cash-flow mensuel positif dès le premier mois',
     )
+  })
+
+  it('draws at its container width so labels keep their size', async () => {
+    let notify: (entries: { contentRect: { width: number } }[]) => void = () => {}
+    class FakeResizeObserver {
+      constructor(cb: typeof notify) {
+        notify = cb
+      }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const wrapper = mount(ProfitChart, { props: { timeline: timeline() } })
+    expect(wrapper.get('svg').attributes('viewBox')).toBe('0 0 1100 280')
+
+    notify([{ contentRect: { width: 640 } }])
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('svg').attributes('viewBox')).toBe('0 0 640 280')
+    vi.unstubAllGlobals()
   })
 })
