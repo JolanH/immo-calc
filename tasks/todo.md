@@ -107,8 +107,9 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Scope:** S
 
 ### [ ] Checkpoint A — app-shell done
-- [ ] `make test`, `make lint`, `make build` pass from a clean checkout
+- [x] `make test`, `make lint`, `make build` pass from a clean checkout
 - [ ] app-shell acceptance criteria 1–11 verified (2 and 11 by hand on a Windows machine: no console window, French message box on fatal error)
+  - Verified by Claude on Linux: 1, 3, 4, 5, 6, 7, 8, 9, 10. Still to check by hand: 2 (browser opens on /biens when double-clicked, Linux + Windows) and 11 (Windows: no console, French message box)
 - [ ] Human review before Phase 2
 
 ---
