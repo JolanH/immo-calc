@@ -910,3 +910,21 @@ a.app-header__name {
   margin-top: 0.35rem;
   font-size: 0.9rem;
 }
+
+.back-link {
+  display: inline-block;
+  margin: 1rem 0 0;
+}
+
+.linked-properties {
+  margin-top: 1.5rem;
+}
+
+.linked-properties h2 {
+  margin-top: 0;
+}
+
+.linked-properties ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}

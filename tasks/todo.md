@@ -432,7 +432,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Dependencies:** Tasks 25b, 33
 **Scope:** M
 
-### [ ] Task 34: « Créer un prêt pour ce bien » + « Biens liés »
+### [x] Task 34: « Créer un prêt pour ce bien » + « Biens liés »
 **Description:** Button → `/prets/nouveau?bien=<id>` with Montant = A and Nom « Prêt – <nom> ». On Enregistrer, create the loan and link it (PUT property), then show « ← Retour au bien ». On the Prêt page, show « Biens liés » from `?loanId=`.
 **Acceptance criteria:**
 - [ ] Prefill correct; save creates and links the loan; return link goes back to the property
