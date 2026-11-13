@@ -10,7 +10,7 @@ const properties = ref<PropertySummary[] | null>(null)
 
 onMounted(async () => {
   try {
-    properties.value = await listProperties(props.loanId)
+    properties.value = await listProperties({ loanId: props.loanId })
   } catch {
     properties.value = null // informational: nothing shown if it can't load
   }

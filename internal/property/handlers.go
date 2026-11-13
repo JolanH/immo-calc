@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"immo-calc/internal/loan"
 	"immo-calc/internal/server"
 	"immo-calc/internal/storage"
 )
@@ -33,7 +34,8 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
-	props, err := h.svc.List(r.URL.Query().Get("loanId"))
+	q := r.URL.Query()
+	props, err := h.svc.ListWith(ListOptions{LoanID: q.Get("loanId"), ActiveLoanID: q.Get("activeLoanId")})
 	if err != nil {
 		writeServiceError(w, err)
 		return
@@ -119,6 +121,8 @@ func writeServiceError(w http.ResponseWriter, err error) {
 			"Certains champs sont invalides, corrigez-les pour continuer", verr.Fields)
 	case errors.Is(err, ErrNotFound):
 		server.WriteError(w, http.StatusNotFound, "not_found", "Bien introuvable", nil)
+	case errors.Is(err, loan.ErrNotFound):
+		server.WriteError(w, http.StatusNotFound, "not_found", "Prêt introuvable", nil)
 	default:
 		storage.WriteSaveError(w, err)
 	}
