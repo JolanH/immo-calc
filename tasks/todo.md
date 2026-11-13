@@ -40,7 +40,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/format.ts`, `web/src/format.spec.ts`
 **Scope:** XS
 
-### [ ] Task 4: Embed the frontend + SPA fallback
+### [x] Task 4: Embed the frontend + SPA fallback
 **Description:** `web/embed.go` (`//go:embed dist`). The server takes an `fs.FS`: serves `/assets/*` and other static files, and returns `index.html` for any other `GET` that isn't `/api/*`. `make run` builds both halves and runs the app in a container on port 8421.
 **Acceptance criteria:**
 - [ ] `GET /` and `GET /prets/123` serve `index.html`; `GET /assets/x.js` serves the asset with the right content type
