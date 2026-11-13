@@ -234,6 +234,23 @@ describe('BienDetail (new property)', () => {
     }
   })
 
+  it('highlights the taxable income, the annual tax and the net income in « Détail du calcul »', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+    await fillReferenceFlat(wrapper)
+
+    const keys = wrapper.findAll('[data-test="calc-detail"] .figures__key')
+    // One dt and one dd per highlighted figure.
+    expect(keys.map((k) => plain(k.text()))).toEqual([
+      'Revenu imposable',
+      '5 390,00 €',
+      'Impôt annuel (IR + prélèvements sociaux)',
+      '2 544,08 €',
+      'Revenu annuel net',
+      '2 855,92 €',
+    ])
+  })
+
   it('shows the warnings above the results', async () => {
     stubApi(() =>
       json({
