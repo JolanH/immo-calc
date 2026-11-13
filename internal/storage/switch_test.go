@@ -181,13 +181,18 @@ func TestOpenWithATypedPath(t *testing.T) {
 
 func TestOpenRejections(t *testing.T) {
 	invalid := writeFile(t, "schema_version: 1\nnope: 1\n")
+	// Built with json.Marshal: Windows paths contain backslashes, which must be escaped.
+	pathBody := func(p string) string {
+		b, _ := json.Marshal(map[string]string{"path": p})
+		return string(b)
+	}
 	tests := []struct {
 		name     string
 		body     string
 		wantCode string
 	}{
-		{"invalid file", `{"path":"` + invalid + `"}`, "invalid_file"},
-		{"missing file", `{"path":"/nowhere/x.yaml"}`, "invalid_file"},
+		{"invalid file", pathBody(invalid), "invalid_file"},
+		{"missing file", pathBody(filepath.Join(t.TempDir(), "nowhere", "x.yaml")), "invalid_file"},
 		{"relative path", `{"path":"x.yaml"}`, "invalid_path"},
 		{"empty path", `{"path":"  "}`, "invalid_path"},
 		{"bad json", `{"path":`, "invalid_path"},
