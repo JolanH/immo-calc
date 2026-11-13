@@ -25,39 +25,39 @@ type Params struct {
 // Installment is one row of the amortization schedule. PaymentCents is
 // principal + interest, insurance excluded.
 type Installment struct {
-	Index          int
-	Month          Month // zero when the loan has no first payment month
-	PaymentCents   int64
-	InterestCents  int64
-	PrincipalCents int64
-	InsuranceCents int64
-	RemainingCents int64
+	Index          int   `json:"index"`
+	Month          Month `json:"month"` // zero when the loan has no first payment month
+	PaymentCents   int64 `json:"paymentCents"`
+	InterestCents  int64 `json:"interestCents"`
+	PrincipalCents int64 `json:"principalCents"`
+	InsuranceCents int64 `json:"insuranceCents"`
+	RemainingCents int64 `json:"remainingCents"`
 }
 
 // Result is everything derived from Params.
 type Result struct {
-	MonthlyPaymentCents   int64 // mensualité hors assurance
-	MonthlyInsuranceCents int64
-	MonthlyTotalCents     int64 // mensualité totale
-	TotalInterestCents    int64
-	TotalInsuranceCents   int64
-	TotalFeesCents        int64
-	TotalCostCents        int64 // coût total du crédit: interest + insurance + fees
-	TotalRepaidCents      int64 // principal + interest + insurance
-	Schedule              []Installment
-	Yearly                []YearRow // by calendar year; empty for an undated loan
+	MonthlyPaymentCents   int64         `json:"monthlyPaymentCents"` // mensualité hors assurance
+	MonthlyInsuranceCents int64         `json:"monthlyInsuranceCents"`
+	MonthlyTotalCents     int64         `json:"monthlyTotalCents"` // mensualité totale
+	TotalInterestCents    int64         `json:"totalInterestCents"`
+	TotalInsuranceCents   int64         `json:"totalInsuranceCents"`
+	TotalFeesCents        int64         `json:"totalFeesCents"`
+	TotalCostCents        int64         `json:"totalCostCents"`   // coût total du crédit: interest + insurance + fees
+	TotalRepaidCents      int64         `json:"totalRepaidCents"` // principal + interest + insurance
+	Schedule              []Installment `json:"schedule"`
+	Yearly                []YearRow     `json:"yearly"` // by calendar year; empty for an undated loan
 }
 
 // YearRow sums the installments of one calendar year. The first and last
 // years can be partial (Installments < 12).
 type YearRow struct {
-	Year           int
-	Installments   int
-	PaymentCents   int64
-	InterestCents  int64
-	PrincipalCents int64
-	InsuranceCents int64
-	RemainingCents int64 // remaining principal after the year's last installment
+	Year           int   `json:"year"`
+	Installments   int   `json:"installments"`
+	PaymentCents   int64 `json:"paymentCents"`
+	InterestCents  int64 `json:"interestCents"`
+	PrincipalCents int64 `json:"principalCents"`
+	InsuranceCents int64 `json:"insuranceCents"`
+	RemainingCents int64 `json:"remainingCents"` // remaining principal after the year's last installment
 }
 
 // roundCents rounds to the nearest cent, half away from zero.

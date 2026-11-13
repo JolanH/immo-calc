@@ -16,6 +16,7 @@ import (
 
 	"immo-calc/internal/applog"
 	"immo-calc/internal/browser"
+	"immo-calc/internal/loan"
 	"immo-calc/internal/notify"
 	"immo-calc/internal/server"
 	"immo-calc/internal/storage"
@@ -81,7 +82,7 @@ func main() {
 			Version:  version,
 			Static:   web.Dist(),
 			Shutdown: stop,
-			Routes:   []func(*http.ServeMux){dataHandlers.Register},
+			Routes:   []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(nil).Register},
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
