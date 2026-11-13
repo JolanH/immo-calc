@@ -30,11 +30,11 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/package.json`, `web/vite.config.ts`, `web/tsconfig*.json`, `web/src/{main.ts,App.vue,router.ts}`, `web/src/views/*.vue`, `web/src/router.spec.ts`, `docker/Dockerfile.node`, `Makefile`
 **Scope:** M
 
-### [ ] Task 3: `format.ts`
+### [x] Task 3: `format.ts`
 **Description:** `formatEuros(cents)` → `"1 234,56 €"`, `formatPercent(value)` → `"3,50 %"`, using `Intl` `fr-FR`. Fully tested. (Tests compare after normalizing narrow no-break spaces.)
 **Acceptance criteria:**
 - [ ] Covers zero, negatives, large amounts, rounding, percent with 2 decimals
-- [ ] 100 % coverage of `format.ts`
+- [ ] 100 % coverage of `format.ts` — every branch is tested, but coverage isn't measured: needs `@vitest/coverage-v8` (not yet approved)
 **Verification:** `make test-web`
 **Dependencies:** Task 2
 **Files:** `web/src/format.ts`, `web/src/format.spec.ts`
