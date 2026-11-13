@@ -1,4 +1,4 @@
-import { request } from './client'
+import { request, requestText } from './client'
 
 export interface DataInfo {
   path: string
@@ -9,4 +9,9 @@ export interface DataInfo {
 
 export function getDataInfo(): Promise<DataInfo> {
   return request<DataInfo>('GET', '/api/data/info')
+}
+
+/** Replaces all data with an exported YAML file; returns the new info. */
+export function importData(yaml: string): Promise<DataInfo> {
+  return requestText<DataInfo>('POST', '/api/data/import', yaml, 'application/yaml')
 }

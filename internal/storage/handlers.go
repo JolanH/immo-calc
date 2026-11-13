@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -32,6 +33,42 @@ func NewHandlers(store *Store, cfg HandlerConfig) *Handlers {
 // Register adds the routes to mux.
 func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/data/info", h.info)
+	mux.HandleFunc("GET /api/data/export", h.export)
+	mux.Handle("POST /api/data/import", server.RequireSameOrigin(http.HandlerFunc(h.importData)))
+}
+
+// maxImportBytes bounds an imported file (a family's data is a few KB).
+const maxImportBytes = 10 << 20
+
+func (h *Handlers) export(w http.ResponseWriter, _ *http.Request) {
+	data, err := h.store.Export()
+	if err != nil {
+		slog.Error("export failed", "err", err)
+		server.WriteError(w, http.StatusInternalServerError, "export_failed", "L'export a échoué", nil)
+		return
+	}
+	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+exportFileName(h.store.now())+`"`)
+	_, _ = w.Write(data)
+}
+
+func (h *Handlers) importData(w http.ResponseWriter, r *http.Request) {
+	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxImportBytes))
+	if err != nil {
+		server.WriteError(w, http.StatusBadRequest, "invalid_import", "Fichier trop volumineux ou illisible", nil)
+		return
+	}
+	if err := h.store.Import(data); err != nil {
+		var loadErr *LoadError
+		if errors.As(err, &loadErr) {
+			server.WriteError(w, http.StatusBadRequest, "invalid_import", loadErr.Error(), nil)
+			return
+		}
+		WriteSaveError(w, err)
+		return
+	}
+	slog.Info("data imported", "path", h.store.Path())
+	server.WriteJSON(w, http.StatusOK, h.currentInfo())
 }
 
 type dataInfo struct {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, request } from './client'
+import { ApiError, request, requestText } from './client'
 
 function mockFetch(status: number, body?: unknown) {
   const fetchMock = vi.fn().mockResolvedValue(
@@ -72,5 +72,17 @@ describe('request', () => {
     const err = await request('GET', '/api/x').catch((e: unknown) => e)
 
     expect(err).toMatchObject({ status: 500, code: 'unknown_error', fields: {} })
+  })
+
+  it('sends a raw text body with the given content type', async () => {
+    const fetchMock = mockFetch(200, { ok: true })
+
+    await requestText('POST', '/api/data/import', 'schema_version: 1\n', 'application/yaml')
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/data/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/yaml' },
+      body: 'schema_version: 1\n',
+    })
   })
 })
