@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		userConfigDir = os.TempDir()
 	}
-	data, err := openStore(cfg, exeDir, userConfigDir, nil)
+	data, err := openStore(cfg, exeDir, userConfigDir, loan.RegisterSection)
 	if err != nil {
 		fatal(err)
 	}
@@ -82,7 +82,7 @@ func main() {
 			Version:  version,
 			Static:   web.Dist(),
 			Shutdown: stop,
-			Routes:   []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(nil).Register},
+			Routes:   []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(loan.NewService(data.store)).Register},
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

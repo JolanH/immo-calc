@@ -254,7 +254,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/views/PretDetail.vue` + spec, `web/src/components/{MoneyInput,RateInput,ResultCard}.vue` + specs, `web/src/composables/useDebouncedEval.ts`, `web/src/api/loans.ts`, `web/src/router.ts`
 **Scope:** M
 
-### [ ] Task 21: `loans` section + CRUD service + endpoints
+### [x] Task 21: `loans` section + CRUD service + endpoints
 **Description:** Register the `loans` section and validator (rules + unique ids) with storage. `loan.Service`: list, create (id from `crypto/rand`, timestamps), get, update. Endpoints `GET/POST /api/loans`, `GET/PUT /api/loans/{id}` behind the same-origin check; results recomputed on read.
 **Acceptance criteria:**
 - [ ] Create → `201`; get returns inputs + results + schedule; unknown id → `404`; write with a foreign Origin → `403`
