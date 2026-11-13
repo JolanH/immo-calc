@@ -207,7 +207,7 @@ The home page « Accueil » (`/`) has two panes:
 
 Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loanId|>,…`.
 
-- **Selecting:** a checkbox column in the Biens list. Once 4 are ticked the others are disabled. A **Comparer (n)** button opens the comparison when at least 2 are ticked. On the comparison page a column can be removed, and a bien added while there are fewer than 4.
+- **Selecting:** a checkbox column in the Biens list and in the home page's Biens pane. From the home page, while a loan is active, every column starts on the active loan (as on the home list); otherwise each bien starts on its own loan. Once 4 are ticked the others are disabled. A **Comparer (n)** button opens the comparison when at least 2 are ticked. On the comparison page a column can be removed, and a bien added while there are fewer than 4.
 - **One column per bien, one row per figure:** Prix, Coût d'acquisition, Loyer, Régime fiscal, DPE (badge); Revenus mensuels bruts, Revenus mensuels après impôts, Revenu annuel net, Rentabilité brute / nette / après impôts; Prêt (selector), Mensualité, Cash-flow avant / après impôts, Apport, Rendement sur apport; Cash-flow mensuel positif, Apport récupéré; Avertissements.
 - **A distinct loan per bien:** each column has a « Prêt » selector (« Aucun » or any saved loan), defaulting to the bien's own loan. The chosen loan applies **as saved** (rules 11–20) for that column only. It is **not saved** on the bien; it lives in the URL (`prets`), so a reload keeps the comparison.
 - Each column is computed with `POST /api/properties/evaluate?id=<bien>` and the chosen `loanId`, so the micro ceilings still count every saved bien once. A bien that no longer exists shows « Bien introuvable » in its column.

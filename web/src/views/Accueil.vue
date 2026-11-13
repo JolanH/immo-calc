@@ -5,6 +5,7 @@ import { ApiError } from '@/api/client'
 import { getActiveLoan, listLoans, setActiveLoan, type LoanSummary } from '@/api/loans'
 import { listProperties, type PropertySummary } from '@/api/properties'
 import PropertiesTable from '@/components/PropertiesTable.vue'
+import CompareBar from '@/components/CompareBar.vue'
 import { formatEuros } from '@/format'
 import { formatInputEuros } from '@/parse'
 
@@ -15,6 +16,8 @@ const loans = ref<LoanSummary[] | null>(null)
 const active = ref('') // '' = « Aucun »
 const error = ref('')
 const properties = ref<PropertySummary[] | null>(null)
+/** Biens ticked for the comparison (2 to 4). */
+const selected = ref<string[]>([])
 const propertiesError = ref('')
 const ready = ref(false)
 
@@ -88,7 +91,10 @@ async function choose(id: string) {
         <p v-if="properties && properties.length === 0" class="placeholder">
           Aucun bien enregistré.
         </p>
-        <PropertiesTable v-else-if="properties" :properties="properties" />
+        <template v-else-if="properties">
+          <CompareBar :selected="selected" :loan-id="active || undefined" />
+          <PropertiesTable v-model:selected="selected" :properties="properties" selectable />
+        </template>
       </section>
 
       <aside class="home__prets card" data-test="home-prets">

@@ -34,7 +34,9 @@ function json(body: unknown, status = 200) {
 function stubApi(routes: Record<string, (init: RequestInit) => Response>) {
   const fetchMock = vi.fn((url: string, init: RequestInit = {}) => {
     const key = `${init.method ?? 'GET'} ${url}`
-    if (!(key in routes) && url.startsWith('/api/properties')) return Promise.resolve(json([]))
+    // Unstubbed Biens lists are empty; a bien's own page isn't served.
+    const isList = url === '/api/properties' || url.startsWith('/api/properties?')
+    if (!(key in routes) && isList) return Promise.resolve(json([]))
     const handler = routes[key]
     if (!handler) throw new Error(`unexpected call ${key}`)
     return Promise.resolve(handler(init))
@@ -264,6 +266,68 @@ describe('Accueil', () => {
         ),
       ).toBe(true)
       expect(wrapper.get('[data-test="active-loan-note"]').text()).toContain('« Crédit Mutuel »')
+    })
+  })
+
+  describe('comparison from the home page', () => {
+    const biens = ['a', 'b', 'c'].map((c, i) => ({
+      id: c.repeat(16),
+      name: `Bien ${i + 1}`,
+      priceCents: 15_000_000,
+      monthlyRentCents: 70_000,
+      dpe: 'D',
+      netAfterTaxYieldPct: 1.75,
+      monthlyNetIncomeCents: 23_799,
+      cashFlowAfterTaxCents: null,
+      loanId: '',
+      loanName: '',
+      warnings: [],
+    }))
+
+    it('ticks biens and opens the comparison with their own loans', async () => {
+      stubApi({
+        'GET /api/loans': () => json(loans),
+        'GET /api/active-loan': () => json({ loanId: null }),
+        'GET /api/properties': () => json(biens),
+      })
+      const { wrapper, router } = await mountHome()
+      const pane = wrapper.get('[data-test="home-biens"]')
+      const button = () => pane.get('[data-test="compare"]')
+      expect(button().attributes('disabled')).toBeDefined()
+
+      const boxes = pane.findAll('tbody input[type="checkbox"]')
+      expect(boxes).toHaveLength(3)
+      await boxes[0].setValue(true)
+      await boxes[2].setValue(true)
+      expect(button().text()).toBe('Comparer (2)')
+      await button().trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe('/biens/comparer')
+      expect(router.currentRoute.value.query).toEqual({
+        biens: 'aaaaaaaaaaaaaaaa,cccccccccccccccc',
+      })
+    })
+
+    it('opens the comparison with the active loan in every column', async () => {
+      stubApi({
+        'GET /api/loans': () => json(loans),
+        'GET /api/active-loan': () => json({ loanId: 'bbbbbbbbbbbbbbbb' }),
+        'GET /api/properties?activeLoanId=bbbbbbbbbbbbbbbb': () => json(biens),
+      })
+      const { wrapper, router } = await mountHome()
+      const pane = wrapper.get('[data-test="home-biens"]')
+      const boxes = pane.findAll('tbody input[type="checkbox"]')
+
+      await boxes[0].setValue(true)
+      await boxes[1].setValue(true)
+      await pane.get('[data-test="compare"]').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.query).toEqual({
+        biens: 'aaaaaaaaaaaaaaaa,bbbbbbbbbbbbbbbb',
+        prets: 'bbbbbbbbbbbbbbbb,bbbbbbbbbbbbbbbb',
+      })
     })
   })
 })
