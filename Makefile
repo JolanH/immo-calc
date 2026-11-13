@@ -11,7 +11,8 @@ GO_IMAGE := immo-calc-go
 NODE_IMAGE := immo-calc-node
 
 DOCKER_RUN := docker run --rm -u $(UID):$(GID) -v "$(CURDIR)":/src -w /src \
-	-e HOME=/src/.cache/home -e GOCACHE=/src/.cache/go-build -e GOMODCACHE=/src/.cache/gomod
+	-e HOME=/src/.cache/home -e XDG_CONFIG_HOME=/src/.cache/home/.config \
+	-e GOCACHE=/src/.cache/go-build -e GOMODCACHE=/src/.cache/gomod
 # Interactive targets share the host network so the app can keep binding
 # 127.0.0.1 only (a published port can't reach a container's loopback).
 DOCKER_RUN_HOST := $(DOCKER_RUN) --init --network host
