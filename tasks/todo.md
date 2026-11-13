@@ -276,7 +276,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/views/{PretsListe,PretDetail}.vue` + specs, `web/src/composables/useUnsavedGuard.ts` + spec, `web/src/api/loans.ts`
 **Scope:** M
 
-### [ ] Task 23: Duplicate + delete with the delete-guard hook
+### [x] Task 23: Duplicate + delete with the delete-guard hook
 **Description:** `Service.RegisterDeleteGuard(func(id) error)`. `POST /api/loans/{id}/duplicate` → « <nom> (copie) », `201`. `DELETE /api/loans/{id}` → `204` or `409 loan_in_use` with the guard's French message. UI: **Dupliquer**, **Supprimer** with confirmation and the 409 message.
 **Acceptance criteria:**
 - [ ] Duplicate is independent (editing it doesn't change the original)

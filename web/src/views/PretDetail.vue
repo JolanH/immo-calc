@@ -6,10 +6,12 @@ import RateInput from '@/components/RateInput.vue'
 import MonthPicker from '@/components/MonthPicker.vue'
 import ResultCard from '@/components/ResultCard.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
-import { useUnsavedGuard } from '@/composables/useUnsavedGuard'
+import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
 import { ApiError } from '@/api/client'
 import {
   createLoan,
+  deleteLoan,
+  duplicateLoan,
   getLoan,
   listLoans,
   simulateLoan,
@@ -158,6 +160,41 @@ async function save() {
     saving.value = false
   }
 }
+
+function showActionError(e: unknown) {
+  saveError.value = e instanceof ApiError ? e.message : String(e)
+}
+
+async function duplicate() {
+  if (!loadedId.value) return
+  if (dirty.value && !window.confirm(UNSAVED_MESSAGE)) return
+  saveError.value = ''
+  status.value = ''
+  try {
+    const copy = await duplicateLoan(loadedId.value)
+    fill(copy) // shown right away; the route change below won't reload it
+    await router.push(`/prets/${copy.id}`)
+    await evaluateNow()
+    status.value = 'Copie créée'
+  } catch (e) {
+    showActionError(e)
+  }
+}
+
+async function remove() {
+  if (!loadedId.value) return
+  if (!window.confirm(`Supprimer le prêt « ${savedName.value} » ? Cette action est définitive.`))
+    return
+  saveError.value = ''
+  status.value = ''
+  try {
+    await deleteLoan(loadedId.value)
+    snapshot.value = JSON.stringify(form) // deleted: nothing left to save
+    await router.push('/prets')
+  } catch (e) {
+    showActionError(e)
+  }
+}
 </script>
 
 <template>
@@ -249,6 +286,14 @@ async function save() {
           <button type="submit" class="button button--primary" data-test="save" :disabled="saving">
             Enregistrer
           </button>
+          <template v-if="loadedId">
+            <button type="button" class="button" data-test="duplicate" @click="duplicate">
+              Dupliquer
+            </button>
+            <button type="button" class="button button--danger" data-test="delete" @click="remove">
+              Supprimer
+            </button>
+          </template>
         </div>
       </form>
 

@@ -28,14 +28,36 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.Handle("POST /api/loans", write(h.create))
 	mux.HandleFunc("GET /api/loans/{id}", h.get)
 	mux.Handle("PUT /api/loans/{id}", write(h.update))
+	mux.Handle("DELETE /api/loans/{id}", write(h.delete))
+	mux.Handle("POST /api/loans/{id}/duplicate", write(h.duplicate))
+}
+
+func (h *Handlers) duplicate(w http.ResponseWriter, r *http.Request) {
+	l, err := h.svc.Duplicate(r.PathValue("id"))
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	h.writeDetail(w, http.StatusCreated, l)
+}
+
+func (h *Handlers) delete(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.Delete(r.PathValue("id")); err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // writeServiceError maps service errors to API answers.
 func writeServiceError(w http.ResponseWriter, err error) {
 	var verr *ValidationError
+	var inUse *InUseError
 	switch {
 	case errors.As(err, &verr):
 		writeValidationError(w, verr.Fields)
+	case errors.As(err, &inUse):
+		server.WriteError(w, http.StatusConflict, "loan_in_use", inUse.Message, nil)
 	case errors.Is(err, ErrNotFound):
 		server.WriteError(w, http.StatusNotFound, "not_found", "Prêt introuvable", nil)
 	default:

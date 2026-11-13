@@ -84,3 +84,13 @@ export function createLoan(input: LoanInput): Promise<LoanDetail> {
 export function updateLoan(id: string, input: LoanInput): Promise<LoanDetail> {
   return request<LoanDetail>('PUT', `/api/loans/${encodeURIComponent(id)}`, input)
 }
+
+/** Saves a copy named « <nom> (copie) ». */
+export function duplicateLoan(id: string): Promise<LoanDetail> {
+  return request<LoanDetail>('POST', `/api/loans/${encodeURIComponent(id)}/duplicate`)
+}
+
+/** Deletes a loan; fails with code loan_in_use when a property uses it. */
+export function deleteLoan(id: string): Promise<void> {
+  return request<void>('DELETE', `/api/loans/${encodeURIComponent(id)}`)
+}

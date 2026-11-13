@@ -194,3 +194,98 @@ func TestNewIDIs16HexChars(t *testing.T) {
 		seen[id] = true
 	}
 }
+
+func TestDuplicateCreatesAnIndependentCopy(t *testing.T) {
+	svc, _ := newTestService(t)
+	original, _ := svc.Create(validInput())
+
+	copied, err := svc.Duplicate(original.ID)
+
+	if err != nil {
+		t.Fatalf("duplicate: %v", err)
+	}
+	if copied.ID == original.ID || copied.Name != "Appart Lyon — Crédit Mutuel (copie)" {
+		t.Errorf("copy = %+v", copied)
+	}
+	in := copied.Input
+	in.Name = original.Name
+	if in != original.Input {
+		t.Errorf("copied inputs differ: %+v", copied.Input)
+	}
+	edited := copied.Input
+	edited.AnnualRatePct = 5
+	if _, err := svc.Update(copied.ID, edited); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := svc.Get(original.ID); got.AnnualRatePct != 3.5 {
+		t.Errorf("editing the copy changed the original: %+v", got)
+	}
+}
+
+func TestDuplicateKeepsTheNameWithin80Characters(t *testing.T) {
+	svc, _ := newTestService(t)
+	in := validInput()
+	in.Name = strings.Repeat("é", 80)
+	original, _ := svc.Create(in)
+
+	copied, err := svc.Duplicate(original.ID)
+
+	if err != nil {
+		t.Fatalf("duplicate: %v", err)
+	}
+	if n := len([]rune(copied.Name)); n != 80 || !strings.HasSuffix(copied.Name, " (copie)") {
+		t.Errorf("copy name = %q (%d runes)", copied.Name, n)
+	}
+}
+
+func TestDuplicateUnknownLoan(t *testing.T) {
+	svc, _ := newTestService(t)
+	if _, err := svc.Duplicate("ffffffffffffffff"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("err = %v", err)
+	}
+}
+
+func TestDeleteWithoutGuards(t *testing.T) {
+	svc, _ := newTestService(t)
+	l, _ := svc.Create(validInput())
+
+	if err := svc.Delete(l.ID); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if _, err := svc.Get(l.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("loan still there: %v", err)
+	}
+	if err := svc.Delete(l.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("second delete: %v", err)
+	}
+}
+
+func TestDeleteGuardCanRefuse(t *testing.T) {
+	svc, _ := newTestService(t)
+	kept, _ := svc.Create(validInput())
+	free, _ := svc.Create(validInput())
+	var asked []string
+	svc.RegisterDeleteGuard(func(loanID string) error {
+		asked = append(asked, loanID)
+		if loanID == kept.ID {
+			return errors.New("Ce prêt est utilisé par le bien « T2 Lyon 7e »")
+		}
+		return nil
+	})
+
+	err := svc.Delete(kept.ID)
+
+	var inUse *InUseError
+	if !errors.As(err, &inUse) || inUse.Message != "Ce prêt est utilisé par le bien « T2 Lyon 7e »" {
+		t.Fatalf("err = %v", err)
+	}
+	if _, err := svc.Get(kept.ID); err != nil {
+		t.Errorf("refused loan was deleted: %v", err)
+	}
+	if err := svc.Delete(free.ID); err != nil {
+		t.Errorf("free loan: %v", err)
+	}
+	if len(asked) != 2 {
+		t.Errorf("guard asked %v", asked)
+	}
+}
