@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"go.yaml.in/yaml/v3"
 
@@ -16,18 +17,26 @@ type HandlerConfig struct {
 	// CountKeys are the list sections counted in /api/data/info.
 	CountKeys []string
 	// Warning is the startup banner (remembered file not found), if any.
+	// It is cleared once the user switches to another file.
 	Warning string
+	// ConfigPath is the app config file where the last data file is remembered.
+	ConfigPath string
+	// Picker shows the native open/save dialogs.
+	Picker Picker
 }
 
 // Handlers serves the /api/data endpoints.
 type Handlers struct {
 	store *Store
 	cfg   HandlerConfig
+
+	mu      sync.Mutex
+	warning string
 }
 
 // NewHandlers returns the /api/data handlers for store.
 func NewHandlers(store *Store, cfg HandlerConfig) *Handlers {
-	return &Handlers{store: store, cfg: cfg}
+	return &Handlers{store: store, cfg: cfg, warning: cfg.Warning}
 }
 
 // Register adds the routes to mux.
@@ -36,6 +45,7 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/data/export", h.export)
 	mux.Handle("POST /api/data/import", server.RequireSameOrigin(http.HandlerFunc(h.importData)))
 	mux.Handle("POST /api/data/reload", server.RequireSameOrigin(http.HandlerFunc(h.reload)))
+	mux.Handle("POST /api/data/open", server.RequireSameOrigin(http.HandlerFunc(h.open)))
 }
 
 func (h *Handlers) reload(w http.ResponseWriter, _ *http.Request) {
@@ -93,11 +103,14 @@ func (h *Handlers) info(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handlers) currentInfo() dataInfo {
+	h.mu.Lock()
+	warning := h.warning
+	h.mu.Unlock()
 	return dataInfo{
 		Path:          h.store.Path(),
 		SchemaVersion: CurrentVersion,
 		Counts:        h.store.counts(h.cfg.CountKeys),
-		Warning:       h.cfg.Warning,
+		Warning:       warning,
 	}
 }
 

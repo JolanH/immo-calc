@@ -64,8 +64,10 @@ func main() {
 		fatal(err)
 	}
 	dataHandlers := storage.NewHandlers(data.store, storage.HandlerConfig{
-		CountKeys: []string{"properties", "loans"},
-		Warning:   data.warning,
+		CountKeys:  []string{"properties", "loans"},
+		Warning:    data.warning,
+		ConfigPath: data.configPath,
+		Picker:     storage.ZenityPicker{},
 	})
 
 	url := appURL(ln)
