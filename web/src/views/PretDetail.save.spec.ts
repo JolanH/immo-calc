@@ -252,3 +252,32 @@ describe('unsaved changes', () => {
     expect(event.defaultPrevented).toBe(true)
   })
 })
+
+describe('breadcrumb', () => {
+  it('shows « Prêts › <nom> » on a saved loan and links back to the list', async () => {
+    stubApi({
+      'GET /api/loans/aaaaaaaaaaaaaaaa': () => json(saved),
+      'POST /api/loans/simulate': () => json(result),
+      'GET /api/loans': () => json([]),
+    })
+    const { wrapper, router } = await mountAt('/prets/aaaaaaaaaaaaaaaa')
+
+    const crumbs = wrapper.get('nav[aria-label="Fil d\'Ariane"]')
+    expect(crumbs.findAll('li').map((li) => li.text())).toEqual(['Prêts', 'Appart Lyon'])
+    await crumbs.get('a').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/prets')
+  })
+
+  it('shows « Prêts › Nouvelle simulation » for a new loan', async () => {
+    stubApi({ 'GET /api/loans': () => json([]) })
+    const { wrapper } = await mountAt('/prets/nouveau')
+
+    expect(
+      wrapper
+        .get('nav[aria-label="Fil d\'Ariane"]')
+        .findAll('li')
+        .map((li) => li.text()),
+    ).toEqual(['Prêts', 'Nouvelle simulation'])
+  })
+})

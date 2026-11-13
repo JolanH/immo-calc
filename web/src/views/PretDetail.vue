@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
 import MoneyInput from '@/components/MoneyInput.vue'
 import RateInput from '@/components/RateInput.vue'
 import MonthPicker from '@/components/MonthPicker.vue'
@@ -201,6 +202,12 @@ async function remove() {
 
 <template>
   <section class="detail">
+    <AppBreadcrumb
+      :items="[
+        { label: 'Prêts', to: '/prets' },
+        { label: loadedId ? savedName : 'Nouvelle simulation' },
+      ]"
+    />
     <h1>{{ loadedId ? savedName : 'Nouvelle simulation de prêt' }}</h1>
     <p v-if="loadError" role="alert" class="alert alert--error">{{ loadError }}</p>
     <div v-else class="detail__layout">
