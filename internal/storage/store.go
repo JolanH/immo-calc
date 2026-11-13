@@ -34,6 +34,7 @@ type Store struct {
 	validators map[string]Validator
 	order      []string // registration order, used when writing
 	migrations map[int]Migration
+	docChecks  []DocumentCheck
 }
 
 // New returns an empty store. Register sections, then call Load.
@@ -169,6 +170,9 @@ func (s *Store) parse(file string, data []byte) (map[string]*yaml.Node, bool, er
 		if err := validateNode(key, node, validate); err != nil {
 			return nil, false, &LoadError{File: file, Line: err.line, Message: err.message}
 		}
+	}
+	if err := s.checkDocument(sections); err != nil {
+		return nil, false, documentLoadError(file, sections, err)
 	}
 	return sections, version < CurrentVersion, nil
 }
