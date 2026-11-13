@@ -389,8 +389,18 @@ async function remove() {
               <span class="result-card__label">Rentabilité</span>
               <span>Brute {{ formatPercent(result.grossYieldPct) }}</span>
               <span>Nette {{ formatPercent(result.netYieldPct) }}</span>
-              <strong class="result-card__value result-card__value--accent">
+              <component
+                :is="result.financing ? 'span' : 'strong'"
+                :class="{ 'result-card__value result-card__value--accent': !result.financing }"
+              >
                 Après impôts {{ formatPercent(result.netAfterTaxYieldPct) }}
+              </component>
+              <strong
+                v-if="result.financing"
+                class="result-card__value result-card__value--accent"
+                data-test="after-credit-yield"
+              >
+                Après crédit {{ formatPercent(result.netAfterCreditYieldPct) }}
               </strong>
             </div>
             <div class="result-card" data-test="profit-dates">

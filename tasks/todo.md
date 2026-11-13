@@ -459,6 +459,13 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] Reloading keeps biens and loans; unknown bien → « Bien introuvable »
 **Scope:** M
 
+### [x] Task 34c (added 2026-11-13): « Rentabilité nette après crédit »
+**Description:** Requested by the user: a profitability KPI that reflects the selected loan (SPEC-property.md rule 15b), shown on the Bien page, both Biens lists (home page with the active loan) and the comparison.
+**Acceptance criteria:**
+- [x] The user's case gives 2,32 % with « Conso Immo », 3,39 % without a loan
+- [x] It follows the loan everywhere: own loan on the Bien page and `/biens`, active loan on the home page, each column's loan in the comparison
+**Scope:** S
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

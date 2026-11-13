@@ -19,6 +19,8 @@ defineProps<{ financing: Financing }>()
       </dd>
       <dt>Apport</dt>
       <dd>{{ formatEuros(financing.ownContributionCents) }}</dd>
+      <dt>Coût annuel moyen du crédit</dt>
+      <dd>{{ formatEuros(financing.annualCreditCostCents) }} / an</dd>
       <dt>Rendement sur apport</dt>
       <dd>
         {{

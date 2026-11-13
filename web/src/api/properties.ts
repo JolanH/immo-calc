@@ -22,6 +22,7 @@ export interface Financing {
   cashFlowBeforeTaxCents: number
   cashFlowAfterTaxCents: number
   ownContributionCents: number
+  annualCreditCostCents: number
   returnOnContributionPct: number | null // null = n/a
 }
 
@@ -62,6 +63,8 @@ export interface PropertyResult {
   grossYieldPct: number
   netYieldPct: number
   netAfterTaxYieldPct: number
+  /** (RN − average annual credit cost) / A; equals netAfterTaxYieldPct without a loan. */
+  netAfterCreditYieldPct: number
   financing: Financing | null
   timeline?: Timeline | null
   warnings: PropertyWarning[]
@@ -87,6 +90,7 @@ export interface PropertySummary {
   monthlyRentCents: number
   dpe: string
   netAfterTaxYieldPct: number
+  netAfterCreditYieldPct: number
   monthlyNetIncomeCents: number
   cashFlowAfterTaxCents: number | null
   loanId: string

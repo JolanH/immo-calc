@@ -371,4 +371,44 @@ describe('BienDetail (new property)', () => {
       expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(false)
     })
   })
+
+  describe('« Rentabilité nette après crédit »', () => {
+    it('is highlighted in the Rentabilité card when a loan is linked', async () => {
+      stubApi(() =>
+        json({
+          ...result,
+          netAfterCreditYieldPct: 2.32,
+          financing: {
+            monthlyPaymentCents: 28_307,
+            cashFlowBeforeTaxCents: -6_974,
+            cashFlowAfterTaxCents: -17_877,
+            ownContributionCents: 2_189_000,
+            annualCreditCostCents: 39_683,
+            returnOnContributionPct: -9.8,
+          },
+        }),
+      )
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      const yields = plain(wrapper.get('[data-test="yields"]').text())
+      expect(yields).toContain('Après impôts 1,75 %')
+      expect(yields).toContain('Après crédit 2,32 %')
+      expect(wrapper.get('[data-test="after-credit-yield"]').classes()).toContain(
+        'result-card__value--accent',
+      )
+      expect(plain(wrapper.get('[data-test="financing"]').text())).toContain(
+        'Coût annuel moyen du crédit',
+      )
+      expect(plain(wrapper.get('[data-test="financing"]').text())).toContain('396,83 €')
+    })
+
+    it('is not repeated without a loan', async () => {
+      stubApi(() => json({ ...result, netAfterCreditYieldPct: 1.75 }))
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      expect(wrapper.find('[data-test="after-credit-yield"]').exists()).toBe(false)
+    })
+  })
 })
