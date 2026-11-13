@@ -99,9 +99,40 @@ func TestReelTaxAfterTheLoanLosesTheInterestDeduction(t *testing.T) {
 	}
 }
 
-func TestNoTimelineWithoutALoan(t *testing.T) {
+func TestNoTimelineWithoutAStartMonth(t *testing.T) {
 	if res := Evaluate(seAppart(), referenceSettings, nil); res.Timeline != nil {
 		t.Errorf("timeline = %+v", res.Timeline)
+	}
+}
+
+func TestProfitabilityDatesWithoutALoan(t *testing.T) {
+	p := seAppart()
+	p.StartMonth = loan.Month{Year: 2026, Month: 12}
+
+	res := Evaluate(p, referenceSettings, nil)
+
+	tl := res.Timeline
+	if tl == nil {
+		t.Fatal("no timeline")
+	}
+	// Apport = A (36 890 €), +104,30 € every month from 12/2026: 354 months.
+	if tl.StartMonth != "2026-12" || tl.PositiveCashFlowMonth != "2026-12" || tl.PaybackMonth != "2056-05" {
+		t.Errorf("timeline = start %s, positive %s, payback %s", tl.StartMonth, tl.PositiveCashFlowMonth, tl.PaybackMonth)
+	}
+	if first := tl.Points[0]; first.CashFlowCents != 10_430 || first.CumulativeCents != -3_689_000+10_430 {
+		t.Errorf("first point = %+v", first)
+	}
+}
+
+func TestNoLoanAndNoIncomeNeverRecovers(t *testing.T) {
+	p := seAppart()
+	p.StartMonth = loan.Month{Year: 2026, Month: 12}
+	p.AnnualCondoFeesCents = 1_000_000
+
+	tl := Evaluate(p, referenceSettings, nil).Timeline
+
+	if tl.PositiveCashFlowMonth != "" || tl.PaybackMonth != "" {
+		t.Errorf("positive %q, payback %q", tl.PositiveCashFlowMonth, tl.PaybackMonth)
 	}
 }
 

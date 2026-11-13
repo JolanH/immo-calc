@@ -428,3 +428,14 @@ func TestUnknownActiveLoan(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestServiceStartsUnfinancedTimelinesNextMonth(t *testing.T) {
+	f := newFixture(t) // now = 13 November 2026
+	p, _ := f.svc.Create(validPropertyInput())
+
+	d, _ := f.svc.Detail(p.ID)
+
+	if d.Result.Timeline == nil || d.Result.Timeline.StartMonth != "2026-12" {
+		t.Errorf("timeline = %+v", d.Result.Timeline)
+	}
+}

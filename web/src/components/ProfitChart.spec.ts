@@ -48,6 +48,18 @@ describe('ProfitChart', () => {
     expect(payback.text()).toContain('Apport récupéré')
   })
 
+  it('says what the line adds up, with or without a loan', () => {
+    const financed = mount(ProfitChart, { props: { timeline: timeline(), financed: true } })
+    expect(financed.text()).toContain(
+      'Apport de départ, puis chaque mois : revenus après impôts − mensualité du prêt.',
+    )
+
+    const unfinanced = mount(ProfitChart, { props: { timeline: timeline(), financed: false } })
+    expect(unfinanced.text()).toContain(
+      'Apport de départ (prix + notaire), puis chaque mois : revenus après impôts.',
+    )
+  })
+
   it('omits a marker for a date that is never reached', () => {
     const t = { ...timeline(), paybackMonth: '' }
     const wrapper = mount(ProfitChart, { props: { timeline: t } })
@@ -82,5 +94,15 @@ describe('ProfitChart', () => {
     expect(wrapper.get('[role="tooltip"]').text()).toContain('juin 2029')
     await frame.trigger('blur')
     expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+  })
+
+  it('labels an immediately positive cash-flow « Immédiat », like the card', () => {
+    const t = { ...timeline(), positiveCashFlowMonth: '2027-01' }
+    const wrapper = mount(ProfitChart, { props: { timeline: t } })
+
+    expect(wrapper.get('[data-test="marker-positive"]').text()).toBe('Cash-flow positif · Immédiat')
+    expect(wrapper.get('svg').attributes('aria-label')).toContain(
+      'cash-flow mensuel positif dès le premier mois',
+    )
   })
 })

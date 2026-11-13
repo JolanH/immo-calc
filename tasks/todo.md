@@ -466,6 +466,13 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] It follows the loan everywhere: own loan on the Bien page and `/biens`, active loan on the home page, each column's loan in the comparison
 **Scope:** S
 
+### [x] Task 34d (added 2026-11-13): profitability dates without a loan
+**Description:** Requested by the user: a bien without a loan also gets its dates (SPEC-property.md rules 16–20): start the month after today, apport = acquisition cost, cash-flow = monthly net income. « Immédiat » when the first month is already positive; special values capitalised.
+**Acceptance criteria:**
+- [x] Unfinanced « SE appart 1 » in November 2026: « Immédiat » and 01/05/2056
+- [x] The card and the chart show for biens without a loan; « Jamais »/« Au-delà de 50 ans » when income is not positive
+**Scope:** S
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

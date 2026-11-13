@@ -343,8 +343,8 @@ describe('BienDetail (new property)', () => {
       const wrapper = await mountNew()
       await fillReferenceFlat(wrapper)
       let card = wrapper.get('[data-test="profit-dates"]').text()
-      expect(card).toContain('Cash-flow mensuel positif : jamais')
-      expect(card).toContain('Apport récupéré : au-delà de 50 ans')
+      expect(card).toContain('Cash-flow mensuel positif : Jamais')
+      expect(card).toContain('Apport récupéré : Au-delà de 50 ans')
 
       stubApi(() =>
         json({
@@ -357,18 +357,27 @@ describe('BienDetail (new property)', () => {
       vi.advanceTimersByTime(300)
       await flushPromises()
       card = wrapper.get('[data-test="profit-dates"]').text()
-      expect(card).toContain("Apport récupéré : dès l'achat")
+      expect(card).toContain("Apport récupéré : Dès l'achat")
     })
 
-    it('invites to link a loan when there is none', async () => {
-      stubApi()
+    it('gives the dates without a loan too, « Immédiat » when the first month is positive', async () => {
+      const unfinanced = {
+        startMonth: '2026-12',
+        positiveCashFlowMonth: '2026-12',
+        paybackMonth: '2056-05',
+        paybackAtStart: false,
+        points: [{ month: '2026-12', cashFlowCents: 10_430, cumulativeCents: -3_678_570 }],
+      }
+      stubApi(() => json({ ...result, timeline: unfinanced }))
       const wrapper = await mountNew()
       await fillReferenceFlat(wrapper)
 
-      expect(wrapper.get('[data-test="profit-dates"]').text()).toContain(
-        'Associez un prêt pour calculer ces dates.',
-      )
-      expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(false)
+      const card = plain(wrapper.get('[data-test="profit-dates"]').text())
+      expect(card).toContain('Cash-flow mensuel positif : Immédiat')
+      expect(card).toContain('Apport récupéré : 01/05/2056')
+      const chart = wrapper.get('[data-test="profit-chart"]').element.closest('section')
+      expect(chart?.textContent).toContain('revenus après impôts')
+      expect(chart?.textContent).not.toContain('mensualité du prêt')
     })
   })
 
