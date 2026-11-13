@@ -4,6 +4,7 @@
 package storage
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -23,8 +24,10 @@ type Validator func(raw []byte) error
 type Store struct {
 	mu         sync.Mutex
 	path       string
-	exists     bool                  // the data file existed at load time
-	migrated   bool                  // loaded from an older schema_version
+	exists     bool   // the data file exists, as far as we know
+	hash       []byte // SHA-256 of the file as last read or written
+	migrated   bool   // loaded from an older schema_version, not saved since
+	fs         fileSystem
 	sections   map[string]*yaml.Node // section key → value node
 	validators map[string]Validator
 	order      []string // registration order, used when writing
@@ -37,6 +40,7 @@ func New() *Store {
 		sections:   map[string]*yaml.Node{},
 		validators: map[string]Validator{},
 		migrations: migrations,
+		fs:         osFS{},
 	}
 }
 
@@ -79,7 +83,7 @@ func (s *Store) Load(path string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	data, err := os.ReadFile(path)
+	data, err := s.fs.ReadFile(path)
 	exists := true
 	if errors.Is(err, os.ErrNotExist) {
 		data, exists = nil, false
@@ -91,7 +95,8 @@ func (s *Store) Load(path string) error {
 	if err != nil {
 		return err
 	}
-	s.path, s.exists, s.migrated, s.sections = path, exists, migrated, sections
+	sum := sha256.Sum256(data)
+	s.path, s.exists, s.migrated, s.sections, s.hash = path, exists, migrated, sections, sum[:]
 	return nil
 }
 
