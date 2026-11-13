@@ -128,7 +128,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/{store,document,migrate,errors}.go` + tests, `SPEC-storage.md`
 **Scope:** M
 
-### [ ] Task 11: Atomic save + external-edit detection
+### [x] Task 11: Atomic save + external-edit detection
 **Description:** `Update[T](s, key, fn)` under a mutex: apply `fn`, validate, then write atomically (temp file in the same dir, fsync, rename) through an injectable filesystem. Record the SHA-256 on load and after each save; before saving, re-hash and return `ErrFileChangedExternally` if it differs. First save creates the file.
 **Acceptance criteria:**
 - [ ] A failing write or rename leaves the original file byte-identical
