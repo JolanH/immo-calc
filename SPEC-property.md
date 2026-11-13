@@ -20,7 +20,6 @@ Let the user enter a flat they are considering buying to rent out, and immediate
 
 **Out (v1):**
 - Rental deficit (*déficit foncier*) carried to global income
-- LMNP *au réel* (depreciation)
 - Capital gains on resale
 - Multi-year projections and IRR
 - Works (*travaux*)
@@ -36,13 +35,15 @@ Let the user enter a flat they are considering buying to rent out, and immediate
 | Loyer | `monthly_rent_cents` | €/mois, **hors charges** | 1 – 20 000 € | — |
 | Charges | `monthly_recoverable_charges_cents` | €/mois | 0 – 2 000 € | 0 |
 | Taxe foncière | `annual_property_tax_cents` | €/an | 0 – 50 000 € | — |
-| Charges de copropriété | `annual_condo_fees_cents` | €/an | 0 – 50 000 € | 0 |
+| Charges de copropriété non récupérables | `annual_condo_fees_cents` | €/an | 0 – 50 000 € | 0 |
 | Assurance PNO | `annual_landlord_insurance_cents` | €/an | 0 – 5 000 € | 0 |
 | Gestion par une agence | `agency_managed` | oui/non | — | non |
-| Régime fiscal | `tax_regime` | enum | `micro_foncier`, `reel_foncier`, `micro_bic` | `micro_foncier` |
+| Régime fiscal | `tax_regime` | enum | `micro_foncier`, `reel_foncier`, `micro_bic`, `lmnp_reel` | `micro_foncier` |
+| Mobilier compris dans le prix | `furniture_included_cents` | € | 0 – Prix; part of the price, listed in the deed | 0 |
+| Mobilier acheté en plus | `furniture_added_cents` | € | 0 – 100 000 € | 0 |
 | Prêt | `loan_id` | id or empty | must exist in `loans` | empty |
 
-*Charges* are paid by the tenant and passed on to the providers (eau chaude, chauffage, ordures…). *Charges de copropriété* are the owner's annual cost paid to the syndic. The two are distinct.
+*Charges* (récupérables) are paid by the tenant and passed on to the providers (eau chaude, chauffage, ordures…). *Charges de copropriété non récupérables* are the part of the syndic's calls the owner keeps paying. The two are distinct and must not overlap: only the non-recoverable part is deductible under the réel regimes (CGI art. 31 I 1° *a quater*; BOFiP BOI-RFPI-BASE-20-30-30 §170–190: recoverable items paid through the provision are reintegrated the following year). Recoverable charges the owner pays during vacancy are deductible (*a ter*). The UI says so next to the field. Checked 2026-11-13; see `docs/tax-regimes.md`.
 
 ## Global settings (`settings` section)
 
@@ -58,9 +59,9 @@ Let the user enter a flat they are considering buying to rent out, and immediate
 
 ## Calculation rules
 
-Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charges, `TF` = annual property tax, `CP` = annual condo fees, `PNO` = annual landlord insurance, `v` = vacancy months/year, `g%` = agency fee rate (0 if the property isn't agency-managed), `N%` = notary rate, `T` = TMI + the regime's social charges (location nue for `micro_foncier` and `reel_foncier`, location meublée for `micro_bic`).
+Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charges, `TF` = annual property tax, `CP` = annual condo fees, `PNO` = annual landlord insurance, `v` = vacancy months/year, `g%` = agency fee rate (0 if the property isn't agency-managed), `N%` = notary rate, `T` = TMI + the regime's social charges (location nue for `micro_foncier` and `reel_foncier`, location meublée for `micro_bic` and `lmnp_reel`).
 
-1. **Coût d'acquisition** `A = Prix × (1 + N%)`
+1. **Coût d'acquisition** `A = Prix + N% × (Prix − Mobilier compris) + Mobilier acheté en plus`. Furniture listed in the deed is outside the base of the notary's transfer taxes; furniture bought separately is paid with own funds.
 2. **Loyers encaissés** (annual) `E = L × (12 − v)`
 3. **Charges du propriétaire** (annual) `CH = TF + CP + PNO + E × g% + C × v`. During vacancy, the owner pays the recoverable charges no tenant reimburses.
 4. **Revenu annuel avant impôts** `R = E − CH`
@@ -68,6 +69,8 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
    - `micro_foncier`: `E × 70 %`. Warn if `E` summed over all `micro_foncier` properties is over **15 000 €** (service-public F1991).
    - `micro_bic` (furnished long-term): `E × 50 %`. Warn if `E` summed over all `micro_bic` properties is over **83 600 €** (revenus 2026; 77 700 € for revenus 2025; service-public F32744).
    - `reel_foncier`: `R − intérêts année 1 − assurance emprunteur année 1` (from the linked loan's first 12 installments, or 0 without a loan). A deficit is floored at 0 and not carried over.
+   - `lmnp_reel` (furnished, actual charges and depreciation; added 2026-11-13): `résultat = R − intérêts année 1 − assurance année 1`; **amortissements** = bâti `((Prix − Mobilier compris) × 85 % + frais de notaire) / 30` (15 % land share, not depreciable) + mobilier `(Mobilier compris + Mobilier acheté) / 7`, each rounded to the cent. Taxable = `max(0, résultat − amortissements)`: depreciation can't create a deficit; what isn't used is not carried forward (simplification). No micro ceiling. Social charges: location meublée.
+   - Simplifications (all regimes): the year-1 tax is kept over the whole timeline (rules 16–20), even after furniture depreciation ends; resale (capital gains, and the 2025 reintegration of LMNP depreciation) is out of scope.
 6. **Impôt annuel** `I = imposable × T`
 7. **Revenu annuel net** (after charges **and** taxes) `RN = R − I`
 8. **Revenus mensuels bruts** = `L`
@@ -99,6 +102,16 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 Reference (user's case): « SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, CP 700 €, micro-foncier, revenus mensuels après impôts 104,30 €) with « Conso Immo » (15 000 € à 5 % sur 5 ans, first installment 01/2027, apport 21 890 €): cash-flow mensuel positif **01/01/2032**, apport récupéré **01/01/2058**.
 
 Rounding: compute in `float64`, round each displayed amount to the cent and each rate to 2 decimals.
+
+### LMNP au réel reference (becomes a unit test)
+
+« SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, copro non récupérables 700 €, no loan, default settings):
+
+| Mobilier | A | Amort. bâti | Amort. mobilier | Revenu imposable | Impôt (30 % + 18,6 %) | Revenu annuel net | Rentabilité nette après impôts |
+|---|---|---|---|---|---|---|---|
+| none | 36 890,00 € | 1 059,67 € | 0,00 € | 1 500,33 € | 729,16 € | 1 830,84 € | 4,96 % |
+| 3 000 € compris dans le prix | 36 635,00 € | 966,17 € | 428,57 € | 1 165,26 € | 566,32 € | 1 993,68 € | 5,44 % |
+| 2 000 € acheté en plus | 38 890,00 € | 1 059,67 € | 285,71 € | 1 214,62 € | 590,31 € | 1 969,69 € | 5,06 % |
 
 ### Reference example (becomes a unit test)
 
@@ -222,7 +235,8 @@ Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loa
 - **/biens/nouveau and /biens/:id: Bien page.**
   - Form on the left (inputs above).
   - Live results on the right (debounced `evaluate`) as cards: **Revenus mensuels bruts**, **Revenus mensuels après impôts**, **Revenu annuel net**, **Rentabilité** (brute / nette / **après impôts**).
-  - A collapsible « Détail du calcul » lists A, E, each owner charge, R, revenu imposable and impôt, so the figures can be checked.
+  - A collapsible « Détail du calcul » lists A, E, each owner charge, R, revenu imposable and impôt (and the depreciation under LMNP au réel), so the figures can be checked.
+  - A collapsible **« Régime fiscal »** section (added 2026-11-13) explains the four regimes in a few lines each and compares them on the current bien: revenu imposable, impôt annuel, revenu annuel net and rentabilité nette après impôts per regime, the bien's own regime marked « actuel » and the lowest tax marked « le plus avantageux ». Each evaluation returns this comparison (`regimes`), computed with the same settings and loan; the micro ceilings are recalled in the text.
   - With a loan, the « Financement » card shows Mensualité, Cash-flow avant/après impôts, Apport and Rendement sur apport.
   - A **« Date de rentabilité »** result card shows « Cash-flow mensuel positif : DD/MM/YYYY » and « Apport récupéré : DD/MM/YYYY » (rules 16–20), and a **« Trésorerie cumulée »** chart in the right panel, under « Détail du calcul », plots the cumulative position over time with a zero line and both dates marked.
   - The DPE warning and regime-ceiling warnings appear above the results.
@@ -254,7 +268,7 @@ Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loa
 - Revenu annuel net = after owner charges **and** taxes.
 - Rentabilité is calculated on price + notary fees.
 - *Charges* are neutral (except during vacancy). The full copro amount is an owner cost.
-- Regimes: micro-foncier, réel foncier, micro-BIC.
+- Regimes: micro-foncier, réel foncier, micro-BIC, and LMNP au réel (added 2026-11-13 at the user's request).
 - Vacancy, letting-agency fees and PNO are included.
 - Notary fees: one global rate, 8,5 %, configurable.
 - Legal rates are checked against official sources before implementation.
