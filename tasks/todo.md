@@ -8,7 +8,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 
 ## Phase 1 — app-shell (`SPEC-app-shell.md`)
 
-### [ ] Task 1: Docker + Makefile + Go health endpoint
+### [x] Task 1: Docker + Makefile + Go health endpoint
 **Description:** Bootstrap the toolchain and the smallest working server. Pin the latest stable Go in `go.mod` and the Docker images. `internal/server` gets a router (stdlib `net/http` patterns), JSON response/error helpers (shared error format with optional `fields`), `GET /api/health` and the `/api/*` 404 JSON. `cmd/immo-calc/main.go` starts it on `127.0.0.1:8421`.
 **Acceptance criteria:**
 - [ ] `GET /api/health` → `200 {"status":"ok","app":"immo-calc","version":"dev"}`

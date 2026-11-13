@@ -1,1 +1,6 @@
 .idea
+/.cache/
+/dist/
+/web/dist/
+/web/node_modules/
+/immo-calc.log
