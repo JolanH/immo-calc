@@ -346,7 +346,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `tasks/legal-rates.md`, possibly `SPEC-property.md`
 **Scope:** XS
 
-### [ ] Task 27: `settings` section + `/api/settings` + Hypothèses et fiscalité
+### [x] Task 27: `settings` section + `/api/settings` + Hypothèses et fiscalité
 **Description:** `internal/property` settings type with defaults (missing section → defaults), validator (TMI ∈ {0,11,30,41,45}, ranges, vacancy step 0.5). `GET/PUT /api/settings`. Paramètres page gets the *Hypothèses et fiscalité* form next to *Données*.
 **Acceptance criteria:**
 - [ ] Missing `settings` → defaults; each rule rejected with a French message

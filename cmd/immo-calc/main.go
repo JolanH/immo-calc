@@ -18,6 +18,7 @@ import (
 	"immo-calc/internal/browser"
 	"immo-calc/internal/loan"
 	"immo-calc/internal/notify"
+	"immo-calc/internal/property"
 	"immo-calc/internal/server"
 	"immo-calc/internal/storage"
 	"immo-calc/web"
@@ -59,7 +60,10 @@ func main() {
 	if err != nil {
 		userConfigDir = os.TempDir()
 	}
-	data, err := openStore(cfg, exeDir, userConfigDir, loan.RegisterSection)
+	data, err := openStore(cfg, exeDir, userConfigDir, func(store *storage.Store) {
+		loan.RegisterSection(store)
+		property.RegisterSections(store)
+	})
 	if err != nil {
 		fatal(err)
 	}
@@ -82,7 +86,9 @@ func main() {
 			Version:  version,
 			Static:   web.Dist(),
 			Shutdown: stop,
-			Routes:   []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(loan.NewService(data.store)).Register},
+			Routes: []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(loan.NewService(data.store)).Register,
+				property.NewHandlers(property.NewService(data.store)).Register,
+			},
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

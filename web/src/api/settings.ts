@@ -1,0 +1,19 @@
+import { request } from './client'
+
+/** Global hypotheses and tax settings (rates in %). */
+export interface Settings {
+  marginalTaxRatePct: number
+  socialChargesUnfurnishedPct: number
+  socialChargesFurnishedPct: number
+  notaryFeePct: number
+  vacancyMonthsPerYear: number
+  agencyFeePct: number
+}
+
+export function getSettings(): Promise<Settings> {
+  return request<Settings>('GET', '/api/settings')
+}
+
+export function updateSettings(settings: Settings): Promise<Settings> {
+  return request<Settings>('PUT', '/api/settings', settings)
+}
