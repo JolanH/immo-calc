@@ -46,6 +46,7 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.Handle("POST /api/data/import", server.RequireSameOrigin(http.HandlerFunc(h.importData)))
 	mux.Handle("POST /api/data/reload", server.RequireSameOrigin(http.HandlerFunc(h.reload)))
 	mux.Handle("POST /api/data/open", server.RequireSameOrigin(http.HandlerFunc(h.open)))
+	mux.Handle("POST /api/data/new", server.RequireSameOrigin(http.HandlerFunc(h.newFile)))
 }
 
 func (h *Handlers) reload(w http.ResponseWriter, _ *http.Request) {

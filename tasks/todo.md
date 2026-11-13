@@ -182,7 +182,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/{picker,picker_zenity,switch}.go` + tests, `internal/storage/handlers.go`, `go.mod`, `web/src/components/DataSection.vue` + spec
 **Scope:** M
 
-### [ ] Task 16: New file
+### [x] Task 16: New file
 **Description:** `POST /api/data/new`: save dialog (default `immo-calc-nouveau.yaml`) or `{"path"}`. Cancel → `204`. Existing path → `400` « Ce fichier existe déjà… ». Otherwise back up current, write an empty v1 document, switch, remember. UI: **Nouveau fichier…** with the same fallback.
 **Acceptance criteria:**
 - [ ] Existing path is refused and the existing file is byte-identical afterwards

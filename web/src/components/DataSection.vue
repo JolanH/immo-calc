@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ApiError } from '@/api/client'
-import { getDataInfo, importData, openFile, type DataInfo } from '@/api/data'
+import { getDataInfo, importData, newFile, openFile, type DataInfo } from '@/api/data'
 
 const info = ref<DataInfo | null>(null)
 const error = ref('')
@@ -9,8 +9,20 @@ const status = ref('')
 const warningDismissed = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
+type SwitchMode = 'open' | 'new'
+
+const switchActions = {
+  open: { call: openFile, done: 'Fichier ouvert', submit: 'Ouvrir' },
+  new: { call: newFile, done: 'Nouveau fichier créé', submit: 'Créer' },
+}
+
 /** Typed-path fallback, shown when the server has no native file dialog. */
-const pathForm = ref<{ message: string; value: string; fieldError: string } | null>(null)
+const pathForm = ref<{
+  mode: SwitchMode
+  message: string
+  value: string
+  fieldError: string
+} | null>(null)
 
 function plural(n: number, singular: string, pluralForm: string): string {
   return `${n} ${n > 1 ? pluralForm : singular}`
@@ -58,19 +70,23 @@ async function onFileChosen(event: Event) {
   }
 }
 
-/** Opens another data file, through the native dialog or a typed path. */
-async function open(path?: string) {
+/**
+ * Opens another data file or creates a new one, through the server's native
+ * dialog or, when there is none, a typed path.
+ */
+async function switchFile(mode: SwitchMode, path?: string) {
   clearMessages()
+  const action = switchActions[mode]
   try {
-    const result = await openFile(path)
+    const result = await action.call(path)
     if (!result) return // dialog cancelled
     info.value = result
     pathForm.value = null
     warningDismissed.value = true
-    status.value = `Fichier ouvert : ${result.path}`
+    status.value = `${action.done} : ${result.path}`
   } catch (e) {
     if (e instanceof ApiError && e.code === 'picker_unavailable') {
-      pathForm.value = { message: e.message, value: '', fieldError: '' }
+      pathForm.value = { mode, message: e.message, value: '', fieldError: '' }
     } else if (e instanceof ApiError && pathForm.value && e.fields.path) {
       pathForm.value.fieldError = e.fields.path
     } else {
@@ -82,7 +98,7 @@ async function open(path?: string) {
 function submitPath() {
   if (!pathForm.value) return
   pathForm.value.fieldError = ''
-  void open(pathForm.value.value)
+  void switchFile(pathForm.value.mode, pathForm.value.value)
 }
 
 onMounted(load)
@@ -117,8 +133,11 @@ onMounted(load)
       <dd>{{ countsText(info.counts) }}</dd>
     </dl>
     <div v-if="info" class="actions">
-      <button type="button" class="button" data-test="open" @click="open()">
+      <button type="button" class="button" data-test="open" @click="switchFile('open')">
         Ouvrir un autre fichier…
+      </button>
+      <button type="button" class="button" data-test="new" @click="switchFile('new')">
+        Nouveau fichier…
       </button>
       <a class="button" href="/api/data/export" download data-test="export">Exporter</a>
       <button type="button" class="button" @click="fileInput?.click()">Importer…</button>
@@ -145,7 +164,7 @@ onMounted(load)
           :aria-invalid="pathForm.fieldError ? 'true' : undefined"
           aria-describedby="data-path-error"
         />
-        <button type="submit" class="button">Ouvrir</button>
+        <button type="submit" class="button">{{ switchActions[pathForm.mode].submit }}</button>
         <button type="button" class="button" data-test="path-cancel" @click="pathForm = null">
           Annuler
         </button>
