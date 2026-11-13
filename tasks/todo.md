@@ -486,6 +486,14 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] Old data files without `accent_color` still load (default); invalid colours are refused with a French message
 **Scope:** M
 
+### [ ] Task 34g (added 2026-11-13): LMNP au réel, furniture, « Régime fiscal »
+**Description:** Requested by the user after questioning the micro regimes. Copropriété field renamed « non récupérables » (only that part is deductible: CGI art. 31 I 1° a quater, BOFiP BOI-RFPI-BASE-20-30-30). New regime LMNP au réel with depreciation (building 85 % over 30 years, furniture over 7 years, capped at the result) and two furniture fields (included in the price: out of the notary base; bought on top: added to A). A collapsible « Régime fiscal » section on the Bien page explains the regimes and compares them on the bien. Explanation documented in `docs/tax-regimes.md`.
+**Acceptance criteria:**
+- [ ] LMNP reference table of SPEC-property.md reproduced (3 furniture cases); existing reference tables unchanged
+- [ ] Furniture fields validated (included ≤ price; added ≤ 100 000 €) and saved; old data files still load
+- [ ] « Régime fiscal » compares the 4 regimes on the current bien, marks « actuel » and « le plus avantageux »
+**Scope:** L — split: (a) Go maths + API, (b) UI
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified
