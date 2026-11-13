@@ -233,7 +233,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/loan/{schedule,yearly}.go` + tests
 **Scope:** S
 
-### [ ] Task 19: Loan validator + `POST /api/loans/simulate`
+### [x] Task 19: Loan validator + `POST /api/loans/simulate`
 **Description:** `loan.Input` with the spec's rules and French messages (field-level). `POST /api/loans/simulate` returns the result JSON (camelCase, cents) with the monthly and yearly schedules, not saved.
 **Acceptance criteria:**
 - [ ] Each validation rule has a test with its French message

@@ -34,3 +34,17 @@ func WriteError(w http.ResponseWriter, status int, code, message string, fields 
 func WriteNotFound(w http.ResponseWriter) {
 	WriteError(w, http.StatusNotFound, "not_found", "Ressource introuvable", nil)
 }
+
+// maxJSONBytes bounds request bodies; immo-calc's forms are tiny.
+const maxJSONBytes = 1 << 20
+
+// DecodeJSON decodes the request body into v. On failure it writes a 400
+// invalid_json answer and returns false.
+func DecodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxJSONBytes))
+	if err := dec.Decode(v); err != nil || dec.More() {
+		WriteError(w, http.StatusBadRequest, "invalid_json", "Requête illisible", nil)
+		return false
+	}
+	return true
+}
