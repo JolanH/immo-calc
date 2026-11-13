@@ -89,7 +89,7 @@ Calling an existing API path with an unsupported method returns `405 {"error":{"
 ## Acceptance Criteria
 
 1. `make build` produces both binaries from a clean checkout, with only Docker and make on the host.
-2. Running the Linux binary (and the Windows one, checked manually on a Windows machine) opens the browser on `/biens` showing the French layout within 3 s.
+2. Running the Linux binary (and the Windows one, checked manually on a Windows machine) opens the browser on the home page « Accueil » showing the French layout within 3 s.
 3. Running a second instance of the same version while the first is up opens the browser on the first instance and exits 0. No second server is started. Running a different version stops the first one through `/api/shutdown` and takes over its port.
 4. When port 8421 is taken by another program, the app starts on a free port and prints that URL.
 5. `GET /api/health` returns the documented JSON with the injected version.
