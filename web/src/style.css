@@ -841,6 +841,24 @@ a.app-header__name {
   font-variant-numeric: tabular-nums;
 }
 
+/* Key figures of « Détail du calcul »: tinted band across the dt/dd pair. */
+.figures dt.figures__key,
+.figures dd.figures__key {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+}
+
+.figures dt.figures__key {
+  border-radius: 6px 0 0 6px;
+  border-left: 3px solid var(--accent);
+}
+
+.figures dd.figures__key {
+  border-radius: 0 6px 6px 0;
+}
+
 .financing h2 {
   margin: 0;
 }

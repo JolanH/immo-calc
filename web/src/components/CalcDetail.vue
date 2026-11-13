@@ -22,6 +22,13 @@ const depreciation = computed((): [string, number][] => {
   ]
 })
 
+// The figures the reader checks first: shown in bold on a tinted background.
+const KEY_LABELS = new Set([
+  'Revenu imposable',
+  'Impôt annuel (IR + prélèvements sociaux)',
+  'Revenu annuel net',
+])
+
 const rows = computed((): [string, number][] => [
   ["Coût d'acquisition (prix + notaire)", props.result.acquisitionCostCents],
   ['Loyers encaissés (vacance déduite)', props.result.collectedRentCents],
@@ -44,8 +51,8 @@ const rows = computed((): [string, number][] => [
     <summary>Détail du calcul</summary>
     <dl class="figures">
       <template v-for="[label, cents] in rows" :key="label">
-        <dt>{{ label }}</dt>
-        <dd>{{ formatEuros(cents) }}</dd>
+        <dt :class="{ figures__key: KEY_LABELS.has(label) }">{{ label }}</dt>
+        <dd :class="{ figures__key: KEY_LABELS.has(label) }">{{ formatEuros(cents) }}</dd>
       </template>
     </dl>
   </details>
