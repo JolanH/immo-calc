@@ -308,8 +308,10 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Scope:** M
 
 ### [ ] Checkpoint C — loan done
-- [ ] `make test`, `make lint`, `make build` pass; `internal/loan` coverage ≥ 90 %
-- [ ] loan acceptance criteria 1–8 verified; storage AC 5 (external edit → 409 banner → Recharger) verified end to end
+- [x] `make test`, `make lint`, `make build` pass; `internal/loan` coverage ≥ 90 %
+- [x] loan acceptance criteria 1–8 verified; storage AC 5 (external edit → 409 banner → Recharger) verified end to end
+  - Verified by Claude: loan 1, 2, 6 (unit + 2 000 generated loans), 3 (create via the real binary, restart, identical results; live results in component tests), 4, 5, 7 (startup refusal names the loan and line), 8 (chart rendered and inspected in light and dark). Storage 5 end to end against the real binary: hand edit kept, save → 409, reload picks it up; the banner itself is covered by component tests.
+  - **To try by hand:** typing in the Prêt form in a real browser (live results, unsaved-changes prompt), the chart tooltip on hover and with the arrow keys.
 - [ ] Human review before Phase 4
 
 ---
