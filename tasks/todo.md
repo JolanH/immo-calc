@@ -357,7 +357,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{settings,settings_handlers}.go` + tests, `cmd/immo-calc/main.go`, `web/src/components/SettingsForm.vue` + spec, `web/src/views/Parametres.vue`, `web/src/api/settings.ts`
 **Scope:** M
 
-### [ ] Task 28: Profitability maths + DPE warnings
+### [x] Task 28: Profitability maths + DPE warnings
 **Description:** Pure `Evaluate(input, settings, loanFigures?)` implementing rules 1–10 (acquisition cost, collected rent, owner charges incl. vacancy charges and agency fee, R, taxable income per regime floored at 0, tax, RN, monthly figures, three yields). Constants cite their sources from Task 26. DPE warnings for G/F/E.
 **Acceptance criteria:**
 - [ ] Both reference tables reproduced exactly for the 3 regimes (no loan)
