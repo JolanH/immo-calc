@@ -150,7 +150,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/{resolve,config,handlers}.go` + tests, `cmd/immo-calc/main.go`, `web/src/views/Parametres.vue`, `web/src/components/DataSection.vue` + spec, `web/src/api/data.ts`
 **Scope:** M
 
-### [ ] Task 13: Export + import (with backup)
+### [x] Task 13: Export + import (with backup)
 **Description:** `GET /api/data/export` (YAML attachment `immo-calc-export-YYYY-MM-DD.yaml`). `POST /api/data/import`: full parse + migrate + validate; on success back up the current file to `<name>.bak-YYYYMMDD-HHMMSS.yaml` (injected clock; none if the file doesn't exist), replace and save. UI: **Exporter**, **Importer…** with the French confirmation (N biens, M prêts) and « Import terminé ».
 **Acceptance criteria:**
 - [ ] Export then import into another store gives an equal document

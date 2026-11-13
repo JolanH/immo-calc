@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -28,6 +29,7 @@ type Store struct {
 	hash       []byte // SHA-256 of the file as last read or written
 	migrated   bool   // loaded from an older schema_version, not saved since
 	fs         fileSystem
+	now        func() time.Time
 	sections   map[string]*yaml.Node // section key → value node
 	validators map[string]Validator
 	order      []string // registration order, used when writing
@@ -41,6 +43,7 @@ func New() *Store {
 		validators: map[string]Validator{},
 		migrations: migrations,
 		fs:         osFS{},
+		now:        time.Now,
 	}
 }
 
