@@ -212,3 +212,9 @@ func Get[T any](s *Store, key string) (T, error) {
 	}
 	return out, nil
 }
+
+// Reload re-reads the active data file from disk, e.g. after an external
+// edit. If the file is invalid, the in-memory document is kept.
+func (s *Store) Reload() error {
+	return s.Load(s.Path())
+}

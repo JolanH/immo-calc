@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { ApiError, request } from '@/api/client'
+import ExternalChangeBanner from '@/components/ExternalChangeBanner.vue'
 
 const stopped = ref(false)
 const quitError = ref('')
@@ -32,6 +33,7 @@ async function quit() {
       <button type="button" class="app-header__quit" data-test="quit" @click="quit">Quitter</button>
     </header>
     <p v-if="quitError" role="alert" class="app-error">{{ quitError }}</p>
+    <ExternalChangeBanner />
     <main class="app-main">
       <RouterView />
     </main>
