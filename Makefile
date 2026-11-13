@@ -63,6 +63,7 @@ lint-go: web/dist/index.html
 	$(GO_RUN) go vet $(GO_PKGS)
 	$(GO_RUN) env GOOS=windows go vet $(GO_PKGS)
 	$(GO_RUN) go vet -tags smoke ./cmd/immo-calc
+	$(GO_RUN) env GOOS=windows go vet -tags smoke ./cmd/immo-calc
 
 lint-web: web/node_modules/.installed
 	$(NODE_RUN) npx eslint .
