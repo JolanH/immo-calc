@@ -14,10 +14,32 @@ async function mountAt(path: string) {
 }
 
 describe('router', () => {
-  it('redirects / to /biens', async () => {
+  it('shows the home page at /', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('offline'))),
+    )
     const { router, wrapper } = await mountAt('/')
-    expect(router.currentRoute.value.path).toBe('/biens')
-    expect(wrapper.find('h1').text()).toBe('Biens')
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(wrapper.find('h1').text()).toBe('Accueil')
+    vi.unstubAllGlobals()
+  })
+
+  it.each([
+    ['/biens', ['Accueil', 'Biens']],
+    ['/prets', ['Accueil', 'Prêts']],
+    ['/parametres', ['Accueil', 'Paramètres']],
+    ['/nimporte/quoi', ['Accueil', 'Page introuvable']],
+  ])('starts the breadcrumb of %s with Accueil', async (path, crumbs) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('offline'))),
+    )
+    const { wrapper } = await mountAt(path)
+    const nav = wrapper.get('nav[aria-label="Fil d\'Ariane"]')
+    expect(nav.findAll('li').map((li) => li.text())).toEqual(crumbs)
+    expect(nav.get('a').attributes('href')).toBe('/')
+    vi.unstubAllGlobals()
   })
 
   it.each([['/biens', 'Biens']])('shows the placeholder page for %s', async (path, title) => {
@@ -49,7 +71,7 @@ describe('router', () => {
     const header = wrapper.get('header')
     expect(header.text()).toContain('immo-calc')
     expect(header.text()).toContain('Quitter')
-    const links = wrapper.findAll('nav a').map((a) => [a.text(), a.attributes('href')])
+    const links = wrapper.findAll('header nav a').map((a) => [a.text(), a.attributes('href')])
     expect(links).toEqual([
       ['Biens', '/biens'],
       ['Prêts', '/prets'],

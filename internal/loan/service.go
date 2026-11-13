@@ -50,6 +50,9 @@ type Service struct {
 
 	guardsMu sync.Mutex
 	guards   []func(loanID string) error
+
+	activeMu sync.Mutex
+	active   string // active loan id, in memory only (see active.go)
 }
 
 // InUseError is a delete refused by a guard. Message is French and names
@@ -217,7 +220,7 @@ func (s *Service) Delete(id string) error {
 			return &InUseError{Message: err.Error()}
 		}
 	}
-	return storage.Update(s.store, SectionKey, func(loans *[]Loan) error {
+	err := storage.Update(s.store, SectionKey, func(loans *[]Loan) error {
 		for i := range *loans {
 			if (*loans)[i].ID == id {
 				*loans = append((*loans)[:i], (*loans)[i+1:]...)
@@ -226,4 +229,8 @@ func (s *Service) Delete(id string) error {
 		}
 		return ErrNotFound
 	})
+	if err == nil {
+		s.clearActive(id)
+	}
+	return err
 }

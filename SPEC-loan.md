@@ -118,6 +118,13 @@ Result JSON (camelCase, cents):
 }
 ```
 
+**Active loan (home page, added 2026-11-13):** one saved loan can be selected as the *active loan* on the home page (see `SPEC-property.md`, *Home page*). The choice is kept **in the running server's memory only**: it survives page reloads, is not written to the data file, and is reset when immo-calc restarts. A deleted loan stops being active.
+
+| Route | Behavior |
+|---|---|
+| `GET /api/active-loan` | `{"loanId": "<id>"}` or `{"loanId": null}` |
+| `PUT /api/active-loan` | body `{"loanId": "<id>" \| null}` → same shape; `404` if the loan doesn't exist; same-origin check |
+
 **Hook for `property`:** `loan.Service.RegisterDeleteGuard(func(loanID string) error)`. `property` uses it to block deleting a loan that a property uses. `loan` never imports `property`.
 
 ## UI
@@ -125,7 +132,7 @@ Result JSON (camelCase, cents):
 **/prets: Prêts list.** Table with Nom, Montant, Taux, Durée, Mensualité (assurance incluse), Coût total du crédit. Clicking a row opens the loan. Buttons: **Nouvelle simulation**. Empty state: « Aucune simulation de prêt. » with the same button.
 
 **/prets/nouveau and /prets/:id: Prêt page.**
-- **Breadcrumb** above the title: « Prêts › <nom du prêt> », or « Prêts › Nouvelle simulation » for an unsaved loan. « Prêts » links to the list.
+- **Breadcrumb** above the title: « Accueil › Prêts › <nom du prêt> », or « Accueil › Prêts › Nouvelle simulation » for an unsaved loan. « Accueil » links to the home page, « Prêts » to the list. The list page shows « Accueil › Prêts ».
 - **Left, form:** Nom, Montant, Taux, Durée (ans, whole years only), Première échéance (month picker, « décembre 2026 »). A collapsible section « Assurance et frais » holds Taux assurance, Frais de dossier, Frais de garantie. Amounts are typed in euros with French formatting (`200 000`, `3,5`).
 - **Right, live results** (debounced `simulate`, ~300 ms): Mensualité hors assurance, Assurance mensuelle, **Mensualité totale**, Intérêts totaux, Coût de l'assurance, Frais, **Coût total du crédit**, Montant total remboursé.
 - **Actions:** **Enregistrer** (create/update), **Dupliquer**, **Supprimer** (confirmation; shows the French `loan_in_use` message if blocked). Leaving with unsaved changes asks for confirmation.

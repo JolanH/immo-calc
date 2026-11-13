@@ -173,6 +173,17 @@ Only inputs are stored, and results are always recomputed. A missing `settings` 
 | `DELETE /api/properties/{id}` | `204` |
 | `GET /api/settings`, `PUT /api/settings` | global settings; all results recompute from them |
 
+## Home page (added 2026-11-13)
+
+The home page « Accueil » (`/`) has two panes:
+
+- **Left (~80 % width): the Biens list**, the same columns as `/biens`, with **Nouveau bien**.
+- **Right (~20 % width): a simplified list of saved loans** (name and monthly total), each linking to its loan page, with a selector to pick **one active loan** (or « Aucun »). The selection is session-only (server memory, see `SPEC-loan.md`).
+
+**Active loan and profitability:** while an active loan is selected, it **overrides** every bien's own linked loan in the home page's Biens list: the Financement figures shown there (Mensualité, Cash-flow, Apport, Rendement sur apport, and the `reel_foncier` interest deduction) use the active loan for every bien. With « Aucun », each bien uses its own linked loan, as on `/biens`. The bien detail page and `/biens` always use the bien's own link.
+
+**Open question (decide when the property maths are built):** a saved loan has a fixed amount while biens have different prices. When the active loan is applied to a bien, is the amount borrowed the loan's own amount, or does the loan act as a template (rate, duration, insurance, fees) with the bien's acquisition cost as the amount?
+
 ## UI
 
 - **/biens: Biens list.** Table with Nom, Prix, Loyer, DPE badge, Rentabilité nette après impôts, Revenus mensuels après impôts, Cash-flow après impôts (if there's a loan), Prêt (link). Button **Nouveau bien**. Empty state message.
@@ -218,4 +229,4 @@ Only inputs are stored, and results are always recomputed. A missing `settings` 
 
 ## Open Questions
 
-None. The vacancy (1 month/year) and agency fee (7 %) defaults are confirmed.
+- Active loan on the home page: the borrowed amount when applied to a bien (see *Home page*). The vacancy (1 month/year) and agency fee (7 %) defaults are confirmed.

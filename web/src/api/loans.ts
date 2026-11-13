@@ -94,3 +94,12 @@ export function duplicateLoan(id: string): Promise<LoanDetail> {
 export function deleteLoan(id: string): Promise<void> {
   return request<void>('DELETE', `/api/loans/${encodeURIComponent(id)}`)
 }
+
+/** The loan selected on the home page (session only), or null. */
+export async function getActiveLoan(): Promise<string | null> {
+  return (await request<{ loanId: string | null }>('GET', '/api/active-loan')).loanId
+}
+
+export async function setActiveLoan(loanId: string | null): Promise<string | null> {
+  return (await request<{ loanId: string | null }>('PUT', '/api/active-loan', { loanId })).loanId
+}

@@ -37,7 +37,7 @@ async function quit() {
   </main>
   <template v-else>
     <header class="app-header">
-      <span class="app-header__name">immo-calc</span>
+      <RouterLink to="/" class="app-header__name">immo-calc</RouterLink>
       <nav class="app-nav">
         <RouterLink
           v-for="link in navLinks"

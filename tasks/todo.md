@@ -314,6 +314,17 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] « Prêts » navigates back to the list (component + page tests)
 **Scope:** XS
 
+### [x] Task 25b (added 2026-11-13): home page skeleton and active loan
+**Description:** Requested at Checkpoint C. `/` becomes the home page « Accueil » (no longer a redirect): left pane (~80 %) for the Biens list (placeholder until Task 32), right pane (~20 %) with a simplified list of saved loans (name, monthly total, link) and a radio selector for one active loan or « Aucun ». Active loan kept in server memory: `GET/PUT /api/active-loan` (404 unknown loan, same-origin on PUT, cleared when the loan is deleted). Breadcrumb starts with « Accueil » on every other page; the header name links home. Specs updated (`SPEC-app-shell.md`, `SPEC-loan.md`, `SPEC-property.md` *Home page*).
+**Acceptance criteria:**
+- [x] `/` shows the two panes; selecting a loan persists across a page reload, not across a restart
+- [x] Unknown loan → 404; deleting the active loan clears it
+- [x] Breadcrumbs: « Accueil › Prêts », « Accueil › Prêts › <nom> », « Accueil › Paramètres », « Accueil › Biens »
+**Verification:** `make test` · real binary: select, reload, restart
+**Dependencies:** Tasks 23, 25a
+**Files:** `internal/loan/{active,handlers}.go` + tests, `web/src/views/Accueil.vue` + spec, `web/src/api/loans.ts`, `web/src/router.ts`, `web/src/App.vue`, list/detail views
+**Scope:** M
+
 ### [ ] Checkpoint C — loan done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` coverage ≥ 90 %
 - [x] loan acceptance criteria 1–8 verified; storage AC 5 (external edit → 409 banner → Recharger) verified end to end
@@ -410,6 +421,16 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Dependencies:** Tasks 23, 32
 **Files:** `internal/property/{service,handlers}.go` + tests, `cmd/immo-calc/main.go`, `web/src/views/{BiensListe,BienDetail}.vue` + specs
 **Scope:** S
+
+### [ ] Task 33b (added 2026-11-13): active loan on the home page Biens list
+**Description:** Fill the home page's left pane with the Biens list (reuse Task 32's list) and apply the active loan: while one is selected it **overrides** every bien's own linked loan for the Financement figures on that list (`SPEC-property.md`, *Home page*). **First settle the open question** (amount borrowed: the loan's own amount, or the loan as a template with the bien's acquisition cost) with the user.
+**Acceptance criteria:**
+- [ ] Open question answered and recorded in `SPEC-property.md`
+- [ ] With an active loan, every bien on the home list shows Financement figures from it; with « Aucun », each uses its own link
+- [ ] `/biens` and the bien detail page are unaffected by the active loan
+**Verification:** `make test` · by hand with two biens and two loans
+**Dependencies:** Tasks 25b, 33
+**Scope:** M
 
 ### [ ] Task 34: « Créer un prêt pour ce bien » + « Biens liés »
 **Description:** Button → `/prets/nouveau?bien=<id>` with Montant = A and Nom « Prêt – <nom> ». On Enregistrer, create the loan and link it (PUT property), then show « ← Retour au bien ». On the Prêt page, show « Biens liés » from `?loanId=`.
