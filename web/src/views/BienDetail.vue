@@ -244,7 +244,7 @@ async function remove() {
     <h1>{{ loadedId ? savedName : 'Nouveau bien' }}</h1>
     <p v-if="loadError" role="alert" class="alert alert--error">{{ loadError }}</p>
     <div v-else class="detail__layout">
-      <form class="card detail__form" novalidate @submit.prevent="save">
+      <form id="bien-form" class="card detail__form" novalidate @submit.prevent="save">
         <div class="field">
           <label for="bien-nom">Nom</label>
           <input
@@ -331,38 +331,6 @@ async function remove() {
           hint="Ajouté au coût d'acquisition, amorti en LMNP au réel."
           :error="errors.furnitureAddedCents"
         />
-        <label class="checkbox">
-          <input id="bien-agence" v-model="form.agencyManaged" type="checkbox" />
-          Gestion par une agence
-        </label>
-        <div class="field">
-          <label for="bien-regime">Régime fiscal</label>
-          <select id="bien-regime" v-model="form.taxRegime" class="input">
-            <option v-for="r in REGIMES" :key="r.value" :value="r.value">{{ r.label }}</option>
-          </select>
-          <p v-if="errors.taxRegime" role="alert" class="field-error">{{ errors.taxRegime }}</p>
-        </div>
-        <div class="field">
-          <label for="bien-pret">Prêt</label>
-          <select
-            id="bien-pret"
-            v-model="form.loanId"
-            class="input"
-            :aria-invalid="errors.loanId ? 'true' : undefined"
-          >
-            <option value="">Aucun</option>
-            <option v-for="l in loans" :key="l.id" :value="l.id">{{ l.name }}</option>
-          </select>
-          <p v-if="errors.loanId" role="alert" class="field-error">{{ errors.loanId }}</p>
-          <RouterLink
-            v-if="form.loanId"
-            :to="`/prets/${form.loanId}`"
-            class="field__link"
-            data-test="open-loan"
-          >
-            Voir le prêt →
-          </RouterLink>
-        </div>
         <p v-if="status" role="status" class="alert alert--success">{{ status }}</p>
         <p v-if="saveError" role="alert" class="alert alert--error">{{ saveError }}</p>
         <div class="actions">
@@ -443,6 +411,46 @@ async function remove() {
             Saisissez le prix, le loyer, la taxe foncière et la classe DPE pour voir les résultats.
           </p>
         </div>
+        <section
+          class="card bien-options"
+          data-test="bien-options"
+          aria-labelledby="bien-options-title"
+        >
+          <h2 id="bien-options-title">Gestion, fiscalité et prêt</h2>
+          <label class="checkbox">
+            <input id="bien-agence" v-model="form.agencyManaged" type="checkbox" form="bien-form" />
+            Gestion par une agence
+          </label>
+          <div class="field">
+            <label for="bien-regime">Régime fiscal</label>
+            <select id="bien-regime" v-model="form.taxRegime" class="input" form="bien-form">
+              <option v-for="r in REGIMES" :key="r.value" :value="r.value">{{ r.label }}</option>
+            </select>
+            <p v-if="errors.taxRegime" role="alert" class="field-error">{{ errors.taxRegime }}</p>
+          </div>
+          <div class="field">
+            <label for="bien-pret">Prêt</label>
+            <select
+              id="bien-pret"
+              v-model="form.loanId"
+              class="input"
+              form="bien-form"
+              :aria-invalid="errors.loanId ? 'true' : undefined"
+            >
+              <option value="">Aucun</option>
+              <option v-for="l in loans" :key="l.id" :value="l.id">{{ l.name }}</option>
+            </select>
+            <p v-if="errors.loanId" role="alert" class="field-error">{{ errors.loanId }}</p>
+            <RouterLink
+              v-if="form.loanId"
+              :to="`/prets/${form.loanId}`"
+              class="field__link"
+              data-test="open-loan"
+            >
+              Voir le prêt →
+            </RouterLink>
+          </div>
+        </section>
         <FinancingCard v-if="result?.financing" :financing="result.financing" />
         <CalcDetail
           v-if="result"

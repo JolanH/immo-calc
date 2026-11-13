@@ -845,6 +845,17 @@ a.app-header__name {
   margin: 0;
 }
 
+/* Bien detail: agency, tax regime and loan, above Financement and Détail du calcul. */
+.bien-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.bien-options h2 {
+  margin: 0;
+}
+
 .calc-detail summary {
   cursor: pointer;
   color: var(--accent);
