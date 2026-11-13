@@ -63,6 +63,7 @@ describe('BiensListe', () => {
     const { wrapper } = await mountList(properties)
 
     expect(wrapper.findAll('thead th').map((th) => th.text())).toEqual([
+      'Comparer',
       'Nom',
       'Prix',
       'Loyer',
@@ -76,6 +77,7 @@ describe('BiensListe', () => {
       .findAll('tbody tr')
       .map((tr) => tr.findAll('td').map((td) => plain(td.text())))
     expect(rows[0]).toEqual([
+      '',
       'T2 Lyon 7e',
       '150 000,00 €',
       '700,00 €',
@@ -86,6 +88,7 @@ describe('BiensListe', () => {
       '—',
     ])
     expect(rows[1]).toEqual([
+      '',
       'Studio',
       '90 000,00 €',
       '500,00 €',
@@ -145,5 +148,54 @@ describe('BiensListe', () => {
         .findAll('li')
         .map((li) => li.text()),
     ).toEqual(['Accueil', 'Biens'])
+  })
+
+  describe('selecting biens to compare', () => {
+    const many = ['a', 'b', 'c', 'd', 'e'].map((c, i) => ({
+      ...properties[0],
+      id: c.repeat(16),
+      name: `Bien ${i + 1}`,
+    }))
+
+    it('needs 2 to 4 biens and opens the comparison', async () => {
+      const { wrapper, router } = await mountList(many)
+      const button = () => wrapper.get('[data-test="compare"]')
+      expect(button().attributes('disabled')).toBeDefined()
+
+      const boxes = wrapper.findAll('tbody input[type="checkbox"]')
+      expect(boxes[0].attributes('aria-label')).toBe('Comparer « Bien 1 »')
+      await boxes[0].setValue(true)
+      expect(button().attributes('disabled')).toBeDefined()
+      await boxes[2].setValue(true)
+      expect(button().text()).toBe('Comparer (2)')
+      expect(button().attributes('disabled')).toBeUndefined()
+
+      await button().trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/biens/comparer')
+      expect(router.currentRoute.value.query.biens).toBe('aaaaaaaaaaaaaaaa,cccccccccccccccc')
+    })
+
+    it('disables the other boxes once 4 are ticked', async () => {
+      const { wrapper } = await mountList(many)
+      const boxes = wrapper.findAll('tbody input[type="checkbox"]')
+
+      for (const i of [0, 1, 2, 3]) await boxes[i].setValue(true)
+
+      expect(boxes[4].attributes('disabled')).toBeDefined()
+      expect(boxes[0].attributes('disabled')).toBeUndefined()
+      expect(wrapper.get('[data-test="compare"]').text()).toBe('Comparer (4)')
+      await boxes[1].setValue(false)
+      expect(boxes[4].attributes('disabled')).toBeUndefined()
+    })
+
+    it('ticking a box does not open the bien', async () => {
+      const { wrapper, router } = await mountList(many)
+
+      await wrapper.findAll('tbody input[type="checkbox"]')[0].trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.path).toBe('/biens')
+    })
   })
 })

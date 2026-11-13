@@ -451,6 +451,14 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] Chart: one line, zero line, both dates marked, French labels, readable in light and dark
 **Scope:** M
 
+### [x] Task 34b (added 2026-11-13): compare up to 4 biens
+**Description:** Requested after Checkpoint D (SPEC-property.md, *Comparison*). Checkbox selection in the Biens list (max 4, « Comparer (n) » from 2), and a `/biens/comparer` page with one column per bien and every basic result, where each column picks its own loan (as saved, not stored on the bien; kept in the URL). Columns can be removed or added (≤ 4).
+**Acceptance criteria:**
+- [x] Selecting a 5th bien is impossible; « Comparer » needs 2 to 4
+- [x] Each column shows the documented rows; changing a column's loan re-evaluates only that column and updates the URL; the saved bien is unchanged
+- [x] Reloading keeps biens and loans; unknown bien → « Bien introuvable »
+**Scope:** M
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

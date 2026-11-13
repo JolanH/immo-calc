@@ -20,21 +20,10 @@ import {
   updateProperty,
   type PropertyDetail,
   type PropertyInput,
-  type Timeline,
   type TaxRegime,
 } from '@/api/properties'
-import { formatMonthDate, formatPercent } from '@/format'
-
-/** « Cash-flow mensuel positif » date, or « jamais ». */
-function positiveDate(t: Timeline): string {
-  return t.positiveCashFlowMonth ? formatMonthDate(t.positiveCashFlowMonth) : 'jamais'
-}
-
-/** « Apport récupéré » date, « dès l'achat » or « au-delà de 50 ans ». */
-function paybackDate(t: Timeline): string {
-  if (t.paybackAtStart) return "dès l'achat"
-  return t.paybackMonth ? formatMonthDate(t.paybackMonth) : 'au-delà de 50 ans'
-}
+import { formatPercent } from '@/format'
+import { paybackDate, positiveDate } from '@/profitDates'
 
 const DPE_CLASSES = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const REGIMES: { value: TaxRegime; label: string }[] = [
