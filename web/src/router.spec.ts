@@ -48,12 +48,15 @@ describe('router', () => {
     expect(wrapper.text()).toContain('Fonctionnalité à venir')
   })
 
-  it('shows the Paramètres page with its Données section', async () => {
+  it('shows the Paramètres page with its two sections', async () => {
     const info = { path: '/x.yaml', schemaVersion: 1, counts: { properties: 0, loans: 0 } }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(info))))
     const { wrapper } = await mountAt('/parametres')
     expect(wrapper.find('h1').text()).toBe('Paramètres')
-    expect(wrapper.find('h2').text()).toBe('Données')
+    expect(wrapper.findAll('h2').map((h) => h.text())).toEqual([
+      'Hypothèses et fiscalité',
+      'Données',
+    ])
     vi.unstubAllGlobals()
   })
 

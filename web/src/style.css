@@ -772,3 +772,14 @@ a.app-header__name {
   color: var(--text);
   text-decoration: none;
 }
+
+.settings-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 0.9rem 1.5rem;
+}
+
+.settings-form > .alert,
+.settings-form > .actions {
+  grid-column: 1 / -1;
+}
