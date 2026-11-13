@@ -171,7 +171,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/handlers.go` + test, `web/src/api/client.ts`, `web/src/components/ExternalChangeBanner.vue` + spec, `web/src/App.vue`
 **Scope:** S
 
-### [ ] Task 15: Open another file
+### [x] Task 15: Open another file
 **Description:** `Picker` interface (open/save dialogs) with a zenity implementation (approved dep `github.com/ncruces/zenity`) and an "unavailable" error. `POST /api/data/open`: no body → dialog; `{"path"}` → typed path. Cancel → `204`. Invalid → `400`, stay on current file. Valid → backup current, switch, write `last_data_file`. UI: **Ouvrir un autre fichier…**, falling back to a path text field when the dialog is unavailable.
 **Acceptance criteria:**
 - [ ] Fake Picker covers cancel / path / error / unavailable

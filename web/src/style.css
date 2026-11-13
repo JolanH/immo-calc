@@ -216,3 +216,45 @@ a {
 .app-banner__error {
   color: var(--error-text);
 }
+
+.path-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.path-form p {
+  margin: 0 0 0.6rem;
+}
+
+.path-form label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+}
+
+.path-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.input {
+  flex: 1;
+  min-width: 16rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--error-text);
+}
+
+.field-error {
+  color: var(--error-text);
+  font-size: 0.9rem;
+}
