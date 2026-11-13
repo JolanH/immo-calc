@@ -424,6 +424,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 
 ### [x] Task 33b (added 2026-11-13): active loan on the home page Biens list
 **Description:** Fill the home page's left pane with the Biens list (reuse Task 32's list) and apply the active loan: while one is selected it **overrides** every bien's own linked loan for the Financement figures on that list (`SPEC-property.md`, *Home page*). **First settle the open question** (amount borrowed: the loan's own amount, or the loan as a template with the bien's acquisition cost) with the user.
+**Revised 2026-11-13 (user bug report):** the active loan now applies **exactly as saved**, not as a template borrowing price + notary. With « Conso Immo » (15 000 €, 283,07 €/month), « SE appart 1 » showed −591,86 € (a 36 890 € loan) instead of the expected −178,77 €.
 **Acceptance criteria:**
 - [x] Open question answered and recorded in `SPEC-property.md`
 - [x] With an active loan, every bien on the home list shows Financement figures from it; with « Aucun », each uses its own link

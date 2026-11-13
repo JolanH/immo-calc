@@ -81,8 +81,8 @@ async function choose(id: string) {
           </RouterLink>
         </div>
         <p v-if="active && activeLoanName" class="alert alert--info" data-test="active-loan-note">
-          Financement calculé avec le prêt « {{ activeLoanName }} » appliqué à chaque bien (montant
-          emprunté : prix + frais de notaire).
+          Financement calculé avec le prêt « {{ activeLoanName }} » tel qu'enregistré, appliqué à
+          chaque bien.
         </p>
         <p v-if="propertiesError" role="alert" class="alert alert--error">{{ propertiesError }}</p>
         <p v-if="properties && properties.length === 0" class="placeholder">

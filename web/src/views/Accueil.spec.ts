@@ -240,7 +240,7 @@ describe('Accueil', () => {
 
       const pane = wrapper.get('[data-test="home-biens"]')
       expect(pane.get('[data-test="active-loan-note"]').text()).toBe(
-        'Financement calculé avec le prêt « BNP » appliqué à chaque bien (montant emprunté : prix + frais de notaire).',
+        "Financement calculé avec le prêt « BNP » tel qu'enregistré, appliqué à chaque bien.",
       )
       expect(plain(pane.text())).toContain('-400,00 €')
     })

@@ -172,10 +172,10 @@ func TestPropertySaveConflictAnswers409(t *testing.T) {
 func TestListWithActiveLoanEndpoint(t *testing.T) {
 	f := newFixture(t)
 	h := NewHandlers(f.svc)
-	template := saveLoan(t, f, "Prêt type")
+	active := saveLoan(t, f, "Prêt type")
 	serveProperty(h, apiRequest(http.MethodPost, "/api/properties", createPropertyBody))
 
-	rec := serveProperty(h, apiRequest(http.MethodGet, "/api/properties?activeLoanId="+template.ID, ""))
+	rec := serveProperty(h, apiRequest(http.MethodGet, "/api/properties?activeLoanId="+active.ID, ""))
 	items := decodeBody[[]map[string]any](t, rec)
 	if rec.Code != http.StatusOK || len(items) != 1 || items[0]["loanName"] != "Prêt type" || items[0]["cashFlowAfterTaxCents"] == nil {
 		t.Errorf("status = %d, body = %s", rec.Code, rec.Body.String())

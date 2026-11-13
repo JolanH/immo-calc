@@ -174,7 +174,7 @@ Only inputs are stored, and results are always recomputed. A missing `settings` 
 | Route | Behavior |
 |---|---|
 | `POST /api/properties/evaluate` | body = inputs → results + warnings (live preview, not saved) |
-| `GET /api/properties[?loanId=][&activeLoanId=]` | list with key results; `activeLoanId` applies that loan as a template to every bien (home page) |
+| `GET /api/properties[?loanId=][&activeLoanId=]` | list with key results; `activeLoanId` finances every bien with that loan as saved (home page) |
 | `POST /api/properties` | create → `201` |
 | `GET /api/properties/{id}` | inputs + results + warnings + linked loan summary |
 | `PUT /api/properties/{id}` | update |
@@ -191,7 +191,7 @@ The home page « Accueil » (`/`) has two panes:
 
 **Active loan and profitability:** while an active loan is selected, it **overrides** every bien's own linked loan in the home page's Biens list: the Financement figures shown there (Mensualité, Cash-flow, Apport, Rendement sur apport, and the `reel_foncier` interest deduction) use the active loan for every bien. With « Aucun », each bien uses its own linked loan, as on `/biens`. The bien detail page and `/biens` always use the bien's own link.
 
-**Borrowed amount (decided 2026-11-13):** the active loan is a **template**. Its rate, duration, insurance rate and fees apply to every bien, and each bien **borrows its own acquisition cost** `A` (price + notary). So the « apport » is the loan fees, and the question answered is « what if I financed each bien entirely on these terms? ». The Prêt column of the home list then shows the active loan.
+**Borrowed amount (decided 2026-11-13, revised the same day):** the active loan applies to every bien **exactly as saved** (its amount, rate, duration, insurance and fees). So the « apport » is `A` + fees − the loan's amount (« n/a » when not positive), and the figures match what the right pane shows. The Prêt column of the home list then shows the active loan. A first version used the loan as a template borrowing each bien's acquisition cost; the user found it misleading (a 15 000 € loan silently became 36 890 €) and chose this rule instead.
 
 ## UI
 
