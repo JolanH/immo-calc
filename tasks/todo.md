@@ -400,7 +400,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/views/BienDetail.vue` + spec, `web/src/components/{DpeBadge,FinancingCard,CalcDetail}.vue` + specs, `web/src/api/properties.ts`, `web/src/router.ts`
 **Scope:** M
 
-### [ ] Task 32: `properties` section + CRUD + Biens list + ceiling warnings
+### [x] Task 32: `properties` section + CRUD + Biens list + ceiling warnings
 **Description:** Register `properties` (validator incl. unique ids, `loan_id` exists — dangling id refuses start). Service + endpoints: list (with key results), create, get, update, duplicate, delete. Micro-ceiling warnings computed across all properties on the same regime. `/biens` list (columns per spec, DPE badge, empty state, **Nouveau bien**). Save/load/Dupliquer/Supprimer + unsaved guard on the Bien page.
 **Acceptance criteria:**
 - [ ] CRUD + duplicate round trip through a temp store; restart gives identical results

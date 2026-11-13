@@ -855,3 +855,52 @@ a.app-header__name {
   gap: 0.5rem;
   cursor: pointer;
 }
+
+/* DPE badge: the letter on its class colour (white text, dark on yellow). */
+.dpe {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 700;
+  text-align: center;
+  color: #ffffff;
+}
+
+.dpe--a {
+  background: #008300;
+}
+
+.dpe--b {
+  background: #3c9a2f;
+}
+
+.dpe--c {
+  background: #8db63c;
+  color: #0b0b0b;
+}
+
+.dpe--d {
+  background: #f2d23c;
+  color: #0b0b0b;
+}
+
+.dpe--e {
+  background: #fab219;
+  color: #0b0b0b;
+}
+
+.dpe--f {
+  background: #ec835a;
+  color: #0b0b0b;
+}
+
+.dpe--g {
+  background: #d03b3b;
+}
+
+/* Long headers wrap; cell values stay on one line. */
+.table th {
+  white-space: normal;
+  vertical-align: bottom;
+}

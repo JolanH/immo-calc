@@ -42,12 +42,6 @@ describe('router', () => {
     vi.unstubAllGlobals()
   })
 
-  it.each([['/biens', 'Biens']])('shows the placeholder page for %s', async (path, title) => {
-    const { wrapper } = await mountAt(path)
-    expect(wrapper.find('h1').text()).toBe(title)
-    expect(wrapper.text()).toContain('Fonctionnalité à venir')
-  })
-
   it('shows the Paramètres page with its two sections', async () => {
     const info = { path: '/x.yaml', schemaVersion: 1, counts: { properties: 0, loans: 0 } }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(info))))
