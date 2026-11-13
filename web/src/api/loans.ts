@@ -49,3 +49,38 @@ export interface LoanResult {
 export function simulateLoan(input: Omit<LoanInput, 'name'>): Promise<LoanResult> {
   return request<LoanResult>('POST', '/api/loans/simulate', input)
 }
+
+/** A saved loan as listed. */
+export interface LoanSummary {
+  id: string
+  name: string
+  principalCents: number
+  annualRatePct: number
+  durationMonths: number
+  monthlyTotalCents: number
+  totalCostCents: number
+}
+
+/** A saved loan with its recomputed results. */
+export interface LoanDetail extends LoanInput {
+  id: string
+  createdAt: string
+  updatedAt: string
+  result: LoanResult
+}
+
+export function listLoans(): Promise<LoanSummary[]> {
+  return request<LoanSummary[]>('GET', '/api/loans')
+}
+
+export function getLoan(id: string): Promise<LoanDetail> {
+  return request<LoanDetail>('GET', `/api/loans/${encodeURIComponent(id)}`)
+}
+
+export function createLoan(input: LoanInput): Promise<LoanDetail> {
+  return request<LoanDetail>('POST', '/api/loans', input)
+}
+
+export function updateLoan(id: string, input: LoanInput): Promise<LoanDetail> {
+  return request<LoanDetail>('PUT', `/api/loans/${encodeURIComponent(id)}`, input)
+}

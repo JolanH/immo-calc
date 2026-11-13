@@ -1,11 +1,22 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MoneyInput from '@/components/MoneyInput.vue'
 import RateInput from '@/components/RateInput.vue'
 import MonthPicker from '@/components/MonthPicker.vue'
 import ResultCard from '@/components/ResultCard.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
-import { simulateLoan, type LoanInput } from '@/api/loans'
+import { useUnsavedGuard } from '@/composables/useUnsavedGuard'
+import { ApiError } from '@/api/client'
+import {
+  createLoan,
+  getLoan,
+  listLoans,
+  simulateLoan,
+  updateLoan,
+  type LoanDetail,
+  type LoanInput,
+} from '@/api/loans'
 
 const DEFAULT_YEARS = 20
 
@@ -14,6 +25,22 @@ function nextMonth(today = new Date()): string {
   const d = new Date(today.getFullYear(), today.getMonth() + 1, 1)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
+
+const route = useRoute()
+const router = useRouter()
+
+/** The saved loan shown, or null for a new simulation. */
+const routeId = computed(() => {
+  const id = route.params.id
+  return typeof id === 'string' && id !== 'nouveau' ? id : null
+})
+const loadedId = ref<string | null>(null)
+const savedName = ref('')
+const loadError = ref('')
+const saveError = ref('')
+const saveFieldErrors = ref<Record<string, string>>({})
+const status = ref('')
+const saving = ref(false)
 
 // Form state: null means "not a number yet" (empty or being typed).
 const form = reactive({
@@ -27,14 +54,23 @@ const form = reactive({
   firstPaymentMonth: nextMonth(),
 })
 
-/** What the API receives; null while the required numbers are missing. */
+// What was last loaded or saved, to detect unsaved changes.
+const snapshot = ref(JSON.stringify(form))
+const dirty = computed(() => JSON.stringify(form) !== snapshot.value)
+useUnsavedGuard(dirty)
+
+function durationMonths(): number {
+  const years = Number(form.durationYears)
+  return Number.isFinite(years) ? Math.round(years * 12) : 0
+}
+
+/** What the simulation receives; null while the required numbers are missing. */
 const simulationInput = computed((): Omit<LoanInput, 'name'> | null => {
   if (form.principalCents === null || form.annualRatePct === null) return null
-  const years = Number(form.durationYears)
   return {
     principalCents: form.principalCents,
     annualRatePct: form.annualRatePct,
-    durationMonths: Number.isFinite(years) ? Math.round(years * 12) : 0,
+    durationMonths: durationMonths(),
     insuranceRatePct: form.insuranceRatePct ?? 0,
     applicationFeeCents: form.applicationFeeCents ?? 0,
     guaranteeFeeCents: form.guaranteeFeeCents ?? 0,
@@ -42,16 +78,94 @@ const simulationInput = computed((): Omit<LoanInput, 'name'> | null => {
   }
 })
 
-const { result, fieldErrors, error } = useDebouncedEval(simulationInput, async (input) =>
-  input === null ? null : simulateLoan(input),
+const { result, fieldErrors, error, evaluateNow } = useDebouncedEval(
+  simulationInput,
+  async (input) => (input === null ? null : simulateLoan(input)),
 )
+
+/** Errors from the live simulation and from the last save attempt. */
+const errors = computed(() => ({ ...fieldErrors.value, ...saveFieldErrors.value }))
+
+function fill(loan: LoanDetail) {
+  Object.assign(form, {
+    name: loan.name,
+    principalCents: loan.principalCents,
+    annualRatePct: loan.annualRatePct,
+    durationYears: loan.durationMonths / 12,
+    insuranceRatePct: loan.insuranceRatePct,
+    applicationFeeCents: loan.applicationFeeCents,
+    guaranteeFeeCents: loan.guaranteeFeeCents,
+    firstPaymentMonth: loan.firstPaymentMonth,
+  })
+  snapshot.value = JSON.stringify(form)
+  loadedId.value = loan.id
+  savedName.value = loan.name
+}
+
+async function load(id: string | null) {
+  if (id !== null && id === loadedId.value) return // just created: already shown
+  loadError.value = ''
+  status.value = ''
+  if (id === null) {
+    // New simulation: propose « Prêt N ».
+    try {
+      const loans = await listLoans()
+      form.name = `Prêt ${(Array.isArray(loans) ? loans.length : 0) + 1}`
+    } catch {
+      form.name = 'Prêt 1'
+    }
+    snapshot.value = JSON.stringify(form)
+    return
+  }
+  try {
+    fill(await getLoan(id))
+    await evaluateNow()
+  } catch (e) {
+    loadError.value = e instanceof ApiError ? e.message : String(e)
+  }
+}
+
+watch(routeId, (id) => void load(id), { immediate: true })
+watch(form, () => (saveFieldErrors.value = {}), { deep: true })
+
+async function save() {
+  saving.value = true
+  saveError.value = ''
+  status.value = ''
+  const input: LoanInput = {
+    name: form.name,
+    principalCents: form.principalCents ?? 0,
+    annualRatePct: form.annualRatePct ?? 0,
+    durationMonths: durationMonths(),
+    insuranceRatePct: form.insuranceRatePct ?? 0,
+    applicationFeeCents: form.applicationFeeCents ?? 0,
+    guaranteeFeeCents: form.guaranteeFeeCents ?? 0,
+    firstPaymentMonth: form.firstPaymentMonth,
+  }
+  try {
+    const saved = loadedId.value ? await updateLoan(loadedId.value, input) : await createLoan(input)
+    const created = loadedId.value === null
+    fill(saved)
+    status.value = 'Prêt enregistré'
+    if (created) await router.replace(`/prets/${saved.id}`)
+  } catch (e) {
+    if (e instanceof ApiError && Object.keys(e.fields).length > 0) {
+      saveFieldErrors.value = e.fields
+    } else {
+      saveError.value = e instanceof ApiError ? e.message : String(e)
+    }
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
   <section class="detail">
-    <h1>Nouvelle simulation de prêt</h1>
-    <div class="detail__layout">
-      <form class="card detail__form" novalidate @submit.prevent>
+    <h1>{{ loadedId ? savedName : 'Nouvelle simulation de prêt' }}</h1>
+    <p v-if="loadError" role="alert" class="alert alert--error">{{ loadError }}</p>
+    <div v-else class="detail__layout">
+      <form class="card detail__form" novalidate @submit.prevent="save">
         <div class="field">
           <label for="pret-nom">Nom</label>
           <input
@@ -61,21 +175,26 @@ const { result, fieldErrors, error } = useDebouncedEval(simulationInput, async (
             maxlength="80"
             class="input"
             placeholder="Appart Lyon — Crédit Mutuel"
+            :aria-invalid="errors.name ? 'true' : undefined"
+            :aria-describedby="errors.name ? 'pret-nom-error' : undefined"
           />
+          <p v-if="errors.name" id="pret-nom-error" role="alert" class="field-error">
+            {{ errors.name }}
+          </p>
         </div>
         <MoneyInput
           id="pret-montant"
           v-model="form.principalCents"
           label="Montant"
           placeholder="200 000"
-          :error="fieldErrors.principalCents"
+          :error="errors.principalCents"
         />
         <RateInput
           id="pret-taux"
           v-model="form.annualRatePct"
           label="Taux nominal"
           placeholder="3,5"
-          :error="fieldErrors.annualRatePct"
+          :error="errors.annualRatePct"
         />
         <div class="field">
           <label for="pret-duree">Durée</label>
@@ -88,25 +207,20 @@ const { result, fieldErrors, error } = useDebouncedEval(simulationInput, async (
               max="30"
               step="1"
               class="input input--short"
-              :aria-invalid="fieldErrors.durationMonths ? 'true' : undefined"
-              :aria-describedby="fieldErrors.durationMonths ? 'pret-duree-error' : undefined"
+              :aria-invalid="errors.durationMonths ? 'true' : undefined"
+              :aria-describedby="errors.durationMonths ? 'pret-duree-error' : undefined"
             />
             <span class="field__suffix">ans</span>
           </div>
-          <p
-            v-if="fieldErrors.durationMonths"
-            id="pret-duree-error"
-            role="alert"
-            class="field-error"
-          >
-            {{ fieldErrors.durationMonths }}
+          <p v-if="errors.durationMonths" id="pret-duree-error" role="alert" class="field-error">
+            {{ errors.durationMonths }}
           </p>
         </div>
         <MonthPicker
           id="pret-echeance"
           v-model="form.firstPaymentMonth"
           label="Première échéance"
-          :error="fieldErrors.firstPaymentMonth"
+          :error="errors.firstPaymentMonth"
         />
         <details class="detail__more">
           <summary>Assurance et frais</summary>
@@ -114,21 +228,28 @@ const { result, fieldErrors, error } = useDebouncedEval(simulationInput, async (
             id="pret-assurance"
             v-model="form.insuranceRatePct"
             label="Taux assurance (du capital initial, par an)"
-            :error="fieldErrors.insuranceRatePct"
+            :error="errors.insuranceRatePct"
           />
           <MoneyInput
             id="pret-frais-dossier"
             v-model="form.applicationFeeCents"
             label="Frais de dossier"
-            :error="fieldErrors.applicationFeeCents"
+            :error="errors.applicationFeeCents"
           />
           <MoneyInput
             id="pret-frais-garantie"
             v-model="form.guaranteeFeeCents"
             label="Frais de garantie"
-            :error="fieldErrors.guaranteeFeeCents"
+            :error="errors.guaranteeFeeCents"
           />
         </details>
+        <p v-if="status" role="status" class="alert alert--success">{{ status }}</p>
+        <p v-if="saveError" role="alert" class="alert alert--error">{{ saveError }}</p>
+        <div class="actions">
+          <button type="submit" class="button button--primary" data-test="save" :disabled="saving">
+            Enregistrer
+          </button>
+        </div>
       </form>
 
       <div class="detail__results" data-test="results" aria-live="polite">
