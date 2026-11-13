@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { ApiError } from '@/api/client'
 import { getActiveLoan, listLoans, setActiveLoan, type LoanSummary } from '@/api/loans'
 import { formatEuros } from '@/format'
+import { formatInputEuros } from '@/parse'
 
 // Home page (SPEC-property.md, Home page): Biens on the left, a simplified
 // list of loans with the session-only active loan on the right. Applying the
@@ -11,6 +12,12 @@ import { formatEuros } from '@/format'
 const loans = ref<LoanSummary[] | null>(null)
 const active = ref('') // '' = « Aucun »
 const error = ref('')
+
+/** « 200 000 € · 20 ans » */
+function loanTerms(loan: LoanSummary): string {
+  const years = loan.durationMonths / 12
+  return `${formatInputEuros(loan.principalCents)}\u00a0€ · ${years} ${years > 1 ? 'ans' : 'an'}`
+}
 
 function showError(e: unknown) {
   error.value = e instanceof ApiError ? e.message : String(e)
@@ -57,28 +64,49 @@ async function choose(id: string) {
         </template>
         <fieldset v-else-if="loans" class="home__loans">
           <legend>Prêt actif</legend>
-          <label class="home__loan">
+          <label
+            class="home__loan"
+            :class="{ 'home__loan--active': active === '' }"
+            data-test="no-loan-row"
+          >
             <input
               type="radio"
               name="active-loan"
               value=""
+              class="visually-hidden"
               :checked="active === ''"
               @change="choose('')"
             />
-            <span>Aucun</span>
+            <span class="home__loan-text"><strong>Aucun</strong></span>
           </label>
-          <label v-for="loan in loans" :key="loan.id" class="home__loan">
+          <label
+            v-for="loan in loans"
+            :key="loan.id"
+            class="home__loan"
+            :class="{ 'home__loan--active': active === loan.id }"
+            data-test="loan-row"
+          >
             <input
               type="radio"
               name="active-loan"
               :value="loan.id"
+              class="visually-hidden"
               :checked="active === loan.id"
               @change="choose(loan.id)"
             />
             <span class="home__loan-text">
-              <RouterLink :to="`/prets/${loan.id}`">{{ loan.name }}</RouterLink>
+              <strong>{{ loan.name }}</strong>
+              <span>{{ loanTerms(loan) }}</span>
               <small>{{ formatEuros(loan.monthlyTotalCents) }} / mois</small>
             </span>
+            <RouterLink
+              :to="`/prets/${loan.id}`"
+              class="home__loan-open"
+              :aria-label="`Voir le prêt ${loan.name}`"
+              title="Voir le prêt"
+            >
+              ›
+            </RouterLink>
           </label>
         </fieldset>
       </aside>
