@@ -84,7 +84,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/server/{origin,shutdown}.go` + tests, `cmd/immo-calc/main.go`, `web/src/api/client.ts` + spec, `web/src/App.vue`, `web/src/App.spec.ts`
 **Scope:** M
 
-### [ ] Task 8: Log file + fatal-error notifier
+### [x] Task 8: Log file + fatal-error notifier
 **Description:** Logs to `immo-calc.log` in the exe dir (truncated at start, verbose with `--debug`), falling back to the temp dir when not writable; also stdout. Startup line logs version, URL and data path. Fatal startup errors go through a `Notifier` interface: Windows `user32.MessageBoxW` via `syscall` (build tag), Linux `notify-send` if present. French message names the log file.
 **Acceptance criteria:**
 - [ ] Log path falls back to the temp dir when the exe dir isn't writable (test with a read-only temp dir)

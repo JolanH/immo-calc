@@ -53,6 +53,7 @@ lint: lint-go lint-web ## Run all linters
 lint-go: web/dist/index.html
 	@out="$$($(GO_RUN) gofmt -l cmd internal web/embed.go)"; if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
 	$(GO_RUN) go vet $(GO_PKGS)
+	$(GO_RUN) env GOOS=windows go vet $(GO_PKGS)
 
 lint-web: web/node_modules/.installed
 	$(NODE_RUN) npx eslint .
