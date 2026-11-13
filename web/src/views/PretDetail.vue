@@ -204,6 +204,7 @@ async function remove() {
   <section class="detail">
     <AppBreadcrumb
       :items="[
+        { label: 'Accueil', to: '/' },
         { label: 'Prêts', to: '/prets' },
         { label: loadedId ? savedName : 'Nouvelle simulation' },
       ]"

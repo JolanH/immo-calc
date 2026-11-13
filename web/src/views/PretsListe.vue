@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
 import { ApiError } from '@/api/client'
 import { listLoans, type LoanSummary } from '@/api/loans'
 import { formatEuros, formatPercent } from '@/format'
@@ -25,6 +26,7 @@ onMounted(async () => {
 
 <template>
   <section>
+    <AppBreadcrumb :items="[{ label: 'Accueil', to: '/' }, { label: 'Prêts' }]" />
     <div class="page-header">
       <h1>Prêts</h1>
       <RouterLink

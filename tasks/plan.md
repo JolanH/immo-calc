@@ -87,6 +87,8 @@ legal-rate check ── settings section + Paramètres UI
 - Task 23: Duplicate + delete with the delete-guard hook
 - Task 24: Amortization table (Annuel / Mensuel)
 - Task 25: `LoanChart.vue` (hand-written SVG)
+- Task 25a: Breadcrumb on detail pages (added at Checkpoint C)
+- Task 25b: Home page « Accueil » skeleton + session-only active loan (added at Checkpoint C)
 - **Checkpoint C:** loan acceptance criteria 1–8
 
 ### Phase 4: property
@@ -98,6 +100,7 @@ legal-rate check ── settings section + Paramètres UI
 - Task 31: Bien page with live evaluation
 - Task 32: `properties` section + CRUD + Biens list + micro-ceiling warnings
 - Task 33: Loan link: `loan_id`, delete guard, `?loanId=`, Financement card
+- Task 33b: Active loan applied to the home page Biens list (settle the open amount question first)
 - Task 34: « Créer un prêt pour ce bien » round trip + « Biens liés »
 - **Checkpoint D (v1 done):** property acceptance criteria 1–9 + project success criteria
 

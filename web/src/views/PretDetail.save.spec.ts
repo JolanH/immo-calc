@@ -263,8 +263,9 @@ describe('breadcrumb', () => {
     const { wrapper, router } = await mountAt('/prets/aaaaaaaaaaaaaaaa')
 
     const crumbs = wrapper.get('nav[aria-label="Fil d\'Ariane"]')
-    expect(crumbs.findAll('li').map((li) => li.text())).toEqual(['Prêts', 'Appart Lyon'])
-    await crumbs.get('a').trigger('click')
+    expect(crumbs.findAll('li').map((li) => li.text())).toEqual(['Accueil', 'Prêts', 'Appart Lyon'])
+    expect(crumbs.get('a').attributes('href')).toBe('/')
+    await crumbs.findAll('a')[1].trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/prets')
   })
@@ -278,6 +279,6 @@ describe('breadcrumb', () => {
         .get('nav[aria-label="Fil d\'Ariane"]')
         .findAll('li')
         .map((li) => li.text()),
-    ).toEqual(['Prêts', 'Nouvelle simulation'])
+    ).toEqual(['Accueil', 'Prêts', 'Nouvelle simulation'])
   })
 })

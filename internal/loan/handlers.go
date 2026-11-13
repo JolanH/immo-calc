@@ -30,6 +30,8 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.Handle("PUT /api/loans/{id}", write(h.update))
 	mux.Handle("DELETE /api/loans/{id}", write(h.delete))
 	mux.Handle("POST /api/loans/{id}/duplicate", write(h.duplicate))
+	mux.HandleFunc("GET /api/active-loan", h.getActive)
+	mux.Handle("PUT /api/active-loan", write(h.putActive))
 }
 
 func (h *Handlers) duplicate(w http.ResponseWriter, r *http.Request) {
