@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -44,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ln, err := listen(cfg.Port, net.Listen, probeHealth)
+	ln, err := newSystemBinder().bind(cfg.Port, version)
 	var running *alreadyRunningError
 	if errors.As(err, &running) {
 		slog.Info("immo-calc is already running, opening it", "url", running.URL)
