@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
 import MoneyInput from '@/components/MoneyInput.vue'
 import ResultCard from '@/components/ResultCard.vue'
 import FinancingCard from '@/components/FinancingCard.vue'
 import CalcDetail from '@/components/CalcDetail.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
+import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
+import { ApiError } from '@/api/client'
 import { listLoans, type LoanSummary } from '@/api/loans'
-import { evaluateProperty, type PropertyInput, type TaxRegime } from '@/api/properties'
+import {
+  createProperty,
+  deleteProperty,
+  duplicateProperty,
+  evaluateProperty,
+  getProperty,
+  updateProperty,
+  type PropertyDetail,
+  type PropertyInput,
+  type TaxRegime,
+} from '@/api/properties'
 import { formatPercent } from '@/format'
 
 const DPE_CLASSES = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
@@ -31,6 +44,27 @@ const form = reactive({
   taxRegime: 'micro_foncier' as TaxRegime,
   loanId: '',
 })
+
+const route = useRoute()
+const router = useRouter()
+
+/** The saved property shown, or null for a new one (/biens/nouveau). */
+const routeId = computed(() => {
+  const id = route.params.id
+  return typeof id === 'string' && id !== 'nouveau' ? id : null
+})
+const loadedId = ref<string | null>(null)
+const savedName = ref('')
+const loadError = ref('')
+const saveError = ref('')
+const saveFieldErrors = ref<Record<string, string>>({})
+const status = ref('')
+const saving = ref(false)
+
+// What was last loaded or saved, to detect unsaved changes.
+const snapshot = ref(JSON.stringify(form))
+const dirty = computed(() => JSON.stringify(form) !== snapshot.value)
+useUnsavedGuard(dirty)
 
 const loans = ref<LoanSummary[]>([])
 onMounted(async () => {
@@ -65,13 +99,119 @@ const evaluationInput = computed((): Omit<PropertyInput, 'name'> | null => {
   }
 })
 
-const {
-  result,
-  fieldErrors: errors,
-  error,
-} = useDebouncedEval(evaluationInput, async (input) =>
-  input === null ? null : evaluateProperty(input),
+const { result, fieldErrors, error, evaluateNow } = useDebouncedEval(
+  evaluationInput,
+  async (input) => (input === null ? null : evaluateProperty(input, loadedId.value ?? undefined)),
 )
+
+/** Errors from the live evaluation and from the last save attempt. */
+const errors = computed(() => ({ ...fieldErrors.value, ...saveFieldErrors.value }))
+
+function fill(p: PropertyDetail) {
+  Object.assign(form, {
+    name: p.name,
+    priceCents: p.priceCents,
+    dpe: p.dpe,
+    monthlyRentCents: p.monthlyRentCents,
+    monthlyRecoverableChargesCents: p.monthlyRecoverableChargesCents,
+    annualPropertyTaxCents: p.annualPropertyTaxCents,
+    annualCondoFeesCents: p.annualCondoFeesCents,
+    annualLandlordInsuranceCents: p.annualLandlordInsuranceCents,
+    agencyManaged: p.agencyManaged,
+    taxRegime: p.taxRegime,
+    loanId: p.loanId,
+  })
+  snapshot.value = JSON.stringify(form)
+  loadedId.value = p.id
+  savedName.value = p.name
+}
+
+async function load(id: string | null) {
+  if (id !== null && id === loadedId.value) return // just created or copied: already shown
+  loadError.value = ''
+  status.value = ''
+  if (id === null) return
+  try {
+    fill(await getProperty(id))
+    await evaluateNow()
+  } catch (e) {
+    loadError.value = e instanceof ApiError ? e.message : String(e)
+  }
+}
+
+watch(routeId, (id) => void load(id), { immediate: true })
+watch(form, () => (saveFieldErrors.value = {}), { deep: true })
+
+function showActionError(e: unknown) {
+  if (e instanceof ApiError && Object.keys(e.fields).length > 0) saveFieldErrors.value = e.fields
+  else saveError.value = e instanceof ApiError ? e.message : String(e)
+}
+
+function clearMessages() {
+  saveError.value = ''
+  status.value = ''
+}
+
+async function save() {
+  clearMessages()
+  saving.value = true
+  const input: PropertyInput = {
+    name: form.name,
+    priceCents: form.priceCents ?? 0,
+    dpe: form.dpe,
+    monthlyRentCents: form.monthlyRentCents ?? 0,
+    monthlyRecoverableChargesCents: form.monthlyRecoverableChargesCents ?? 0,
+    annualPropertyTaxCents: form.annualPropertyTaxCents ?? 0,
+    annualCondoFeesCents: form.annualCondoFeesCents ?? 0,
+    annualLandlordInsuranceCents: form.annualLandlordInsuranceCents ?? 0,
+    agencyManaged: form.agencyManaged,
+    taxRegime: form.taxRegime,
+    loanId: form.loanId,
+  }
+  try {
+    const created = loadedId.value === null
+    const saved = created
+      ? await createProperty(input)
+      : await updateProperty(loadedId.value as string, input)
+    fill(saved)
+    status.value = 'Bien enregistré'
+    if (created) await router.replace(`/biens/${saved.id}`)
+  } catch (e) {
+    showActionError(e)
+  } finally {
+    saving.value = false
+  }
+}
+
+async function duplicate() {
+  if (!loadedId.value) return
+  if (dirty.value && !window.confirm(UNSAVED_MESSAGE)) return
+  clearMessages()
+  try {
+    const copy = await duplicateProperty(loadedId.value)
+    fill(copy) // shown right away; the route change below won't reload it
+    await router.push(`/biens/${copy.id}`)
+    await evaluateNow()
+    status.value = 'Copie créée'
+  } catch (e) {
+    showActionError(e)
+  }
+}
+
+async function remove() {
+  if (!loadedId.value) return
+  if (!window.confirm(`Supprimer le bien « ${savedName.value} » ? Cette action est définitive.`)) {
+    return
+  }
+  clearMessages()
+  try {
+    await deleteProperty(loadedId.value)
+    snapshot.value = JSON.stringify(form) // deleted: nothing left to save
+    await router.push('/biens')
+  } catch (e) {
+    showActionError(e)
+  }
+}
 </script>
 
 <template>
@@ -80,12 +220,13 @@ const {
       :items="[
         { label: 'Accueil', to: '/' },
         { label: 'Biens', to: '/biens' },
-        { label: 'Nouveau bien' },
+        { label: loadedId ? savedName : 'Nouveau bien' },
       ]"
     />
-    <h1>Nouveau bien</h1>
-    <div class="detail__layout">
-      <form class="card detail__form" novalidate @submit.prevent>
+    <h1>{{ loadedId ? savedName : 'Nouveau bien' }}</h1>
+    <p v-if="loadError" role="alert" class="alert alert--error">{{ loadError }}</p>
+    <div v-else class="detail__layout">
+      <form class="card detail__form" novalidate @submit.prevent="save">
         <div class="field">
           <label for="bien-nom">Nom</label>
           <input
@@ -180,6 +321,21 @@ const {
             <option v-for="l in loans" :key="l.id" :value="l.id">{{ l.name }}</option>
           </select>
           <p v-if="errors.loanId" role="alert" class="field-error">{{ errors.loanId }}</p>
+        </div>
+        <p v-if="status" role="status" class="alert alert--success">{{ status }}</p>
+        <p v-if="saveError" role="alert" class="alert alert--error">{{ saveError }}</p>
+        <div class="actions">
+          <button type="submit" class="button button--primary" data-test="save" :disabled="saving">
+            Enregistrer
+          </button>
+          <template v-if="loadedId">
+            <button type="button" class="button" data-test="duplicate" @click="duplicate">
+              Dupliquer
+            </button>
+            <button type="button" class="button button--danger" data-test="delete" @click="remove">
+              Supprimer
+            </button>
+          </template>
         </div>
       </form>
 

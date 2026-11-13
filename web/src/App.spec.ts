@@ -6,7 +6,8 @@ import { createAppRouter } from './router'
 
 async function mountApp() {
   const router = createAppRouter(createMemoryHistory())
-  router.push('/biens')
+  // A page that loads nothing, so fetch only sees the shutdown call.
+  router.push('/page-sans-donnees')
   await router.isReady()
   return mount(App, { global: { plugins: [router] } })
 }
