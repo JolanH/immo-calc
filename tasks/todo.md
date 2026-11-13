@@ -422,12 +422,12 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{service,handlers}.go` + tests, `cmd/immo-calc/main.go`, `web/src/views/{BiensListe,BienDetail}.vue` + specs
 **Scope:** S
 
-### [ ] Task 33b (added 2026-11-13): active loan on the home page Biens list
+### [x] Task 33b (added 2026-11-13): active loan on the home page Biens list
 **Description:** Fill the home page's left pane with the Biens list (reuse Task 32's list) and apply the active loan: while one is selected it **overrides** every bien's own linked loan for the Financement figures on that list (`SPEC-property.md`, *Home page*). **First settle the open question** (amount borrowed: the loan's own amount, or the loan as a template with the bien's acquisition cost) with the user.
 **Acceptance criteria:**
-- [ ] Open question answered and recorded in `SPEC-property.md`
-- [ ] With an active loan, every bien on the home list shows Financement figures from it; with « Aucun », each uses its own link
-- [ ] `/biens` and the bien detail page are unaffected by the active loan
+- [x] Open question answered and recorded in `SPEC-property.md`
+- [x] With an active loan, every bien on the home list shows Financement figures from it; with « Aucun », each uses its own link
+- [x] `/biens` and the bien detail page are unaffected by the active loan
 **Verification:** `make test` · by hand with two biens and two loans
 **Dependencies:** Tasks 25b, 33
 **Scope:** M

@@ -174,7 +174,7 @@ Only inputs are stored, and results are always recomputed. A missing `settings` 
 | Route | Behavior |
 |---|---|
 | `POST /api/properties/evaluate` | body = inputs → results + warnings (live preview, not saved) |
-| `GET /api/properties[?loanId=]` | list with key results |
+| `GET /api/properties[?loanId=][&activeLoanId=]` | list with key results; `activeLoanId` applies that loan as a template to every bien (home page) |
 | `POST /api/properties` | create → `201` |
 | `GET /api/properties/{id}` | inputs + results + warnings + linked loan summary |
 | `PUT /api/properties/{id}` | update |
@@ -191,7 +191,7 @@ The home page « Accueil » (`/`) has two panes:
 
 **Active loan and profitability:** while an active loan is selected, it **overrides** every bien's own linked loan in the home page's Biens list: the Financement figures shown there (Mensualité, Cash-flow, Apport, Rendement sur apport, and the `reel_foncier` interest deduction) use the active loan for every bien. With « Aucun », each bien uses its own linked loan, as on `/biens`. The bien detail page and `/biens` always use the bien's own link.
 
-**Open question (decide when the property maths are built):** a saved loan has a fixed amount while biens have different prices. When the active loan is applied to a bien, is the amount borrowed the loan's own amount, or does the loan act as a template (rate, duration, insurance, fees) with the bien's acquisition cost as the amount?
+**Borrowed amount (decided 2026-11-13):** the active loan is a **template**. Its rate, duration, insurance rate and fees apply to every bien, and each bien **borrows its own acquisition cost** `A` (price + notary). So the « apport » is the loan fees, and the question answered is « what if I financed each bien entirely on these terms? ». The Prêt column of the home list then shows the active loan.
 
 ## UI
 
@@ -238,4 +238,4 @@ The home page « Accueil » (`/`) has two panes:
 
 ## Open Questions
 
-- Active loan on the home page: the borrowed amount when applied to a bien (see *Home page*). The vacancy (1 month/year) and agency fee (7 %) defaults are confirmed.
+None. The vacancy (1 month/year) and agency fee (7 %) defaults are confirmed.

@@ -88,8 +88,18 @@ export interface PropertyDetail extends PropertyInput {
 
 const path = (id: string) => `/api/properties/${encodeURIComponent(id)}`
 
-export function listProperties(loanId?: string): Promise<PropertySummary[]> {
-  const query = loanId ? `?loanId=${encodeURIComponent(loanId)}` : ''
+/**
+ * Lists saved properties: only those using `loanId` if given; with
+ * `activeLoanId`, that loan is applied to every property as a template (home
+ * page), each borrowing its own price + notary fees.
+ */
+export function listProperties(
+  options: { loanId?: string; activeLoanId?: string } = {},
+): Promise<PropertySummary[]> {
+  const params = new URLSearchParams()
+  if (options.loanId) params.set('loanId', options.loanId)
+  if (options.activeLoanId) params.set('activeLoanId', options.activeLoanId)
+  const query = params.size ? `?${params}` : ''
   return request<PropertySummary[]>('GET', `/api/properties${query}`)
 }
 

@@ -34,6 +34,7 @@ function json(body: unknown, status = 200) {
 function stubApi(routes: Record<string, (init: RequestInit) => Response>) {
   const fetchMock = vi.fn((url: string, init: RequestInit = {}) => {
     const key = `${init.method ?? 'GET'} ${url}`
+    if (!(key in routes) && url.startsWith('/api/properties')) return Promise.resolve(json([]))
     const handler = routes[key]
     if (!handler) throw new Error(`unexpected call ${key}`)
     return Promise.resolve(handler(init))
@@ -166,7 +167,8 @@ describe('Accueil', () => {
 
     await wrapper.get('input[value=""]').setValue(true)
     await flushPromises()
-    expect(JSON.parse(String(fetchMock.mock.calls.at(-1)?.[1]?.body))).toEqual({ loanId: null })
+    const lastPut = fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT').at(-1)
+    expect(JSON.parse(String(lastPut?.[1]?.body))).toEqual({ loanId: null })
   })
 
   it('invites to create a loan when there is none', async () => {
@@ -190,5 +192,78 @@ describe('Accueil', () => {
     const { wrapper } = await mountHome()
 
     expect(wrapper.get('header a.app-header__name').attributes('href')).toBe('/')
+  })
+
+  describe('Biens pane', () => {
+    const property = {
+      id: 'pppppppppppppppp',
+      name: 'T2 Lyon 7e',
+      priceCents: 15_000_000,
+      monthlyRentCents: 70_000,
+      dpe: 'D',
+      netAfterTaxYieldPct: 1.75,
+      monthlyNetIncomeCents: 23_799,
+      cashFlowAfterTaxCents: null,
+      loanId: '',
+      loanName: '',
+      warnings: [],
+    }
+
+    it('lists the biens with their own loans when no loan is active', async () => {
+      const fetchMock = stubApi({
+        'GET /api/loans': () => json(loans),
+        'GET /api/active-loan': () => json({ loanId: null }),
+        'GET /api/properties': () => json([property]),
+      })
+      const { wrapper } = await mountHome()
+
+      const pane = wrapper.get('[data-test="home-biens"]')
+      expect(pane.get('tbody a').text()).toBe('T2 Lyon 7e')
+      expect(pane.find('[data-test="active-loan-note"]').exists()).toBe(false)
+      expect(pane.get('[data-test="new-property"]').attributes('href')).toBe('/biens/nouveau')
+      expect(fetchMock.mock.calls.some(([url]) => url === '/api/properties')).toBe(true)
+    })
+
+    it('applies the active loan to every bien', async () => {
+      const financed = {
+        ...property,
+        cashFlowAfterTaxCents: -40_000,
+        loanId: 'bbbbbbbbbbbbbbbb',
+        loanName: 'BNP',
+      }
+      stubApi({
+        'GET /api/loans': () => json(loans),
+        'GET /api/active-loan': () => json({ loanId: 'bbbbbbbbbbbbbbbb' }),
+        'GET /api/properties?activeLoanId=bbbbbbbbbbbbbbbb': () => json([financed]),
+      })
+      const { wrapper } = await mountHome()
+
+      const pane = wrapper.get('[data-test="home-biens"]')
+      expect(pane.get('[data-test="active-loan-note"]').text()).toBe(
+        'Financement calculé avec le prêt « BNP » appliqué à chaque bien (montant emprunté : prix + frais de notaire).',
+      )
+      expect(plain(pane.text())).toContain('-400,00 €')
+    })
+
+    it('reloads the biens when the active loan changes', async () => {
+      const fetchMock = stubApi({
+        'GET /api/loans': () => json(loans),
+        'GET /api/active-loan': () => json({ loanId: null }),
+        'GET /api/properties': () => json([property]),
+        'PUT /api/active-loan': (init) => json(JSON.parse(String(init.body))),
+        'GET /api/properties?activeLoanId=aaaaaaaaaaaaaaaa': () => json([property]),
+      })
+      const { wrapper } = await mountHome()
+
+      await wrapper.get('input[value="aaaaaaaaaaaaaaaa"]').setValue(true)
+      await flushPromises()
+
+      expect(
+        fetchMock.mock.calls.some(
+          ([url]) => url === '/api/properties?activeLoanId=aaaaaaaaaaaaaaaa',
+        ),
+      ).toBe(true)
+      expect(wrapper.get('[data-test="active-loan-note"]').text()).toContain('« Crédit Mutuel »')
+    })
   })
 })

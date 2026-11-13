@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError } from '@/api/client'
 import { getActiveLoan, listLoans, setActiveLoan, type LoanSummary } from '@/api/loans'
+import { listProperties, type PropertySummary } from '@/api/properties'
+import PropertiesTable from '@/components/PropertiesTable.vue'
 import { formatEuros } from '@/format'
 import { formatInputEuros } from '@/parse'
 
@@ -12,6 +14,25 @@ import { formatInputEuros } from '@/parse'
 const loans = ref<LoanSummary[] | null>(null)
 const active = ref('') // '' = « Aucun »
 const error = ref('')
+const properties = ref<PropertySummary[] | null>(null)
+const propertiesError = ref('')
+const ready = ref(false)
+
+const activeLoanName = computed(() => loans.value?.find((l) => l.id === active.value)?.name ?? '')
+
+/** The Biens, financed with the active loan when one is selected. */
+async function loadProperties() {
+  propertiesError.value = ''
+  try {
+    properties.value = await listProperties({ activeLoanId: active.value || undefined })
+  } catch (e) {
+    propertiesError.value = e instanceof ApiError ? e.message : String(e)
+  }
+}
+
+watch(active, () => {
+  if (ready.value) void loadProperties()
+})
 
 /** « 200 000 € · 20 ans » */
 function loanTerms(loan: LoanSummary): string {
@@ -31,6 +52,8 @@ onMounted(async () => {
   } catch (e) {
     showError(e)
   }
+  ready.value = true
+  await loadProperties()
 })
 
 async function choose(id: string) {
@@ -51,8 +74,21 @@ async function choose(id: string) {
     <h1>Accueil</h1>
     <div class="home">
       <section class="home__biens card" data-test="home-biens">
-        <h2>Biens</h2>
-        <p class="placeholder">Fonctionnalité à venir</p>
+        <div class="page-header">
+          <h2>Biens</h2>
+          <RouterLink to="/biens/nouveau" class="button" data-test="new-property">
+            Nouveau bien
+          </RouterLink>
+        </div>
+        <p v-if="active && activeLoanName" class="alert alert--info" data-test="active-loan-note">
+          Financement calculé avec le prêt « {{ activeLoanName }} » appliqué à chaque bien (montant
+          emprunté : prix + frais de notaire).
+        </p>
+        <p v-if="propertiesError" role="alert" class="alert alert--error">{{ propertiesError }}</p>
+        <p v-if="properties && properties.length === 0" class="placeholder">
+          Aucun bien enregistré.
+        </p>
+        <PropertiesTable v-else-if="properties" :properties="properties" />
       </section>
 
       <aside class="home__prets card" data-test="home-prets">

@@ -367,3 +367,52 @@ func TestPropertyListOrDetailNamesThreeOrMoreProperties(t *testing.T) {
 		t.Errorf("message = %q", got)
 	}
 }
+
+func TestActiveLoanTemplateAppliesToEveryProperty(t *testing.T) {
+	f := newFixture(t)
+	template := saveLoan(t, f, "Prêt type") // 3 %, 20 ans, assurance 0,3 %, 1 000 € de frais
+	own := saveLoan(t, f, "Prêt du bien")
+	withOwnLoan := validPropertyInput()
+	withOwnLoan.LoanID = own.ID
+	_, _ = f.svc.Create(validPropertyInput())
+	_, _ = f.svc.Create(withOwnLoan)
+
+	list, err := f.svc.ListWith(ListOptions{ActiveLoanID: template.ID})
+
+	if err != nil || len(list) != 2 {
+		t.Fatalf("list = %+v, %v", list, err)
+	}
+	// Each bien borrows its own acquisition cost (162 750 €) on the template's terms.
+	want, _ := FiguresOf(loanParams(template, 16_275_000))
+	for i, s := range list {
+		if s.LoanID != template.ID || s.LoanName != "Prêt type" || s.CashFlowAfterTaxCents == nil {
+			t.Fatalf("list[%d] = %+v", i, s)
+		}
+		if got := *s.CashFlowAfterTaxCents; got != 23_799-want.MonthlyTotalCents {
+			t.Errorf("list[%d] cash-flow = %d, want %d", i, got, 23_799-want.MonthlyTotalCents)
+		}
+	}
+}
+
+func TestActiveLoanTemplateFinancing(t *testing.T) {
+	f := newFixture(t)
+	template := saveLoan(t, f, "Prêt type")
+	p, _ := f.svc.Create(validPropertyInput())
+
+	res, err := f.svc.evaluateWithTemplate(p.ID, template.ID)
+
+	if err != nil || res.Financing == nil {
+		t.Fatalf("res = %+v, err = %v", res, err)
+	}
+	// Apport = A + fees − A = the loan fees.
+	if res.Financing.OwnContributionCents != 100_000 {
+		t.Errorf("apport = %d, want 1 000 € (fees only)", res.Financing.OwnContributionCents)
+	}
+}
+
+func TestUnknownActiveLoan(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.svc.ListWith(ListOptions{ActiveLoanID: "ffffffffffffffff"}); !errors.Is(err, loan.ErrNotFound) {
+		t.Errorf("err = %v", err)
+	}
+}
