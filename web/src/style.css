@@ -76,7 +76,7 @@ body {
   text-decoration: none;
 }
 
-.app-nav a.router-link-active {
+.app-nav a.nav-active {
   color: var(--accent);
   font-weight: 600;
 }
