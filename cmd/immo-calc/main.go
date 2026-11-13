@@ -2,13 +2,17 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"immo-calc/internal/browser"
 	"immo-calc/internal/server"
@@ -41,10 +45,28 @@ func main() {
 
 	url := appURL(ln)
 	log.Printf("immo-calc %s listening on %s (data: %s)", version, url, cfg.DataPath)
+
+	// Stop on Ctrl+C / SIGTERM, or when the UI's "Quitter" calls /api/shutdown.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	srv := &http.Server{
+		Handler:           server.New(server.Config{Version: version, Static: web.Dist(), Shutdown: stop}),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.Serve(ln) }()
 	openBrowser(cfg, url)
-	handler := server.New(server.Config{Version: version, Static: web.Dist()})
-	if err := http.Serve(ln, handler); err != nil {
+
+	select {
+	case err := <-serveErr:
 		log.Fatalf("server: %v", err)
+	case <-ctx.Done():
+	}
+	log.Printf("shutting down")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("graceful shutdown: %v", err)
 	}
 }
 

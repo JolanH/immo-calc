@@ -73,7 +73,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `cmd/immo-calc/listen.go`, `cmd/immo-calc/listen_test.go`, `internal/browser/{browser,browser_test}.go`
 **Scope:** M
 
-### [ ] Task 7: Same-origin middleware, shutdown + Quitter
+### [x] Task 7: Same-origin middleware, shutdown + Quitter
 **Description:** `server.RequireSameOrigin` middleware (reused by every state-changing route later). `POST /api/shutdown` → `200 {}` then graceful shutdown through an injected callback. SIGINT/SIGTERM also shut down gracefully. Frontend: `web/src/api/client.ts` (typed fetch, `ApiError{status, code, message, fields}`), Quitter calls the endpoint and replaces the page with « immo-calc est arrêté, vous pouvez fermer cet onglet ».
 **Acceptance criteria:**
 - [ ] Shutdown with a foreign `Origin` → 403 and the callback isn't called; same origin → 200 and the callback is called

@@ -10,7 +10,7 @@ func TestHealth(t *testing.T) {
 	h := New(Config{Version: "1.2.3"})
 	rec := httptest.NewRecorder()
 
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/health", nil))
+	h.ServeHTTP(rec, localRequest(http.MethodGet, "/api/health"))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d", rec.Code)
@@ -25,7 +25,7 @@ func TestHealthRejectsOtherMethods(t *testing.T) {
 	h := New(Config{Version: "dev"})
 	rec := httptest.NewRecorder()
 
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/health", nil))
+	h.ServeHTTP(rec, localRequest(http.MethodPost, "/api/health"))
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want 405", rec.Code)
@@ -38,7 +38,7 @@ func TestUnknownAPIRouteReturnsJSON404(t *testing.T) {
 	for _, path := range []string{"/api/unknown", "/api/loans/x/y", "/api"} {
 		t.Run(path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+			h.ServeHTTP(rec, localRequest(http.MethodGet, path))
 
 			if rec.Code != http.StatusNotFound {
 				t.Fatalf("status = %d", rec.Code)
@@ -49,4 +49,11 @@ func TestUnknownAPIRouteReturnsJSON404(t *testing.T) {
 			}
 		})
 	}
+}
+
+// localRequest builds a request addressed to 127.0.0.1, as the browser sends it.
+func localRequest(method, path string) *http.Request {
+	req := httptest.NewRequest(method, path, nil)
+	req.Host = "127.0.0.1:8421"
+	return req
 }

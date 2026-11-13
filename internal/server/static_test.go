@@ -20,7 +20,7 @@ func testStatic() fstest.MapFS {
 func get(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+	h.ServeHTTP(rec, localRequest(http.MethodGet, path))
 	return rec
 }
 
@@ -68,7 +68,7 @@ func TestStaticRejectsWrites(t *testing.T) {
 	h := New(Config{Version: "dev", Static: testStatic()})
 	rec := httptest.NewRecorder()
 
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/biens", nil))
+	h.ServeHTTP(rec, localRequest(http.MethodPost, "/biens"))
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want 405", rec.Code)
