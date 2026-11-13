@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
 import MoneyInput from '@/components/MoneyInput.vue'
 import ResultCard from '@/components/ResultCard.vue'
@@ -321,6 +321,14 @@ async function remove() {
             <option v-for="l in loans" :key="l.id" :value="l.id">{{ l.name }}</option>
           </select>
           <p v-if="errors.loanId" role="alert" class="field-error">{{ errors.loanId }}</p>
+          <RouterLink
+            v-if="form.loanId"
+            :to="`/prets/${form.loanId}`"
+            class="field__link"
+            data-test="open-loan"
+          >
+            Voir le prêt →
+          </RouterLink>
         </div>
         <p v-if="status" role="status" class="alert alert--success">{{ status }}</p>
         <p v-if="saveError" role="alert" class="alert alert--error">{{ saveError }}</p>

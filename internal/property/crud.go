@@ -303,3 +303,35 @@ func (s *Service) Delete(id string) error {
 		return ErrNotFound
 	})
 }
+
+// LoanDeleteGuard refuses to delete a loan that properties use. Register it
+// with loan.Service.RegisterDeleteGuard; its message names the properties.
+func (s *Service) LoanDeleteGuard(loanID string) error {
+	props, err := s.properties()
+	if err != nil {
+		return err
+	}
+	var names []string
+	for _, p := range props {
+		if p.LoanID == loanID {
+			names = append(names, p.Name)
+		}
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return errors.New(usedByMessage(names))
+}
+
+// usedByMessage is « Ce prêt est utilisé par le bien « A » » or
+// « … par les biens « A », « B » et « C » ».
+func usedByMessage(names []string) string {
+	quoted := make([]string, len(names))
+	for i, n := range names {
+		quoted[i] = "« " + n + " »"
+	}
+	if len(quoted) == 1 {
+		return "Ce prêt est utilisé par le bien " + quoted[0]
+	}
+	return "Ce prêt est utilisé par les biens " + strings.Join(quoted[:len(quoted)-1], ", ") + " et " + quoted[len(quoted)-1]
+}

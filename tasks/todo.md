@@ -411,7 +411,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{service,section,handlers}.go` + tests, `web/src/views/{BiensListe,BienDetail}.vue` + specs
 **Scope:** L — split during implementation if needed: (a) backend CRUD + ceilings, (b) list + save UI
 
-### [ ] Task 33: Loan link
+### [x] Task 33: Loan link
 **Description:** Register the delete guard with `loan` (message names the properties). `GET /api/properties?loanId=`. Property GET returns a linked-loan summary. **Voir le prêt →** link; Prêt column in the list; Cash-flow column when linked.
 **Acceptance criteria:**
 - [ ] Deleting a loan in use → `409` naming the property; deleting a property leaves its loan intact

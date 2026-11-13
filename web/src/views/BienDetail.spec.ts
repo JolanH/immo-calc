@@ -291,4 +291,16 @@ describe('BienDetail (new property)', () => {
       'Le prix doit être compris entre 10 000 € et 5 000 000 €',
     )
   })
+
+  it('links to the selected loan', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+    expect(wrapper.find('[data-test="open-loan"]').exists()).toBe(false)
+
+    await wrapper.get('#bien-pret').setValue('aaaaaaaaaaaaaaaa')
+
+    const link = wrapper.get('[data-test="open-loan"]')
+    expect(link.text()).toBe('Voir le prêt →')
+    expect(link.attributes('href')).toBe('/prets/aaaaaaaaaaaaaaaa')
+  })
 })
