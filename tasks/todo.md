@@ -389,7 +389,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{input,validate,handlers}.go` + tests, `cmd/immo-calc/main.go`
 **Scope:** S
 
-### [ ] Task 31: Bien page with live evaluation
+### [x] Task 31: Bien page with live evaluation
 **Description:** `/biens/nouveau`: form (reusing `MoneyInput`/`RateInput`), Prêt select (« Aucun » + saved loans), live cards (Revenus mensuels bruts, après impôts, Revenu annuel net, Rentabilité brute/nette/**après impôts**), collapsible « Détail du calcul », DPE and ceiling warnings above results, Financement card when a loan is selected.
 **Acceptance criteria:**
 - [ ] Typing updates the four outputs without saving (mocked API, debounced)
