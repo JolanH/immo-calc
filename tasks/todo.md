@@ -243,7 +243,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/loan/{input,validate,handlers}.go` + tests, `cmd/immo-calc/main.go`
 **Scope:** S
 
-### [ ] Task 20: Prêt page with live simulation
+### [x] Task 20: Prêt page with live simulation
 **Description:** `/prets/nouveau` form (Nom, Montant, Taux, Durée in years, Première échéance month picker, collapsible « Assurance et frais »). Shared components: `MoneyInput`, `RateInput` (French parsing `200 000`, `3,5`), `ResultCard`, `useDebouncedEval` (~300 ms). Results panel shows the 8 result figures; field errors from `400` appear next to fields.
 **Acceptance criteria:**
 - [ ] Typing updates the results without saving (mocked API, fake timers for the debounce)

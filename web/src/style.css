@@ -258,3 +258,115 @@ a {
   color: var(--error-text);
   font-size: 0.9rem;
 }
+
+.detail__layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 26rem) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .detail__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.detail__more summary {
+  cursor: pointer;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+
+.detail__more[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.detail__results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.detail__results > .alert,
+.detail__results > .placeholder {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+}
+
+.field__control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.field__control .input {
+  min-width: 0;
+}
+
+.field__suffix {
+  color: var(--muted);
+}
+
+.input--short {
+  flex: 0 0 5rem;
+}
+
+.input--month {
+  flex: 1;
+}
+
+.input--year {
+  flex: 0 0 5rem;
+}
+
+.field-error {
+  margin: 0.3rem 0 0;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.result-card__label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.result-card__value {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-card--highlight {
+  border-color: var(--accent);
+}
+
+.result-card--highlight .result-card__value {
+  color: var(--accent);
+}
+
+.field > .input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}

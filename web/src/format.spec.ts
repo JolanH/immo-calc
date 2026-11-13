@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatEuros, formatPercent } from './format'
 
 // Intl uses non-breaking spaces (U+00A0, U+202F) in fr-FR; compare with plain spaces.
-const plain = (s: string) => s.replace(/[  ]/g, ' ')
+const plain = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ')
 
 describe('formatEuros', () => {
   it.each([

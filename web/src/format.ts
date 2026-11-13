@@ -20,5 +20,5 @@ export function formatEuros(cents: number): string {
 
 /** formatPercent(3.5) → "3,50 %". The value is already a percentage. */
 export function formatPercent(value: number): string {
-  return `${percent.format(value)} %`
+  return `${percent.format(value)}\u00a0%`
 }
