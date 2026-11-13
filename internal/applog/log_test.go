@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -42,6 +43,9 @@ func TestOpenTruncatesThePreviousLog(t *testing.T) {
 }
 
 func TestOpenFallsBackWhenThePreferredDirIsNotWritable(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows ignores chmod on directories; the fallback code is OS-independent")
+	}
 	if os.Getuid() == 0 {
 		t.Skip("root ignores directory permissions")
 	}

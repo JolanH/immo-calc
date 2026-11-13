@@ -3,6 +3,7 @@ package storage
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -52,6 +53,9 @@ func TestConfigPathPrefersTheExecutableDir(t *testing.T) {
 }
 
 func TestConfigPathFallsBackToTheUserConfigDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows ignores chmod on directories; the fallback code is OS-independent")
+	}
 	if os.Getuid() == 0 {
 		t.Skip("root ignores directory permissions")
 	}
