@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
+import CompareBar from '@/components/CompareBar.vue'
 import PropertiesTable from '@/components/PropertiesTable.vue'
 import { ApiError } from '@/api/client'
 import { listProperties, type PropertySummary } from '@/api/properties'
 
-const router = useRouter()
 const properties = ref<PropertySummary[] | null>(null)
 /** Biens ticked for the comparison (2 to 4). */
 const selected = ref<string[]>([])
-
-function compare() {
-  void router.push({ path: '/biens/comparer', query: { biens: selected.value.join(',') } })
-}
 const error = ref('')
 
 onMounted(async () => {
@@ -47,18 +43,7 @@ onMounted(async () => {
       </RouterLink>
     </div>
     <template v-else-if="properties">
-      <div class="compare-bar">
-        <span class="placeholder">Cochez de 2 à 4 biens pour les comparer.</span>
-        <button
-          type="button"
-          class="button"
-          data-test="compare"
-          :disabled="selected.length < 2"
-          @click="compare"
-        >
-          {{ selected.length ? `Comparer (${selected.length})` : 'Comparer' }}
-        </button>
-      </div>
+      <CompareBar :selected="selected" />
       <PropertiesTable v-model:selected="selected" :properties="properties" selectable />
     </template>
   </section>
