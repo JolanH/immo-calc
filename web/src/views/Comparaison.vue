@@ -12,6 +12,7 @@ import {
   type PropertyDetail,
   type PropertyResult,
   type PropertySummary,
+  REGIME_LABELS,
 } from '@/api/properties'
 import { formatEuros, formatPercent } from '@/format'
 import { paybackDate, positiveDate } from '@/profitDates'
@@ -36,12 +37,6 @@ const columns = reactive<Column[]>([])
 const loans = ref<LoanSummary[]>([])
 const allBiens = ref<PropertySummary[]>([])
 const addChoice = ref('')
-
-const REGIMES: Record<string, string> = {
-  micro_foncier: 'Micro-foncier',
-  reel_foncier: 'Réel foncier',
-  micro_bic: 'Micro-BIC',
-}
 
 function queryList(key: string): string[] | null {
   const v = route.query[key]
@@ -75,6 +70,8 @@ async function evaluate(col: Column) {
         annualPropertyTaxCents: d.annualPropertyTaxCents,
         annualCondoFeesCents: d.annualCondoFeesCents,
         annualLandlordInsuranceCents: d.annualLandlordInsuranceCents,
+        furnitureIncludedCents: d.furnitureIncludedCents,
+        furnitureAddedCents: d.furnitureAddedCents,
         agencyManaged: d.agencyManaged,
         taxRegime: d.taxRegime,
         loanId: col.loanId,
@@ -154,7 +151,7 @@ const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[]
       {
         key: 'regime',
         label: 'Régime fiscal',
-        value: (c) => (c.detail ? REGIMES[c.detail.taxRegime] : dash),
+        value: (c) => (c.detail ? REGIME_LABELS[c.detail.taxRegime] : dash),
       },
       'dpe',
     ],

@@ -17,6 +17,8 @@ function bien(id: string, name: string, loanId = '') {
     annualPropertyTaxCents: 90_000,
     annualCondoFeesCents: 120_000,
     annualLandlordInsuranceCents: 15_000,
+    furnitureIncludedCents: 0,
+    furnitureAddedCents: 0,
     agencyManaged: false,
     taxRegime: 'micro_foncier',
     loanId,

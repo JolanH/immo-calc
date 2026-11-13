@@ -12,23 +12,31 @@ const props = defineProps<{
   insuranceCents: number
 }>()
 
-const rows = computed(
-  () =>
-    [
-      ["Coût d'acquisition (prix + notaire)", props.result.acquisitionCostCents],
-      ['Loyers encaissés (vacance déduite)', props.result.collectedRentCents],
-      ['Taxe foncière', props.propertyTaxCents],
-      ['Charges de copropriété', props.condoFeesCents],
-      ['Assurance PNO', props.insuranceCents],
-      ['Frais de gestion locative', props.result.agencyFeesCents],
-      ['Charges non récupérées pendant la vacance', props.result.vacancyChargesCents],
-      ['Charges du propriétaire', props.result.ownerChargesCents],
-      ['Revenu annuel avant impôts', props.result.incomeBeforeTaxCents],
-      ['Revenu imposable', props.result.taxableIncomeCents],
-      ['Impôt annuel (IR + prélèvements sociaux)', props.result.annualTaxCents],
-      ['Revenu annuel net', props.result.netAnnualIncomeCents],
-    ] as const,
-)
+const depreciation = computed((): [string, number][] => {
+  const building = props.result.buildingDepreciationCents ?? 0
+  const furniture = props.result.furnitureDepreciationCents ?? 0
+  if (building === 0 && furniture === 0) return []
+  return [
+    ['Amortissement du bâti (LMNP)', building],
+    ['Amortissement du mobilier (LMNP)', furniture],
+  ]
+})
+
+const rows = computed((): [string, number][] => [
+  ["Coût d'acquisition (prix + notaire)", props.result.acquisitionCostCents],
+  ['Loyers encaissés (vacance déduite)', props.result.collectedRentCents],
+  ['Taxe foncière', props.propertyTaxCents],
+  ['Charges de copropriété non récupérables', props.condoFeesCents],
+  ['Assurance PNO', props.insuranceCents],
+  ['Frais de gestion locative', props.result.agencyFeesCents],
+  ['Charges non récupérées pendant la vacance', props.result.vacancyChargesCents],
+  ['Charges du propriétaire', props.result.ownerChargesCents],
+  ['Revenu annuel avant impôts', props.result.incomeBeforeTaxCents],
+  ...depreciation.value,
+  ['Revenu imposable', props.result.taxableIncomeCents],
+  ['Impôt annuel (IR + prélèvements sociaux)', props.result.annualTaxCents],
+  ['Revenu annuel net', props.result.netAnnualIncomeCents],
+])
 </script>
 
 <template>
