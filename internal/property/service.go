@@ -59,7 +59,7 @@ func (s *Service) Settings() (Settings, error) {
 	if stored == nil {
 		return DefaultSettings(), nil
 	}
-	return *stored, nil
+	return withDefaults(*stored), nil
 }
 
 // UpdateSettings validates and saves the global settings.
@@ -67,6 +67,7 @@ func (s *Service) UpdateSettings(next Settings) (Settings, error) {
 	if errs := ValidateSettings(next); len(errs) > 0 {
 		return Settings{}, &ValidationError{Fields: errs}
 	}
+	next = withDefaults(next)
 	err := storage.Update(s.store, SettingsKey, func(stored **Settings) error {
 		*stored = &next
 		return nil
