@@ -95,7 +95,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/applog/{log,log_test}.go`, `internal/notify/{notify,notify_windows,notify_linux,notify_test}.go`, `cmd/immo-calc/main.go`
 **Scope:** M
 
-### [ ] Task 9: `make dev`, `make debug`, `make clean`, smoke test
+### [x] Task 9: `make dev`, `make debug`, `make clean`, smoke test
 **Description:** `make dev`: Vite dev server on 5173 with HMR, proxying `/api` to the Go server (`--no-browser`). `make debug`: Delve headless on 2345 with the built frontend. `make clean`. Smoke test as part of `make test`: build the binary, start it with `--no-browser --port 0`, read the URL, check `/api/health` and `/`, then shut it down via the API.
 **Acceptance criteria:**
 - [ ] `make dev` serves the app at `http://localhost:5173`, an edit to a `.vue` file hot-reloads, and `/api/health` goes through the proxy
