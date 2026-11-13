@@ -34,7 +34,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Description:** `formatEuros(cents)` → `"1 234,56 €"`, `formatPercent(value)` → `"3,50 %"`, using `Intl` `fr-FR`. Fully tested. (Tests compare after normalizing narrow no-break spaces.)
 **Acceptance criteria:**
 - [ ] Covers zero, negatives, large amounts, rounding, percent with 2 decimals
-- [ ] 100 % coverage of `format.ts` — every branch is tested, but coverage isn't measured: needs `@vitest/coverage-v8` (not yet approved)
+- [x] ~~100 % coverage of `format.ts`~~ — dropped (2026-11-13): frontend coverage numbers not needed; every branch is tested
 **Verification:** `make test-web`
 **Dependencies:** Task 2
 **Files:** `web/src/format.ts`, `web/src/format.spec.ts`
@@ -106,11 +106,12 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `Makefile`, `web/vite.config.ts`, `docker/*`, `scripts/smoke.sh` (or `cmd/immo-calc/smoke_test.go`)
 **Scope:** S
 
-### [ ] Checkpoint A — app-shell done
+### [x] Checkpoint A — app-shell done
 - [x] `make test`, `make lint`, `make build` pass from a clean checkout
-- [ ] app-shell acceptance criteria 1–11 verified (2 and 11 by hand on a Windows machine: no console window, French message box on fatal error)
-  - Verified by Claude on Linux: 1, 3, 4, 5, 6, 7, 8, 9, 10. Still to check by hand: 2 (browser opens on /biens when double-clicked, Linux + Windows) and 11 (Windows: no console, French message box)
-- [ ] Human review before Phase 2
+- [x] app-shell acceptance criteria 1–11 verified (2 and 11 by hand on a Windows machine: no console window, French message box on fatal error)
+  - Verified on Linux: 1, 3–10 by Claude; 2 by the user (binary opens the web UI).
+  - **Windows check deferred (2026-11-13), assumed OK:** criterion 2 (double-click opens the browser on /biens) and 11 (no console window, French message box naming `immo-calc.log` on a fatal error). To be tested by the user on a Windows machine later.
+- [x] Human review before Phase 2
 
 ---
 
@@ -404,5 +405,5 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 ### [ ] Checkpoint D — v1 done
 - [ ] `make test`, `make lint`, `make build` pass; `internal/loan` and `internal/property` coverage ≥ 90 %
 - [ ] property acceptance criteria 1–9 verified
-- [ ] Project success criteria (`SPEC.md`) verified, including on Windows: double-click, data survives restart, export → import on another machine
+- [ ] Project success criteria (`SPEC.md`) verified, including on Windows: double-click, data survives restart, export → import on another machine — include the app-shell Windows checks deferred at Checkpoint A (criteria 2 and 11)
 - [ ] Human review
