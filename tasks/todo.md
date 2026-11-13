@@ -336,7 +336,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 
 ## Phase 4 — property (`SPEC-property.md`)
 
-### [ ] Task 26: Check legal rates against official sources
+### [x] Task 26: Check legal rates against official sources
 **Description:** Check against impots.gouv.fr / service-public.fr: prélèvements sociaux rate on property income, micro-foncier ceiling + 30 % allowance, micro-BIC (long-term furnished) ceiling + 50 % allowance, DPE rental-ban dates (G/F/E). Write a short findings note in `tasks/legal-rates.md` with URLs and dates checked. **Any difference from the spec → stop and ask** before changing the spec (it's a calculation rule).
 **Acceptance criteria:**
 - [ ] Every ⚠️ value in `SPEC-property.md` has a cited official source and a confirmed or corrected value

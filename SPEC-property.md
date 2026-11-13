@@ -1,7 +1,7 @@
 # Spec: property
 
 > Module of [immo-calc](SPEC.md). Depends on: `storage`, `loan`. Shared conventions are in `SPEC.md`.
-> The rules approximate French rules realistically, not exactly. **The tax rates and ceilings used as defaults must be checked against official sources (impots.gouv.fr, service-public.fr) before implementation.** That's the first task of this module.
+> The rules approximate French rules realistically, not exactly. The tax rates, ceilings and DPE dates were checked against official sources on 2026-11-13; the findings and links are in `tasks/legal-rates.md`.
 
 ## Objective
 
@@ -49,22 +49,23 @@ Let the user enter a flat they are considering buying to rent out, and immediate
 | Paramètre | Field | Default | Rule |
 |---|---|---|---|
 | Tranche marginale d'imposition (TMI) | `marginal_tax_rate_pct` | 30 | one of 0, 11, 30, 41, 45 |
-| Prélèvements sociaux | `social_charges_pct` | 17.2 ⚠️ to check | 0 – 30 |
+| Prélèvements sociaux — location nue | `social_charges_unfurnished_pct` | 17.2 | 0 – 30. Used by `micro_foncier` and `reel_foncier` (service-public F2329) |
+| Prélèvements sociaux — location meublée | `social_charges_furnished_pct` | 18.6 | 0 – 30. Used by `micro_bic` (CSG raised to 10,6 % by the LFSS 2026; service-public F2329) |
 | Frais de notaire | `notary_fee_pct` | **8.5** | 0 – 15, % of the price |
 | Vacance locative | `vacancy_months_per_year` | 1 | 0 – 12, step 0.5 (months without a tenant per year) |
 | Frais de gestion locative | `agency_fee_pct` | 7 | 0 – 15, % of rent collected (TTC). Applies to properties with *Gestion par une agence* = oui |
 
 ## Calculation rules
 
-Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charges, `TF` = annual property tax, `CP` = annual condo fees, `PNO` = annual landlord insurance, `v` = vacancy months/year, `g%` = agency fee rate (0 if the property isn't agency-managed), `N%` = notary rate, `T` = TMI + social charges.
+Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charges, `TF` = annual property tax, `CP` = annual condo fees, `PNO` = annual landlord insurance, `v` = vacancy months/year, `g%` = agency fee rate (0 if the property isn't agency-managed), `N%` = notary rate, `T` = TMI + the regime's social charges (location nue for `micro_foncier` and `reel_foncier`, location meublée for `micro_bic`).
 
 1. **Coût d'acquisition** `A = Prix × (1 + N%)`
 2. **Loyers encaissés** (annual) `E = L × (12 − v)`
 3. **Charges du propriétaire** (annual) `CH = TF + CP + PNO + E × g% + C × v`. During vacancy, the owner pays the recoverable charges no tenant reimburses.
 4. **Revenu annuel avant impôts** `R = E − CH`
 5. **Revenu imposable** (annual, floored at 0):
-   - `micro_foncier`: `E × 70 %`. Warn if `E` summed over all `micro_foncier` properties is over **15 000 €** ⚠️ to check.
-   - `micro_bic` (furnished long-term): `E × 50 %`. Warn if `E` summed over all `micro_bic` properties is over **77 700 €** ⚠️ to check.
+   - `micro_foncier`: `E × 70 %`. Warn if `E` summed over all `micro_foncier` properties is over **15 000 €** (service-public F1991).
+   - `micro_bic` (furnished long-term): `E × 50 %`. Warn if `E` summed over all `micro_bic` properties is over **83 600 €** (revenus 2026; 77 700 € for revenus 2025; service-public F32744).
    - `reel_foncier`: `R − intérêts année 1 − assurance emprunteur année 1` (from the linked loan's first 12 installments, or 0 without a loan). A deficit is floored at 0 and not carried over.
 6. **Impôt annuel** `I = imposable × T`
 7. **Revenu annuel net** (after charges **and** taxes) `RN = R − I`
@@ -87,7 +88,7 @@ Rounding: compute in `float64`, round each displayed amount to the cent and each
 
 ### Reference example (becomes a unit test)
 
-Prix 150 000 €, Loyer 700 €, Charges 50 €, TF 900 €, CP 1 200 €, PNO 150 €. Settings: TMI 30 %, PS 17,2 %, notaire 8,5 %, vacance 1 mois, gestion 7 %. No loan.
+Prix 150 000 €, Loyer 700 €, Charges 50 €, TF 900 €, CP 1 200 €, PNO 150 €. Settings: TMI 30 %, PS location nue 17,2 %, PS location meublée 18,6 %, notaire 8,5 %, vacance 1 mois, gestion 7 %. No loan.
 
 Common figures: A = 162 750 €, E = 7 700 €, rentabilité brute = 5,16 %.
 
@@ -96,20 +97,20 @@ Common figures: A = 162 750 €, E = 7 700 €, rentabilité brute = 5,16 %.
 | | micro-foncier | réel | micro-BIC |
 |---|---|---|---|
 | Revenu imposable | 5 390,00 € | 5 400,00 € | 3 850,00 € |
-| Impôt annuel | 2 544,08 € | 2 548,80 € | 1 817,20 € |
-| **Revenu annuel net** | 2 855,92 € | 2 851,20 € | 3 582,80 € |
-| **Revenus mensuels après impôts** | 237,99 € | 237,60 € | 298,57 € |
-| **Rentabilité nette après impôts** | 1,75 % | 1,75 % | 2,20 % |
+| Impôt annuel | 2 544,08 € | 2 548,80 € | 1 871,10 € |
+| **Revenu annuel net** | 2 855,92 € | 2 851,20 € | 3 528,90 € |
+| **Revenus mensuels après impôts** | 237,99 € | 237,60 € | 294,08 € |
+| **Rentabilité nette après impôts** | 1,75 % | 1,75 % | 2,17 % |
 
 **With an agency** (frais de gestion 539 €, R = 4 861 €, nette = 2,99 %):
 
 | | micro-foncier | réel | micro-BIC |
 |---|---|---|---|
 | Revenu imposable | 5 390,00 € | 4 861,00 € | 3 850,00 € |
-| Impôt annuel | 2 544,08 € | 2 294,39 € | 1 817,20 € |
-| **Revenu annuel net** | 2 316,92 € | 2 566,61 € | 3 043,80 € |
-| **Revenus mensuels après impôts** | 193,08 € | 213,88 € | 253,65 € |
-| **Rentabilité nette après impôts** | 1,42 % | 1,58 % | 1,87 % |
+| Impôt annuel | 2 544,08 € | 2 294,39 € | 1 871,10 € |
+| **Revenu annuel net** | 2 316,92 € | 2 566,61 € | 2 989,90 € |
+| **Revenus mensuels après impôts** | 193,08 € | 213,88 € | 249,16 € |
+| **Rentabilité nette après impôts** | 1,42 % | 1,58 % | 1,84 % |
 
 A reference case with a linked loan will be added during implementation, using the loan module's reference values.
 
@@ -122,14 +123,15 @@ A reference case with a linked loan will be added during implementation, using t
 | E | yellow | « Logement E : interdit à la location à partir du 1er janvier 2034 » |
 | A–D | neutral | — |
 
-Warnings are informational and don't change the maths. The dates are to be checked with the other legal values.
+Warnings are informational and don't change the maths. Dates checked on ecologie.gouv.fr (page DPE) and service-public F2042; the bans apply to new leases and renewals from each date.
 
 ## Data
 
 ```yaml
 settings:
   marginal_tax_rate_pct: 30
-  social_charges_pct: 17.2
+  social_charges_unfurnished_pct: 17.2
+  social_charges_furnished_pct: 18.6
   notary_fee_pct: 8.5
   vacancy_months_per_year: 1
   agency_fee_pct: 7
@@ -194,7 +196,7 @@ The home page « Accueil » (`/`) has two panes:
   - With a loan, the « Financement » card shows Mensualité, Cash-flow avant/après impôts, Apport and Rendement sur apport.
   - The DPE warning and regime-ceiling warnings appear above the results.
   - Actions: Enregistrer, Dupliquer, Supprimer (confirmation), unsaved-changes guard.
-- **/parametres: Hypothèses et fiscalité** section (TMI, PS, notaire, vacance, gestion), next to the *Données* section from `storage`.
+- **/parametres: Hypothèses et fiscalité** section (TMI, PS location nue, PS location meublée, notaire, vacance, gestion), next to the *Données* section from `storage`.
 
 ## Acceptance Criteria
 
