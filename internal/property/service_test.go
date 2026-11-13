@@ -63,7 +63,7 @@ func TestCreatePropertySurvivesARestart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("detail after restart: %v", err)
 	}
-	if detail.Input != validPropertyInput() || detail.Result.NetAnnualIncomeCents != 285_592 {
+	if detail.Input != validPropertyInput() || detail.Result.NetAnnualIncomeCents != 267_420 {
 		t.Errorf("after restart = %+v / %+v", detail.Input, detail.Result)
 	}
 	content, _ := os.ReadFile(f.path)
@@ -159,12 +159,12 @@ func TestListSummaries(t *testing.T) {
 	}
 	first := list[0]
 	if first.Name != "T2 Lyon 7e" || first.PriceCents != 15_000_000 || first.MonthlyRentCents != 70_000 || first.DPE != "D" ||
-		first.NetAfterTaxYieldPct != 1.75 || first.MonthlyNetIncomeCents != 23_799 || first.CashFlowAfterTaxCents != nil ||
+		first.NetAfterTaxYieldPct != 1.64 || first.MonthlyNetIncomeCents != 22_285 || first.CashFlowAfterTaxCents != nil ||
 		first.LoanID != "" || first.LoanName != "" || first.TaxRegime != MicroFoncier {
 		t.Errorf("list[0] = %+v", first)
 	}
 	second := list[1]
-	if second.TaxRegime != ReelFoncier || second.LoanID != l.ID || second.LoanName != "Petit prêt" || second.CashFlowAfterTaxCents == nil || *second.CashFlowAfterTaxCents != 1_170 {
+	if second.TaxRegime != ReelFoncier || second.LoanID != l.ID || second.LoanName != "Petit prêt" || second.CashFlowAfterTaxCents == nil || *second.CashFlowAfterTaxCents != 5_104 {
 		t.Errorf("list[1] = %+v", second)
 	}
 }
@@ -197,7 +197,7 @@ func TestDetailIncludesTheLinkedLoan(t *testing.T) {
 	if d.Loan == nil || d.Loan.ID != l.ID || d.Loan.Name != "Petit prêt" {
 		t.Errorf("loan = %+v", d.Loan)
 	}
-	if d.Result.Financing == nil || d.Result.TaxableIncomeCents != 377_534 {
+	if d.Result.Financing == nil || d.Result.TaxableIncomeCents != 277_534 {
 		t.Errorf("result = %+v", d.Result)
 	}
 }
@@ -236,7 +236,7 @@ func TestMicroCeilingWarningSumsAllPropertiesOfTheRegime(t *testing.T) {
 	for _, id := range []string{a.ID, b.ID} {
 		d, _ := f.svc.Detail(id)
 		w := warning(d.Result, "micro_ceiling")
-		if w == nil || !strings.Contains(w.Message, "15 400 €") || !strings.Contains(w.Message, "15 000 €") ||
+		if w == nil || !strings.Contains(w.Message, "16 500 €") || !strings.Contains(w.Message, "15 000 €") ||
 			!strings.Contains(w.Message, "micro-foncier") {
 			t.Errorf("%s: warning = %+v", id, w)
 		}
@@ -397,11 +397,11 @@ func TestActiveLoanAppliesExactlyAsSaved(t *testing.T) {
 		t.Fatalf("list = %+v, %v", list, err)
 	}
 	for _, s := range list {
-		if s.MonthlyNetIncomeCents != 10_430 {
-			t.Fatalf("%s: revenus mensuels après impôts = %d, want 104,30 €", s.Name, s.MonthlyNetIncomeCents)
+		if s.MonthlyNetIncomeCents != 8_916 {
+			t.Fatalf("%s: revenus mensuels après impôts = %d, want 89,16 €", s.Name, s.MonthlyNetIncomeCents)
 		}
-		if s.LoanID != conso.ID || s.CashFlowAfterTaxCents == nil || *s.CashFlowAfterTaxCents != -17_877 {
-			t.Errorf("%s: loan = %s, cash-flow = %v, want −178,77 € with « Conso Immo »", s.Name, s.LoanName, s.CashFlowAfterTaxCents)
+		if s.LoanID != conso.ID || s.CashFlowAfterTaxCents == nil || *s.CashFlowAfterTaxCents != -19_391 {
+			t.Errorf("%s: loan = %s, cash-flow = %v, want −193,91 € with « Conso Immo »", s.Name, s.LoanName, s.CashFlowAfterTaxCents)
 		}
 	}
 }

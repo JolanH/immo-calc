@@ -68,7 +68,18 @@ export interface RegimeComparison {
   netAnnualIncomeCents: number
   netAfterTaxYieldPct: number
   current: boolean
-  best: boolean // lowest tax
+  furnished: boolean // location meublée (micro-BIC, LMNP) or nue
+  /** false when the bien's receipts are above the micro ceiling. */
+  eligible: boolean
+  /** Lowest tax among the eligible regimes of the same kind of rental (nue or meublée). */
+  best: boolean
+}
+
+/** One year of « Impôt au fil des années » (year 1 = first year of the loan or of the activity). */
+export interface YearTax {
+  year: number
+  annualTaxCents: number
+  netAnnualIncomeCents: number
 }
 
 /** How the annual tax is produced (« Comment est calculé l'impôt »). IR + PS = tax. */
@@ -79,7 +90,11 @@ export interface TaxDetail {
   /** Year-1 loan costs deducted under the réel regimes (0 otherwise). */
   loanInterestCents: number
   loanInsuranceCents: number
+  /** Application + guarantee fees, deducted in year 1. */
+  loanFeesCents: number
   loanCostsCents: number
+  /** Charges the tenant reimburses, taxed with the rent under the micro regimes. */
+  reimbursedChargesCents: number
   /** Taxable base before the floor at 0 (negative = deficit). */
   rawTaxableCents: number
   incomeTaxCents: number
@@ -89,6 +104,7 @@ export interface TaxDetail {
 export interface PropertyResult {
   acquisitionCostCents: number
   collectedRentCents: number
+  reimbursedChargesCents: number
   agencyFeesCents: number
   vacancyChargesCents: number
   ownerChargesCents: number
@@ -109,6 +125,7 @@ export interface PropertyResult {
   /** The four regimes compared on this bien. */
   regimes?: RegimeComparison[]
   taxDetail?: TaxDetail
+  yearlyTax?: YearTax[]
   financing: Financing | null
   timeline?: Timeline | null
   warnings: PropertyWarning[]

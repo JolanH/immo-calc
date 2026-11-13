@@ -8,10 +8,10 @@ immo-calc approximates French rules **realistically, not exactly**: it is a deci
 
 | Regime (UI) | For | Taxable income | Social charges | Best when |
 |---|---|---|---|---|
-| **Micro-foncier** (`micro_foncier`) | Unfurnished, gross rent ≤ 15 000 €/year (all such biens together) | Rent collected **× 70 %** (flat 30 % allowance; no real charge deducted) | 17,2 % | Your real charges + loan interest are **below 30 %** of the rent |
-| **Réel foncier** (`reel_foncier`) | Unfurnished, any amount (compulsory above 15 000 €) | Rent − real charges − year-1 loan interest and borrower insurance, floored at 0 | 17,2 % | Charges + interest **above 30 %** of the rent (typical with a loan) |
-| **Micro-BIC** (`micro_bic`) | Long-term furnished, receipts ≤ 83 600 € (revenus 2026) | Rent collected **× 50 %** (flat 50 % allowance) | 18,6 % | Small furnished rentals with few charges and no loan |
-| **LMNP au réel** (`lmnp_reel`) | Furnished (loueur en meublé non professionnel), any amount | Rent − real charges − loan interest/insurance − **depreciation**, floored at 0 | 18,6 % | Almost always for furnished rentals: depreciation often brings the taxable income to 0 |
+| **Micro-foncier** (`micro_foncier`) | Unfurnished, gross receipts ≤ 15 000 €/year (all such biens together) | (Rent collected + charges reimbursed by the tenant) **× 70 %** (flat 30 % allowance; no real charge deducted) | 17,2 % | Your real charges + loan interest are **below 30 %** of the rent |
+| **Réel foncier** (`reel_foncier`) | Unfurnished, any amount (compulsory above 15 000 €) | Rent − real charges − loan interest, borrower insurance and loan fees of the year, floored at 0 | 17,2 % | Charges + interest **above 30 %** of the rent (typical with a loan) |
+| **Micro-BIC** (`micro_bic`) | Long-term furnished, receipts ≤ 83 600 € (revenus 2026) | (Rent collected + charges reimbursed) **× 50 %** (flat 50 % allowance) | 18,6 % | Small furnished rentals with few charges and no loan |
+| **LMNP au réel** (`lmnp_reel`) | Furnished (loueur en meublé non professionnel), any amount | Rent − real charges − loan interest/insurance/fees − **depreciation**, floored at 0 | 18,6 % | Almost always for furnished rentals: depreciation often brings the taxable income to 0 |
 
 The tax is `taxable income × (TMI + social charges)`. TMI and both social-charge rates are settings (Paramètres → Hypothèses et fiscalité).
 
@@ -19,17 +19,17 @@ The tax is `taxable income × (TMI + social charges)`. TMI and both social-charg
 
 The micro regimes are a **simplification**, not an optimisation. They replace your real charges with a flat allowance (30 % or 50 % of the rent). If your real deductible charges plus loan interest are larger than that allowance, the réel regime taxes less.
 
-Example, « SE appart 1 » (rent 360 €/month, 1 month of vacancy, taxe foncière 650 €, non-recoverable copropriété charges 700 €, TMI 30 %), rent collected 3 960 €/year, real charges 1 400 € (35 % of the rent):
+Example, « SE appart 1 » (rent 360 €/month, 1 month of vacancy, taxe foncière 650 €, non-recoverable copropriété charges 700 €, TMI 30 %), rent collected 3 960 €/year, real charges 1 400 € (35 % of the rent), recoverable charges 50 €/month (550 € reimbursed over the 11 months rented). The micro regimes tax the rent **plus** these 550 €:
 
 | | Taxable income | Tax |
 |---|---|---|
-| Micro-foncier: 3 960 × 70 % | 2 772 € | ≈ 1 308 € |
+| Micro-foncier: (3 960 + 550) × 70 % | 3 157 € | ≈ 1 490 € |
 | Réel foncier, no loan: 3 960 − 1 400 | 2 560 € | ≈ 1 208 € |
 | Réel foncier with « Conso Immo » (≈ 678 € interest in year 1) | ≈ 1 882 € | ≈ 888 € |
-| Micro-BIC (furnished): 3 960 × 50 % | 1 980 € | ≈ 962 € |
+| Micro-BIC (furnished): (3 960 + 550) × 50 % | 2 255 € | ≈ 1 096 € |
 | LMNP au réel (furnished, no loan, no furniture): 2 560 − 1 060 depreciation | 1 500 € | ≈ 729 € |
 
-Each Bien page shows this comparison for the bien in the collapsible « Régime fiscal » section.
+Each Bien page shows this comparison for the bien in the « Régime fiscal » modal. The « best » tag is given separately to the best unfurnished regime and the best furnished one (the two are not interchangeable: another rent, an equipped flat), and never to a micro regime whose ceiling the bien exceeds.
 
 ## What is deductible under the réel regimes
 
@@ -41,7 +41,7 @@ Article 31 of the Code général des impôts (I, 1°, version in force on 13/11/
   **So only the non-recoverable part is deductible in the end.** That is why the field is « Charges de copropriété non récupérables »: enter the part of the syndic's calls you keep paying, and put the recoverable part in « Charges récupérables » (passed on to the tenant, neutral for tax).
 - **Recoverable charges paid during vacancy** — *a ter*: « les dépenses supportées pour le compte du locataire […] dont [le propriétaire] n'a pu obtenir le remboursement ».
 - **Letting-agency fees** — management costs (BOFiP BOI-RFPI-BASE-20-10).
-- **Loan interest and borrower insurance** — immo-calc uses the first 12 installments (year 1) and keeps that tax over time.
+- **Loan interest, borrower insurance and loan fees** (application and guarantee fees) — each year of the loan uses that year's interest and insurance, taken from the schedule; the fees are deducted in year 1 only.
 
 Not modelled: works (travaux), the déficit foncier carried to global income, the micro-foncier « 50 % » variants for specific schemes.
 
@@ -49,8 +49,8 @@ Not modelled: works (travaux), the déficit foncier carried to global income, th
 
 Furnished rentals under the réel regime are taxed as BIC with an accounting result: receipts − real charges − loan interest/insurance − **depreciation (amortissements)**. Depreciation is what makes the regime attractive:
 
-- **Building**: the price excluding furniture, **minus a 15 % land share** (land doesn't wear out), plus the notary fees, over **30 years**.
-- **Furniture**: over **7 years** — both furniture *included in the price* and furniture *bought on top*.
+- **Building**: the price excluding furniture, **minus a 15 % land share** (land doesn't wear out), plus the notary fees, over **30 years** (then it stops).
+- **Furniture**: over **7 years** (then it stops) — both furniture *included in the price* and furniture *bought on top*.
 - Depreciation **cannot create a deficit**: it is used only up to the result (immo-calc doesn't carry the unused part forward).
 
 Rates and durations follow common practice (building 25–40 years, furniture 5–10 years, land 10–20 %); immo-calc fixes 15 %, 30 years and 7 years.
@@ -66,7 +66,7 @@ Reference values are in `SPEC-property.md` (*LMNP au réel reference*).
 
 ## Simplifications to keep in mind
 
-- **Year-1 tax kept over time** — the profitability timeline keeps the year-1 tax (interest decreases, furniture depreciation stops after 7 years in reality).
+- **Tax per year in the timeline** — the profitability dates use each year's tax (the interest falls as the loan is repaid, LMNP depreciation ends after 7 and 30 years). The headline figures (« Revenu annuel net », yields, comparison) are those of **year 1**. Rents and charges are not indexed.
 - **Resale is out of scope** — capital gains, and since 2025 the reintegration of LMNP depreciation into the gain.
 - **LMP not modelled** — the professional status (loueur meublé professionnel) and its thresholds are not checked.
 - **Micro ceilings** — they are checked across all biens of the regime and shown as warnings; immo-calc doesn't switch the regime automatically.

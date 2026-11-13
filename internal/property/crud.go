@@ -97,7 +97,7 @@ func (s *Service) evaluateAll(items []candidate, activeLoan *loan.Loan) ([]Resul
 		params := it.in.Params()
 		params.StartMonth = s.startMonth()
 		results[i] = Evaluate(params, settings, lf)
-		totals[it.in.TaxRegime] += results[i].CollectedRentCents
+		totals[it.in.TaxRegime] += microReceipts(results[i])
 	}
 	for i, it := range items {
 		if w := ceilingWarning(it.in.TaxRegime, totals[it.in.TaxRegime]); w != nil {
@@ -131,7 +131,7 @@ func ceilingWarning(r Regime, totalCents int64) *Warning {
 		return nil
 	}
 	return &Warning{Code: "micro_ceiling", Severity: "warning", Message: fmt.Sprintf(
-		"Les loyers encaissés de vos biens en %s (%s) dépassent le plafond de %s : le régime réel s'applique à ces revenus.",
+		"Les recettes (loyers et charges refacturées) de vos biens en %s (%s) dépassent le plafond de %s : le régime réel s'applique à ces revenus.",
 		label, wholeEuros(totalCents), wholeEuros(ceiling))}
 }
 

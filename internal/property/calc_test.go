@@ -56,12 +56,12 @@ func TestReferenceTables(t *testing.T) {
 		netMonthly    int64
 		afterTaxYield float64
 	}{
-		{"micro-foncier", MicroFoncier, false, 230_000, 540_000, 3.32, 539_000, 254_408, 285_592, 23_799, 1.75},
+		{"micro-foncier", MicroFoncier, false, 230_000, 540_000, 3.32, 577_500, 272_580, 267_420, 22_285, 1.64},
 		{"réel", ReelFoncier, false, 230_000, 540_000, 3.32, 540_000, 254_880, 285_120, 23_760, 1.75},
-		{"micro-BIC", MicroBIC, false, 230_000, 540_000, 3.32, 385_000, 187_110, 352_890, 29_408, 2.17},
-		{"micro-foncier with agency", MicroFoncier, true, 283_900, 486_100, 2.99, 539_000, 254_408, 231_692, 19_308, 1.42},
+		{"micro-BIC", MicroBIC, false, 230_000, 540_000, 3.32, 412_500, 200_475, 339_525, 28_294, 2.09},
+		{"micro-foncier with agency", MicroFoncier, true, 283_900, 486_100, 2.99, 577_500, 272_580, 213_520, 17_793, 1.31},
 		{"réel with agency", ReelFoncier, true, 283_900, 486_100, 2.99, 486_100, 229_439, 256_661, 21_388, 1.58},
-		{"micro-BIC with agency", MicroBIC, true, 283_900, 486_100, 2.99, 385_000, 187_110, 298_990, 24_916, 1.84},
+		{"micro-BIC with agency", MicroBIC, true, 283_900, 486_100, 2.99, 412_500, 200_475, 285_625, 23_802, 1.75},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -146,11 +146,11 @@ func TestSocialChargesFollowTheRegime(t *testing.T) {
 	foncier := Evaluate(referenceFlat(MicroFoncier, false), s, nil)
 	bic := Evaluate(referenceFlat(MicroBIC, false), s, nil)
 
-	if foncier.AnnualTaxCents != 539_000*40/100 {
-		t.Errorf("micro-foncier tax = %d, want 40 %% of 5 390 €", foncier.AnnualTaxCents)
+	if foncier.AnnualTaxCents != 577_500*40/100 {
+		t.Errorf("micro-foncier tax = %d, want 40 %% of 5 775 €", foncier.AnnualTaxCents)
 	}
-	if bic.AnnualTaxCents != 385_000*50/100 {
-		t.Errorf("micro-BIC tax = %d, want 50 %% of 3 850 €", bic.AnnualTaxCents)
+	if bic.AnnualTaxCents != 412_500*50/100 {
+		t.Errorf("micro-BIC tax = %d, want 50 %% of 4 125 €", bic.AnnualTaxCents)
 	}
 }
 
@@ -222,8 +222,8 @@ func TestTaxDetailSplitsIncomeTaxAndSocialCharges(t *testing.T) {
 	if d.MarginalTaxRatePct != 30 || d.SocialChargesPct != 17.2 {
 		t.Errorf("rates = %v / %v, want 30 / 17,2", d.MarginalTaxRatePct, d.SocialChargesPct)
 	}
-	if d.IncomeTaxCents != 161_700 { // 5 390 € × 30 %
-		t.Errorf("IR = %d, want 1 617 €", d.IncomeTaxCents)
+	if d.IncomeTaxCents != 173_250 { // 5 775 € × 30 %
+		t.Errorf("IR = %d, want 1 732,50 €", d.IncomeTaxCents)
 	}
 	if d.IncomeTaxCents+d.SocialChargesCents != res.AnnualTaxCents {
 		t.Errorf("IR %d + PS %d != I %d", d.IncomeTaxCents, d.SocialChargesCents, res.AnnualTaxCents)
@@ -234,7 +234,7 @@ func TestTaxDetailSplitsIncomeTaxAndSocialCharges(t *testing.T) {
 }
 
 func TestTaxDetailReportsDeductedLoanCostsUnderTheReelRegimes(t *testing.T) {
-	lf := &LoanFigures{FirstYearInterest: 300_000, FirstYearInsurance: 20_000}
+	lf := &LoanFigures{YearlyInterest: []int64{300_000}, YearlyInsurance: []int64{20_000}}
 	for _, tt := range []struct {
 		regime Regime
 		want   int64

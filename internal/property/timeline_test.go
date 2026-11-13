@@ -34,25 +34,25 @@ func TestProfitabilityDatesOfTheUsersCase(t *testing.T) {
 	if tl == nil {
 		t.Fatal("no timeline")
 	}
-	// Independently computed: −178,77 €/month for 60 months, then +104,30 €.
-	if tl.StartMonth != "2027-01" || tl.PositiveCashFlowMonth != "2032-01" || tl.PaybackMonth != "2058-01" || tl.PaybackAtStart {
+	// Independently computed: −193,91 €/month for 60 months, then +89,16 €.
+	if tl.StartMonth != "2027-01" || tl.PositiveCashFlowMonth != "2032-01" || tl.PaybackMonth != "2063-05" || tl.PaybackAtStart {
 		t.Errorf("timeline = start %s, positive %s, payback %s (at start %v)",
 			tl.StartMonth, tl.PositiveCashFlowMonth, tl.PaybackMonth, tl.PaybackAtStart)
 	}
 	first, atLoanEnd, afterLoan := tl.Points[0], tl.Points[59], tl.Points[60]
-	if first.Month != "2027-01" || first.CashFlowCents != -17_877 || first.CumulativeCents != -2_189_000-17_877 {
+	if first.Month != "2027-01" || first.CashFlowCents != -19_391 || first.CumulativeCents != -2_189_000-19_391 {
 		t.Errorf("first point = %+v", first)
 	}
-	if atLoanEnd.CumulativeCents != -3_261_613 || afterLoan.CashFlowCents != 10_430 {
+	if atLoanEnd.CumulativeCents != -3_352_453 || afterLoan.CashFlowCents != 8_916 {
 		t.Errorf("loan end = %+v, after = %+v", atLoanEnd, afterLoan)
 	}
-	payback := tl.Points[372]
-	if payback.Month != "2058-01" || payback.CumulativeCents < 0 || tl.Points[371].CumulativeCents >= 0 {
-		t.Errorf("payback point = %+v, before = %+v", payback, tl.Points[371])
+	payback := tl.Points[436]
+	if payback.Month != "2063-05" || payback.CumulativeCents < 0 || tl.Points[435].CumulativeCents >= 0 {
+		t.Errorf("payback point = %+v, before = %+v", payback, tl.Points[435])
 	}
 	// The chart runs a year past the last event.
-	if got := len(tl.Points); got != 373+12 {
-		t.Errorf("points = %d, want %d", got, 373+12)
+	if got := len(tl.Points); got != 437+12 {
+		t.Errorf("points = %d, want %d", got, 437+12)
 	}
 }
 
@@ -115,11 +115,11 @@ func TestProfitabilityDatesWithoutALoan(t *testing.T) {
 	if tl == nil {
 		t.Fatal("no timeline")
 	}
-	// Apport = A (36 890 €), +104,30 € every month from 12/2026: 354 months.
-	if tl.StartMonth != "2026-12" || tl.PositiveCashFlowMonth != "2026-12" || tl.PaybackMonth != "2056-05" {
+	// Apport = A (36 890 €), +89,16 € every month from 12/2026: 414 months.
+	if tl.StartMonth != "2026-12" || tl.PositiveCashFlowMonth != "2026-12" || tl.PaybackMonth != "2061-05" {
 		t.Errorf("timeline = start %s, positive %s, payback %s", tl.StartMonth, tl.PositiveCashFlowMonth, tl.PaybackMonth)
 	}
-	if first := tl.Points[0]; first.CashFlowCents != 10_430 || first.CumulativeCents != -3_689_000+10_430 {
+	if first := tl.Points[0]; first.CashFlowCents != 8_916 || first.CumulativeCents != -3_689_000+8_916 {
 		t.Errorf("first point = %+v", first)
 	}
 }
@@ -140,15 +140,15 @@ func TestNetAfterCreditYield(t *testing.T) {
 	withLoan := evaluateWithLoan(t, seAppart(), consoImmo)
 	withoutLoan := Evaluate(seAppart(), referenceSettings, nil)
 
-	// (1 251,62 − 1 984,13 × 12 / 60) / 36 890 = 2,32 %.
+	// (1 069,90 − 1 984,13 × 12 / 60) / 36 890 = 1,82 %.
 	if withLoan.Financing.AnnualCreditCostCents != 39_683 {
 		t.Errorf("annual credit cost = %d, want 396,83 €", withLoan.Financing.AnnualCreditCostCents)
 	}
-	if withLoan.NetAfterCreditYieldPct != 2.32 {
-		t.Errorf("with the loan = %v, want 2,32", withLoan.NetAfterCreditYieldPct)
+	if withLoan.NetAfterCreditYieldPct != 1.82 {
+		t.Errorf("with the loan = %v, want 1,82", withLoan.NetAfterCreditYieldPct)
 	}
-	if withoutLoan.NetAfterCreditYieldPct != withoutLoan.NetAfterTaxYieldPct || withoutLoan.NetAfterCreditYieldPct != 3.39 {
-		t.Errorf("without a loan = %v, want the after-tax yield 3,39", withoutLoan.NetAfterCreditYieldPct)
+	if withoutLoan.NetAfterCreditYieldPct != withoutLoan.NetAfterTaxYieldPct || withoutLoan.NetAfterCreditYieldPct != 2.90 {
+		t.Errorf("without a loan = %v, want the after-tax yield 2,90", withoutLoan.NetAfterCreditYieldPct)
 	}
 }
 

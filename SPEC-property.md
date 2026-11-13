@@ -66,11 +66,12 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 3. **Charges du propriétaire** (annual) `CH = TF + CP + PNO + E × g% + C × v`. During vacancy, the owner pays the recoverable charges no tenant reimburses.
 4. **Revenu annuel avant impôts** `R = E − CH`
 5. **Revenu imposable** (annual, floored at 0):
-   - `micro_foncier`: `E × 70 %`. Warn if `E` summed over all `micro_foncier` properties is over **15 000 €** (service-public F1991).
-   - `micro_bic` (furnished long-term): `E × 50 %`. Warn if `E` summed over all `micro_bic` properties is over **83 600 €** (revenus 2026; 77 700 € for revenus 2025; service-public F32744).
-   - `reel_foncier`: `R − intérêts année 1 − assurance emprunteur année 1` (from the linked loan's first 12 installments, or 0 without a loan). A deficit is floored at 0 and not carried over.
-   - `lmnp_reel` (furnished, actual charges and depreciation; added 2026-11-13): `résultat = R − intérêts année 1 − assurance année 1`; **amortissements** = bâti `((Prix − Mobilier compris) × 85 % + frais de notaire) / 30` (15 % land share, not depreciable) + mobilier `(Mobilier compris + Mobilier acheté) / 7`, each rounded to the cent. Taxable = `max(0, résultat − amortissements)`: depreciation can't create a deficit; what isn't used is not carried forward (simplification). No micro ceiling. Social charges: location meublée.
-   - Simplifications (all regimes): the year-1 tax is kept over the whole timeline (rules 16–20), even after furniture depreciation ends; resale (capital gains, and the 2025 reintegration of LMNP depreciation) is out of scope.
+   - `micro_foncier`: `(E + C × (12 − v)) × 70 %`: the receipts include the charges the tenant reimburses (`C × (12 − v)`); the allowance replaces every deduction. Warn if these receipts, summed over all `micro_foncier` properties, are over **15 000 €** (service-public F1991).
+   - `micro_bic` (furnished long-term): `(E + C × (12 − v)) × 50 %`. Warn if these receipts, summed over all `micro_bic` properties, are over **83 600 €** (revenus 2026; 77 700 € for revenus 2025; service-public F32744).
+   - `reel_foncier`: `R − intérêts − assurance emprunteur − frais de dossier et de garantie` of the year: interest and insurance of that year's 12 installments (0 without a loan, and after the loan), the fees in year 1 only. A deficit is floored at 0 and not carried over.
+   - `lmnp_reel` (furnished, actual charges and depreciation; added 2026-11-13): `résultat = R − intérêts − assurance − frais de l'emprunt` (as for `reel_foncier`); **amortissements** = bâti `((Prix − Mobilier compris) × 85 % + frais de notaire) / 30` (15 % land share, not depreciable) + mobilier `(Mobilier compris + Mobilier acheté) / 7`, each rounded to the cent. Taxable = `max(0, résultat − amortissements)`: depreciation can't create a deficit; what isn't used is not carried forward (simplification). Building depreciation stops after 30 years and furniture depreciation after 7. No micro ceiling. Social charges: location meublée.
+   - The tax of year `y` (year 1 = the loan's first 12 installments, or the first year without a loan) feeds the timeline month by month (rules 16–20); the headline figures and the regime comparison use year 1. The comparison marks `Best` (lowest tax) separately among the eligible regimes of unfurnished rental and of furnished rental, and `Eligible` is false for a micro regime whose ceiling the bien's own receipts exceed.
+   - Simplifications (all regimes): rents and charges are not indexed; resale (capital gains, and the 2025 reintegration of LMNP depreciation) is out of scope.
 6. **Impôt annuel** `I = imposable × T`
 7. **Revenu annuel net** (after charges **and** taxes) `RN = R − I`
 8. **Revenus mensuels bruts** = `L`
@@ -88,18 +89,18 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 14. **Apport** = `A` + loan fees − loan amount. If ≤ 0, the return on contribution shows « n/a ».
 15. **Rendement sur apport** = `12 × cash-flow après impôts / Apport`
 15b. **Rentabilité nette après crédit** (added 2026-11-13, the headline KPI for choosing between biens and loans) = `(RN − coût annuel moyen du crédit) / A`, where the average annual credit cost = the loan's **coût total du crédit** (interest + insurance + fees) × 12 / its duration in months, rounded to the cent. Principal repaid is not a cost (it builds equity). **Without a loan** the credit cost is 0, so it equals the « nette après impôts » yield, which keeps every bien comparable. Shown highlighted on the Bien page (Rentabilité card), as a column of the Biens lists (`/biens` and the home page, which uses the active loan) and as a highlighted row of the comparison (following each column's loan).
-  Reference: « SE appart 1 » with « Conso Immo » (coût total 1 984,13 € over 5 years → 396,83 €/an): (1 251,62 − 396,83) / 36 890 = **2,32 %** (3,39 % without the loan).
+  Reference: « SE appart 1 » with « Conso Immo » (coût total 1 984,13 € over 5 years → 396,83 €/an): (1 069,90 − 396,83) / 36 890 = **1,82 %** (2,90 % without the loan).
 
 **Dates de rentabilité** (added 2026-11-13 at the user's request; extended the same day to biens without a loan). A month-by-month timeline starting at the loan's first installment or, **without a loan, the month after today** (the default first installment of a new loan):
 
-16. **Cash-flow of month k** = `RN/12` − (installment k + insurance k) while the loan runs (without a loan: `RN/12` every month), then `RN'/12` after the last installment, where `RN'` is the net annual income without the loan (under `reel_foncier` the interest deduction stops; the micro regimes are unchanged).
+16. **Cash-flow of month k** = `RN_y/12` − (installment k + insurance k) while the loan runs, where `RN_y` is the net annual income of the year `y` that month falls in (`R` − that year's tax: under `reel_foncier` and `lmnp_reel` the tax rises as the interest falls; the micro regimes are constant). After the last installment: `RN_y/12` without loan costs.
 17. **Cumulative position** starts at −Apport (without a loan, Apport = `A`: everything is paid with own funds) and adds each month's cash-flow.
 18. **« Cash-flow mensuel positif »** = the first month whose cash-flow is > 0; « Immédiat » when that is the first month, « Jamais » if it never is.
 19. **« Apport récupéré »** = the first month the cumulative position is ≥ 0; « Dès l'achat » when the apport isn't positive, « Au-delà de 50 ans » if not reached within 50 years.
 20. Dates are months; the UI shows them as `01/MM/YYYY`. Without a loan the dates depend on today's date (the start month moves forward).
-  Reference without a loan: « SE appart 1 » unfinanced, evaluated in November 2026 (start 12/2026, apport 36 890 €, +104,30 €/month): cash-flow mensuel positif « Immédiat », apport récupéré **01/05/2056**.
+  Reference without a loan: « SE appart 1 » unfinanced, evaluated in November 2026 (start 12/2026, apport 36 890 €, +89,16 €/month): cash-flow mensuel positif « Immédiat », apport récupéré **01/05/2061**.
 
-Reference (user's case): « SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, CP 700 €, micro-foncier, revenus mensuels après impôts 104,30 €) with « Conso Immo » (15 000 € à 5 % sur 5 ans, first installment 01/2027, apport 21 890 €): cash-flow mensuel positif **01/01/2032**, apport récupéré **01/01/2058**.
+Reference (user's case): « SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, CP 700 €, micro-foncier, revenus mensuels après impôts 89,16 €, the 550 € of reimbursed charges being taxed) with « Conso Immo » (15 000 € à 5 % sur 5 ans, first installment 01/2027, apport 21 890 €): cash-flow mensuel positif **01/01/2032**, apport récupéré **01/05/2063**.
 
 Rounding: compute in `float64`, round each displayed amount to the cent and each rate to 2 decimals.
 
@@ -123,29 +124,29 @@ Common figures: A = 162 750 €, E = 7 700 €, rentabilité brute = 5,16 %.
 
 | | micro-foncier | réel | micro-BIC |
 |---|---|---|---|
-| Revenu imposable | 5 390,00 € | 5 400,00 € | 3 850,00 € |
-| Impôt annuel | 2 544,08 € | 2 548,80 € | 1 871,10 € |
-| **Revenu annuel net** | 2 855,92 € | 2 851,20 € | 3 528,90 € |
-| **Revenus mensuels après impôts** | 237,99 € | 237,60 € | 294,08 € |
-| **Rentabilité nette après impôts** | 1,75 % | 1,75 % | 2,17 % |
+| Revenu imposable | 5 775,00 € | 5 400,00 € | 4 125,00 € |
+| Impôt annuel | 2 725,80 € | 2 548,80 € | 2 004,75 € |
+| **Revenu annuel net** | 2 674,20 € | 2 851,20 € | 3 395,25 € |
+| **Revenus mensuels après impôts** | 222,85 € | 237,60 € | 282,94 € |
+| **Rentabilité nette après impôts** | 1,64 % | 1,75 % | 2,09 % |
 
 **With an agency** (frais de gestion 539 €, R = 4 861 €, nette = 2,99 %):
 
 | | micro-foncier | réel | micro-BIC |
 |---|---|---|---|
-| Revenu imposable | 5 390,00 € | 4 861,00 € | 3 850,00 € |
-| Impôt annuel | 2 544,08 € | 2 294,39 € | 1 871,10 € |
-| **Revenu annuel net** | 2 316,92 € | 2 566,61 € | 2 989,90 € |
-| **Revenus mensuels après impôts** | 193,08 € | 213,88 € | 249,16 € |
-| **Rentabilité nette après impôts** | 1,42 % | 1,58 % | 1,84 % |
+| Revenu imposable | 5 775,00 € | 4 861,00 € | 4 125,00 € |
+| Impôt annuel | 2 725,80 € | 2 294,39 € | 2 004,75 € |
+| **Revenu annuel net** | 2 135,20 € | 2 566,61 € | 2 856,25 € |
+| **Revenus mensuels après impôts** | 177,93 € | 213,88 € | 238,02 € |
+| **Rentabilité nette après impôts** | 1,31 % | 1,58 % | 1,75 % |
 
 **With a linked loan** (same flat, no agency; computed with the loan rules, first-year figures = first 12 installments):
 
 | Loan | Regime | Revenu imposable | Impôt annuel | Mensualité | Cash-flow avant / après impôts | Apport | Rendement sur apport |
 |---|---|---|---|---|---|---|---|
-| 150 000 € à 4 % sur 25 ans (loan reference 2), no insurance, no fees. Intérêts année 1 : 5 935,09 € | micro-foncier | 5 390,00 € | 2 544,08 € | 791,76 € | −341,76 € / −553,77 € | 12 750,00 € | −52,12 % |
+| 150 000 € à 4 % sur 25 ans (loan reference 2), no insurance, no fees. Intérêts année 1 : 5 935,09 € | micro-foncier | 5 775,00 € | 2 725,80 € | 791,76 € | −341,76 € / −568,91 € | 12 750,00 € | −53,54 % |
 | same | réel | 0,00 € (5 400 € − 5 935,09 € floored at 0) | 0,00 € | 791,76 € | −341,76 € / −341,76 € | 12 750,00 € | −32,17 % |
-| 50 000 € à 3 % sur 20 ans, assurance 0,30 %, 1 000 € de frais. Intérêts année 1 : 1 474,66 €, assurance : 150,00 € | réel | 3 775,34 € | 1 781,96 € | 289,80 € | 160,20 € / 11,70 € | 113 750,00 € | 0,12 % |
+| 50 000 € à 3 % sur 20 ans, assurance 0,30 %, 1 000 € de frais. Intérêts année 1 : 1 474,66 €, assurance : 150,00 € | réel | 2 775,34 € (5 400 € − 1 474,66 € − 150 € − 1 000 € of fees) | 1 309,96 € | 289,80 € | 160,20 € / 51,04 € | 113 750,00 € | 0,54 % |
 | 200 000 € à 3,5 % sur 20 ans | any | — | — | 1 159,92 € | — | ≤ 0 | n/a |
 
 ## DPE warnings (loi Climat et résilience)
@@ -240,6 +241,7 @@ Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loa
   - A collapsible **« Régime fiscal »** section (added 2026-11-13) explains the four regimes in a few lines each and compares them on the current bien: revenu imposable, impôt annuel, revenu annuel net and rentabilité nette après impôts per regime, the bien's own regime marked « actuel » and the lowest tax marked « le plus avantageux ». Each evaluation returns this comparison (`regimes`), computed with the same settings and loan; the micro ceilings are recalled in the text.
   - With a loan, the « Financement » card shows Mensualité, Cash-flow avant/après impôts, Apport and Rendement sur apport.
   - A **« Date de rentabilité »** result card shows « Cash-flow mensuel positif : DD/MM/YYYY » and « Apport récupéré : DD/MM/YYYY » (rules 16–20), and a **« Trésorerie cumulée »** chart in the right panel, under « Détail du calcul », plots the cumulative position over time with a zero line and both dates marked.
+  - An **« Impôt au fil des années »** chart (added 2026-11-13) plots the annual tax and the net income after tax of each year (year 1 = the loan's first year, or the first without a loan), up to 3 years after the last change (at least 10 years). It is always shown under `lmnp_reel` and otherwise only when the tax changes from year to year (réel regimes with a loan). The « Charges de copropriété non récupérables » field's hint says to enter only the deductible part (not the tenant-recoverable part, the fonds de travaux or extension works).
   - The DPE warning and regime-ceiling warnings appear above the results.
   - Actions: Enregistrer, Dupliquer, Supprimer (confirmation), unsaved-changes guard.
 - **/parametres: Hypothèses et fiscalité** section (TMI, PS location nue, PS location meublée, notaire, vacance, gestion), next to the *Données* section from `storage`.
