@@ -2,6 +2,7 @@ package property
 
 import (
 	"fmt"
+	"time"
 
 	"immo-calc/internal/storage"
 )
@@ -17,12 +18,14 @@ func (e *ValidationError) Error() string { return fmt.Sprintf("invalid input: %v
 type Service struct {
 	store *storage.Store
 	loans LoanSource
+	now   func() time.Time
+	newID func() string
 }
 
 // NewService returns a service over store, whose sections must have been
 // registered with RegisterSections. loans resolves linked loans.
 func NewService(store *storage.Store, loans LoanSource) *Service {
-	return &Service{store: store, loans: loans}
+	return &Service{store: store, loans: loans, now: time.Now, newID: newRandomID}
 }
 
 // loanFigures returns the figures of a linked loan, or nil without one.
@@ -41,21 +44,9 @@ func (s *Service) loanFigures(loanID string) (*LoanFigures, error) {
 	return &f, nil
 }
 
-// EvaluateInput validates an unsaved input (name not required) and evaluates
-// it with the current settings and its linked loan.
+// EvaluateInput evaluates an unsaved property (see EvaluateFor).
 func (s *Service) EvaluateInput(in Input) (Result, error) {
-	if errs := ValidateParams(in, s.loans); len(errs) > 0 {
-		return Result{}, &ValidationError{Fields: errs}
-	}
-	settings, err := s.Settings()
-	if err != nil {
-		return Result{}, err
-	}
-	loanFig, err := s.loanFigures(in.LoanID)
-	if err != nil {
-		return Result{}, err
-	}
-	return Evaluate(in.Params(), settings, loanFig), nil
+	return s.EvaluateFor("", in)
 }
 
 // Settings returns the global settings, or the defaults when the data file
