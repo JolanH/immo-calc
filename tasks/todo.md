@@ -443,7 +443,10 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Scope:** S
 
 ### [ ] Checkpoint D — v1 done
-- [ ] `make test`, `make lint`, `make build` pass; `internal/loan` and `internal/property` coverage ≥ 90 %
-- [ ] property acceptance criteria 1–9 verified
+- [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
+- [x] property acceptance criteria 1–9 verified
+  - By Claude: 1 (both reference tables × 3 regimes, plus the linked-loan cases), 2 (create via the real binary, restart, identical results; live evaluation in component tests), 3 (settings change propagates, unit), 4 (Financement card; réel deducts year-1 interest and insurance), 5 (« Créer un prêt pour ce bien » prefill checked in the real binary, link and return in component tests), 6 (deleting a used loan → 409 naming the bien, real binary; deleting a bien keeps its loan), 7 (DPE G/F/E and micro ceilings summed across biens), 8 (French field errors, nothing saved), 9 (official sources in `tasks/legal-rates.md`, cited next to the constants).
 - [ ] Project success criteria (`SPEC.md`) verified, including on Windows: double-click, data survives restart, export → import on another machine — include the app-shell Windows checks deferred at Checkpoint A (criteria 2 and 11)
+  - On Linux by Claude: data survives a restart; export from one instance then import into another gives identical properties, loans, settings and export file.
+  - **Left for the user:** the Windows checks (double-click, no console window, French message box; criteria 2 and 11 of app-shell), the native file dialogs (Ouvrir / Nouveau fichier), and a pass through the UI in a real browser (typing in the forms, chart tooltip, home page active loan).
 - [ ] Human review
