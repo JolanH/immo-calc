@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 
 	"immo-calc/internal/storage"
 )
@@ -45,6 +47,25 @@ type Service struct {
 	store *storage.Store
 	now   func() time.Time
 	newID func() string
+
+	guardsMu sync.Mutex
+	guards   []func(loanID string) error
+}
+
+// InUseError is a delete refused by a guard. Message is French and names
+// what uses the loan.
+type InUseError struct{ Message string }
+
+func (e *InUseError) Error() string { return e.Message }
+
+// RegisterDeleteGuard adds a check run before a loan is deleted; returning an
+// error (with a French message) refuses the deletion. The property module
+// uses it to protect loans that a property references, without loan
+// importing property.
+func (s *Service) RegisterDeleteGuard(guard func(loanID string) error) {
+	s.guardsMu.Lock()
+	defer s.guardsMu.Unlock()
+	s.guards = append(s.guards, guard)
 }
 
 // NewService returns a service over store, whose loans section must have been
@@ -164,4 +185,45 @@ func (s *Service) Update(id string, in Input) (Loan, error) {
 		return Loan{}, err
 	}
 	return updated, nil
+}
+
+const copySuffix = " (copie)"
+
+// Duplicate saves a copy of a loan named « <nom> (copie) ».
+func (s *Service) Duplicate(id string) (Loan, error) {
+	original, err := s.Get(id)
+	if err != nil {
+		return Loan{}, err
+	}
+	in := original.Input
+	base := in.Name
+	if room := maxNameLength - utf8.RuneCountInString(copySuffix); utf8.RuneCountInString(base) > room {
+		base = string([]rune(base)[:room])
+	}
+	in.Name = base + copySuffix
+	return s.Create(in)
+}
+
+// Delete removes a loan unless a delete guard refuses (*InUseError).
+func (s *Service) Delete(id string) error {
+	if _, err := s.Get(id); err != nil {
+		return err
+	}
+	s.guardsMu.Lock()
+	guards := append([]func(string) error(nil), s.guards...)
+	s.guardsMu.Unlock()
+	for _, guard := range guards {
+		if err := guard(id); err != nil {
+			return &InUseError{Message: err.Error()}
+		}
+	}
+	return storage.Update(s.store, SectionKey, func(loans *[]Loan) error {
+		for i := range *loans {
+			if (*loans)[i].ID == id {
+				*loans = append((*loans)[:i], (*loans)[i+1:]...)
+				return nil
+			}
+		}
+		return ErrNotFound
+	})
 }

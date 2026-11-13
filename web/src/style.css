@@ -443,3 +443,11 @@ a {
 .table__row--link:hover {
   background: var(--bg);
 }
+
+.button--danger {
+  color: var(--error-text);
+}
+
+.button--danger:hover {
+  border-color: var(--error-text);
+}

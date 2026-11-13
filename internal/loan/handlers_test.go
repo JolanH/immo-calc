@@ -2,6 +2,7 @@ package loan
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -223,5 +224,58 @@ func TestLoanSaveConflictAnswers409(t *testing.T) {
 
 	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "file_changed_externally") {
 		t.Errorf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestDuplicateAndDeleteEndpoints(t *testing.T) {
+	svc, _ := newTestService(t)
+	h := NewHandlers(svc)
+	original := decode[detailJSON](t, serveLoan(h, apiRequest(http.MethodPost, "/api/loans", createBody)))
+
+	dup := serveLoan(h, apiRequest(http.MethodPost, "/api/loans/"+original.ID+"/duplicate", ""))
+	if dup.Code != http.StatusCreated || decode[detailJSON](t, dup).Name != "Appart Lyon (copie)" {
+		t.Fatalf("duplicate: status = %d, body = %.200s", dup.Code, dup.Body.String())
+	}
+
+	del := serveLoan(h, apiRequest(http.MethodDelete, "/api/loans/"+original.ID, ""))
+	if del.Code != http.StatusNoContent || del.Body.Len() != 0 {
+		t.Errorf("delete: status = %d, body = %q", del.Code, del.Body.String())
+	}
+	if again := serveLoan(h, apiRequest(http.MethodDelete, "/api/loans/"+original.ID, "")); again.Code != http.StatusNotFound {
+		t.Errorf("delete again: status = %d", again.Code)
+	}
+	if unknown := serveLoan(h, apiRequest(http.MethodPost, "/api/loans/ffffffffffffffff/duplicate", "")); unknown.Code != http.StatusNotFound {
+		t.Errorf("duplicate unknown: status = %d", unknown.Code)
+	}
+}
+
+func TestDeleteRefusedByAGuardAnswers409(t *testing.T) {
+	svc, _ := newTestService(t)
+	svc.RegisterDeleteGuard(func(string) error { return errors.New("Ce prêt est utilisé par le bien « T2 Lyon 7e »") })
+	h := NewHandlers(svc)
+	l := decode[detailJSON](t, serveLoan(h, apiRequest(http.MethodPost, "/api/loans", createBody)))
+
+	rec := serveLoan(h, apiRequest(http.MethodDelete, "/api/loans/"+l.ID, ""))
+
+	resp := decode[struct {
+		Error struct{ Code, Message string } `json:"error"`
+	}](t, rec)
+	if rec.Code != http.StatusConflict || resp.Error.Code != "loan_in_use" ||
+		resp.Error.Message != "Ce prêt est utilisé par le bien « T2 Lyon 7e »" {
+		t.Errorf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestDuplicateAndDeleteRequireSameOrigin(t *testing.T) {
+	svc, _ := newTestService(t)
+	h := NewHandlers(svc)
+	for _, req := range []*http.Request{
+		apiRequest(http.MethodPost, "/api/loans/0000000000000001/duplicate", ""),
+		apiRequest(http.MethodDelete, "/api/loans/0000000000000001", ""),
+	} {
+		req.Header.Set("Origin", "http://evil.example")
+		if rec := serveLoan(h, req); rec.Code != http.StatusForbidden {
+			t.Errorf("%s %s: status = %d", req.Method, req.URL.Path, rec.Code)
+		}
 	}
 }
