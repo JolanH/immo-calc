@@ -19,7 +19,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `go.mod`, `cmd/immo-calc/main.go`, `internal/server/{server,json,server_test}.go`, `docker/Dockerfile.*`, `Makefile`, `.gitignore`
 **Scope:** M
 
-### [ ] Task 2: Vue scaffold with French layout, routes and placeholders
+### [x] Task 2: Vue scaffold with French layout, routes and placeholders
 **Description:** Create `web/` (Vue 3 + TS + Vite + Vue Router, history mode). Header with **immo-calc** and a (not yet wired) **Quitter** button. Nav **Biens / Prêts / Paramètres**. Placeholder pages with title + « Fonctionnalité à venir ». `/` → `/biens`. Unknown route → « Page introuvable » + link to Biens. Plain CSS. Add `make test-web` and the web half of `make lint` (eslint, prettier check, `vue-tsc --noEmit`).
 **Acceptance criteria:**
 - [ ] `/` redirects to `/biens`. `/prets` and `/parametres` show their placeholder
