@@ -2,13 +2,12 @@ package main
 
 import (
 	"io"
-	"path/filepath"
 	"testing"
 )
 
 func TestParseConfig(t *testing.T) {
-	exeDir := filepath.FromSlash("/opt/immo")
-	defaultData := filepath.Join(exeDir, "immo-calc.yaml")
+	// No --data means "not given": storage resolves the default later.
+	defaultData := ""
 
 	tests := []struct {
 		name string
@@ -27,7 +26,7 @@ func TestParseConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseConfig(tt.args, exeDir, io.Discard)
+			got, err := parseConfig(tt.args, io.Discard)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -47,7 +46,7 @@ func TestParseConfigRejectsInvalidInput(t *testing.T) {
 		{"extra-argument"},
 	} {
 		t.Run(args[0], func(t *testing.T) {
-			if _, err := parseConfig(args, "/opt/immo", io.Discard); err == nil {
+			if _, err := parseConfig(args, io.Discard); err == nil {
 				t.Errorf("parseConfig(%q) returned no error", args)
 			}
 		})

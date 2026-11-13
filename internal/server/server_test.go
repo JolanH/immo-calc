@@ -57,3 +57,20 @@ func localRequest(method, path string) *http.Request {
 	req.Host = "127.0.0.1:8421"
 	return req
 }
+
+func TestModuleRoutesAreRegistered(t *testing.T) {
+	h := New(Config{Version: "dev", Routes: []func(*http.ServeMux){
+		func(mux *http.ServeMux) {
+			mux.HandleFunc("GET /api/things", func(w http.ResponseWriter, _ *http.Request) {
+				WriteJSON(w, http.StatusOK, []string{"a"})
+			})
+		},
+	}})
+	rec := httptest.NewRecorder()
+
+	h.ServeHTTP(rec, localRequest(http.MethodGet, "/api/things"))
+
+	if rec.Code != http.StatusOK || rec.Body.String() != "[\"a\"]\n" {
+		t.Errorf("status = %d, body = %q", rec.Code, rec.Body.String())
+	}
+}

@@ -19,6 +19,8 @@ type Config struct {
 	Static fs.FS
 	// Shutdown is called after POST /api/shutdown has been answered.
 	Shutdown func()
+	// Routes lets each module register its API routes.
+	Routes []func(*http.ServeMux)
 }
 
 // New returns the root HTTP handler.
@@ -32,6 +34,9 @@ func New(cfg Config) http.Handler {
 		}{"ok", AppName, cfg.Version})
 	})
 	mux.Handle("POST /api/shutdown", RequireSameOrigin(shutdownHandler(cfg.Shutdown)))
+	for _, register := range cfg.Routes {
+		register(mux)
+	}
 
 	apiFallback := func(w http.ResponseWriter, r *http.Request) { apiNotMatched(mux, w, r) }
 	mux.HandleFunc("/api/", apiFallback)

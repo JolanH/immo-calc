@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net"
 	"net/http"
@@ -20,6 +19,7 @@ import (
 	"immo-calc/internal/browser"
 	"immo-calc/internal/notify"
 	"immo-calc/internal/server"
+	"immo-calc/internal/storage"
 	"immo-calc/web"
 )
 
@@ -28,7 +28,7 @@ var version = "dev"
 
 func main() {
 	exeDir := executableDir()
-	cfg, err := parseConfig(os.Args[1:], exeDir, os.Stderr)
+	cfg, err := parseConfig(os.Args[1:], os.Stderr)
 	if err != nil {
 		os.Exit(2)
 	}
@@ -39,7 +39,8 @@ func main() {
 
 	logPath := setupLogging(exeDir, cfg.Debug)
 	fatal := func(err error) {
-		reportFatal(notify.Fatal, log.Printf, err, logPath)
+		logError := func(format string, args ...any) { slog.Error(fmt.Sprintf(format, args...)) }
+		reportFatal(notify.Fatal, logError, err, logPath)
 		os.Exit(1)
 	}
 
@@ -54,14 +55,33 @@ func main() {
 		fatal(err)
 	}
 
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		userConfigDir = os.TempDir()
+	}
+	data, err := openStore(cfg, exeDir, userConfigDir, nil)
+	if err != nil {
+		fatal(err)
+	}
+	dataHandlers := storage.NewHandlers(data.store, storage.HandlerConfig{
+		CountKeys: []string{"properties", "loans"},
+		Warning:   data.warning,
+	})
+
 	url := appURL(ln)
-	slog.Info("immo-calc started", "version", version, "url", url, "data", cfg.DataPath, "log", logPath)
+	slog.Info("immo-calc started", "version", version, "url", url,
+		"data", data.store.Path(), "config", data.configPath, "log", logPath)
 
 	// Stop on Ctrl+C / SIGTERM, or when the UI's "Quitter" calls /api/shutdown.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	srv := &http.Server{
-		Handler:           server.New(server.Config{Version: version, Static: web.Dist(), Shutdown: stop}),
+		Handler: server.New(server.Config{
+			Version:  version,
+			Static:   web.Dist(),
+			Shutdown: stop,
+			Routes:   []func(*http.ServeMux){dataHandlers.Register},
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	serveErr := make(chan error, 1)
