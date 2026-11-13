@@ -62,7 +62,11 @@ At the end of this module there is no business feature yet. There is a working, 
 
 API error format, used by every module: `{"error":{"code":"<machine_code>","message":"<French message for the UI>","fields":{"<field>":"<French message>"}}}`. `fields` is optional and holds validation errors.
 
-`POST /api/shutdown` is protected against cross-site requests: requests whose `Origin` header doesn't match the server's own origin are rejected with 403. All state-changing endpoints in later modules reuse this check.
+`POST /api/shutdown` is protected against cross-site requests: requests whose `Origin` header doesn't match the server's own origin are rejected with 403. All state-changing endpoints in later modules reuse this check (`server.RequireSameOrigin`). When `Origin` is absent, a `Sec-Fetch-Site` of `cross-site` or `same-site` is also rejected; requests with neither header (non-browser clients such as `curl`) are allowed.
+
+**Loopback-only API (DNS-rebinding protection):** every `/api/*` request, read or write, must carry a `Host` header naming this machine: `127.0.0.1` or `localhost`, any port. Anything else gets `403 {"error":{"code":"forbidden_origin","message":"Requête refusée : origine non autorisée"}}`. This stops a web page on a domain that resolves to `127.0.0.1` from reading or changing local data. Static files are served regardless of `Host`.
+
+Calling an existing API path with an unsupported method returns `405 {"error":{"code":"method_not_allowed","message":"Méthode non autorisée"}}` with an `Allow` header.
 
 ### UI skeleton (French)
 
@@ -87,7 +91,7 @@ API error format, used by every module: `{"error":{"code":"<machine_code>","mess
 4. When port 8421 is taken by another program, the app starts on a free port and prints that URL.
 5. `GET /api/health` returns the documented JSON with the injected version.
 6. Deep links like `/prets/123` reload correctly (SPA fallback). Unknown `/api/x` returns a 404 JSON error.
-7. "Quitter" stops the process. A `POST /api/shutdown` with a foreign `Origin` is rejected with 403.
+7. "Quitter" stops the process. A `POST /api/shutdown` with a foreign `Origin` is rejected with 403. Any `/api/*` request whose `Host` isn't `127.0.0.1` or `localhost` is rejected with 403.
 11. On Windows, double-clicking the `.exe` opens no console window, and a fatal startup error shows a French message box pointing to `immo-calc.log`.
 8. The server never listens on anything other than `127.0.0.1`.
 9. `make test`, `make lint`, `make run`, `make dev` and `make debug` all work as described in `SPEC.md`.
