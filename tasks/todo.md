@@ -193,8 +193,10 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Scope:** S
 
 ### [ ] Checkpoint B — storage done
-- [ ] `make test`, `make lint`, `make build` pass
+- [x] `make test`, `make lint`, `make build` pass
 - [ ] storage acceptance criteria 1–12 verified (3: kill during save by hand or via the injected-failure test; 5 re-checked in Phase 3)
+  - Verified by Claude: 2, 4, 6, 7, 8, 10, 12 with the real binary (typed paths); 1, 3, 9, 11 by unit tests (3 via injected write/rename failures). 1 end to end and 5 come back in Phase 3, once a module writes data.
+  - **To check by hand:** the native dialogs for « Ouvrir un autre fichier… » and « Nouveau fichier… » (Linux with zenity/kdialog, and Windows). Not exercised automatically, to avoid popping dialogs on the desktop.
 - [ ] Human review before Phase 3
 
 ---
