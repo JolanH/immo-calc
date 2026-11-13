@@ -1072,3 +1072,16 @@ a.app-header__name {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* « Rentabilité nette après crédit »: the headline KPI in lists and the comparison. */
+.table .kpi {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.compare-kpi th,
+.compare-kpi td {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+}

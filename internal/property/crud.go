@@ -18,17 +18,18 @@ var ErrNotFound = errors.New("property not found")
 
 // Summary is a property as shown in the Biens list.
 type Summary struct {
-	ID                    string    `json:"id"`
-	Name                  string    `json:"name"`
-	PriceCents            int64     `json:"priceCents"`
-	MonthlyRentCents      int64     `json:"monthlyRentCents"`
-	DPE                   string    `json:"dpe"`
-	NetAfterTaxYieldPct   float64   `json:"netAfterTaxYieldPct"`
-	MonthlyNetIncomeCents int64     `json:"monthlyNetIncomeCents"`
-	CashFlowAfterTaxCents *int64    `json:"cashFlowAfterTaxCents"` // with a linked loan only
-	LoanID                string    `json:"loanId"`
-	LoanName              string    `json:"loanName"`
-	Warnings              []Warning `json:"warnings"`
+	ID                     string    `json:"id"`
+	Name                   string    `json:"name"`
+	PriceCents             int64     `json:"priceCents"`
+	MonthlyRentCents       int64     `json:"monthlyRentCents"`
+	DPE                    string    `json:"dpe"`
+	NetAfterTaxYieldPct    float64   `json:"netAfterTaxYieldPct"`
+	NetAfterCreditYieldPct float64   `json:"netAfterCreditYieldPct"`
+	MonthlyNetIncomeCents  int64     `json:"monthlyNetIncomeCents"`
+	CashFlowAfterTaxCents  *int64    `json:"cashFlowAfterTaxCents"` // with a linked loan only
+	LoanID                 string    `json:"loanId"`
+	LoanName               string    `json:"loanName"`
+	Warnings               []Warning `json:"warnings"`
 }
 
 // LoanRef names a property's linked loan.
@@ -214,8 +215,9 @@ func (s *Service) ListWith(opts ListOptions) ([]Summary, error) {
 		r := results[i]
 		sum := Summary{
 			ID: p.ID, Name: p.Name, PriceCents: p.PriceCents, MonthlyRentCents: p.MonthlyRentCents, DPE: p.DPE,
-			NetAfterTaxYieldPct: r.NetAfterTaxYieldPct, MonthlyNetIncomeCents: r.MonthlyNetIncomeCents,
-			LoanID: p.LoanID, Warnings: r.Warnings,
+			NetAfterTaxYieldPct: r.NetAfterTaxYieldPct, NetAfterCreditYieldPct: r.NetAfterCreditYieldPct,
+			MonthlyNetIncomeCents: r.MonthlyNetIncomeCents,
+			LoanID:                p.LoanID, Warnings: r.Warnings,
 		}
 		if r.Financing != nil {
 			cf := r.Financing.CashFlowAfterTaxCents

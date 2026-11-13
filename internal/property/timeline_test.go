@@ -104,3 +104,38 @@ func TestNoTimelineWithoutALoan(t *testing.T) {
 		t.Errorf("timeline = %+v", res.Timeline)
 	}
 }
+
+func TestNetAfterCreditYield(t *testing.T) {
+	withLoan := evaluateWithLoan(t, seAppart(), consoImmo)
+	withoutLoan := Evaluate(seAppart(), referenceSettings, nil)
+
+	// (1 251,62 − 1 984,13 × 12 / 60) / 36 890 = 2,32 %.
+	if withLoan.Financing.AnnualCreditCostCents != 39_683 {
+		t.Errorf("annual credit cost = %d, want 396,83 €", withLoan.Financing.AnnualCreditCostCents)
+	}
+	if withLoan.NetAfterCreditYieldPct != 2.32 {
+		t.Errorf("with the loan = %v, want 2,32", withLoan.NetAfterCreditYieldPct)
+	}
+	if withoutLoan.NetAfterCreditYieldPct != withoutLoan.NetAfterTaxYieldPct || withoutLoan.NetAfterCreditYieldPct != 3.39 {
+		t.Errorf("without a loan = %v, want the after-tax yield 3,39", withoutLoan.NetAfterCreditYieldPct)
+	}
+}
+
+func TestListsCarryTheNetAfterCreditYield(t *testing.T) {
+	f := newFixture(t)
+	l := saveLoan(t, f, "Petit prêt")
+	in := validPropertyInput()
+	in.LoanID = l.ID
+	_, _ = f.svc.Create(in)
+
+	own, _ := f.svc.List("")
+	active, _ := f.svc.ListWith(ListOptions{ActiveLoanID: l.ID})
+	d, _ := f.svc.Detail(own[0].ID)
+
+	if own[0].NetAfterCreditYieldPct != d.Result.NetAfterCreditYieldPct || own[0].NetAfterCreditYieldPct >= own[0].NetAfterTaxYieldPct {
+		t.Errorf("list = %v, detail = %v, after tax = %v", own[0].NetAfterCreditYieldPct, d.Result.NetAfterCreditYieldPct, own[0].NetAfterTaxYieldPct)
+	}
+	if active[0].NetAfterCreditYieldPct != own[0].NetAfterCreditYieldPct {
+		t.Errorf("active-loan list = %v", active[0].NetAfterCreditYieldPct)
+	}
+}

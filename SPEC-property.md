@@ -83,6 +83,8 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 13. **Cash-flow mensuel après impôts** = `RN/12 − Mensualité`
 14. **Apport** = `A` + loan fees − loan amount. If ≤ 0, the return on contribution shows « n/a ».
 15. **Rendement sur apport** = `12 × cash-flow après impôts / Apport`
+15b. **Rentabilité nette après crédit** (added 2026-11-13, the headline KPI for choosing between biens and loans) = `(RN − coût annuel moyen du crédit) / A`, where the average annual credit cost = the loan's **coût total du crédit** (interest + insurance + fees) × 12 / its duration in months, rounded to the cent. Principal repaid is not a cost (it builds equity). **Without a loan** the credit cost is 0, so it equals the « nette après impôts » yield, which keeps every bien comparable. Shown highlighted on the Bien page (Rentabilité card), as a column of the Biens lists (`/biens` and the home page, which uses the active loan) and as a highlighted row of the comparison (following each column's loan).
+  Reference: « SE appart 1 » with « Conso Immo » (coût total 1 984,13 € over 5 years → 396,83 €/an): (1 251,62 − 396,83) / 36 890 = **2,32 %** (3,39 % without the loan).
 
 **Dates de rentabilité** (with a linked loan; added 2026-11-13 at the user's request). A month-by-month timeline starting at the loan's first installment:
 

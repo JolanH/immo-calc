@@ -41,6 +41,7 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
           <th scope="col" class="num">Loyer</th>
           <th scope="col">DPE</th>
           <th scope="col" class="num">Rentabilité nette après impôts</th>
+          <th scope="col" class="num kpi">Rentabilité nette après crédit</th>
           <th scope="col" class="num">Revenus mensuels après impôts</th>
           <th v-if="showCashFlow" scope="col" class="num">Cash-flow après impôts</th>
           <th scope="col">Prêt</th>
@@ -69,6 +70,7 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
           <td class="num">{{ formatEuros(p.monthlyRentCents) }}</td>
           <td><DpeBadge :dpe="p.dpe" /></td>
           <td class="num">{{ formatPercent(p.netAfterTaxYieldPct) }}</td>
+          <td class="num kpi">{{ formatPercent(p.netAfterCreditYieldPct) }}</td>
           <td class="num">{{ formatEuros(p.monthlyNetIncomeCents) }}</td>
           <td v-if="showCashFlow" class="num">
             {{ p.cashFlowAfterTaxCents === null ? '—' : formatEuros(p.cashFlowAfterTaxCents) }}

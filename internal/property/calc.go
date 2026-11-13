@@ -48,6 +48,8 @@ type LoanFigures struct {
 	FirstYearInsurance int64 // borrower insurance of the first 12 installments
 	FirstPaymentMonth  loan.Month
 	Payments           []int64 // each installment, insurance included
+	TotalCostCents     int64   // coût total du crédit: interest + insurance + fees
+	DurationMonths     int
 }
 
 // Warning is shown above a property's results.
@@ -75,6 +77,9 @@ type Result struct {
 	GrossYieldPct       float64 `json:"grossYieldPct"`
 	NetYieldPct         float64 `json:"netYieldPct"`
 	NetAfterTaxYieldPct float64 `json:"netAfterTaxYieldPct"`
+	// NetAfterCreditYieldPct is (RN − average annual credit cost) / A, the
+	// headline KPI (rule 15b); equal to NetAfterTaxYieldPct without a loan.
+	NetAfterCreditYieldPct float64 `json:"netAfterCreditYieldPct"`
 
 	Financing *Financing `json:"financing"` // with a linked loan only
 	Timeline  *Timeline  `json:"timeline"`  // profitability dates, with a dated loan only
@@ -142,8 +147,10 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 	r.NetYieldPct = pct(r.IncomeBeforeTaxCents, r.AcquisitionCostCents)
 	r.NetAfterTaxYieldPct = pct(r.NetAnnualIncomeCents, r.AcquisitionCostCents)
 
+	r.NetAfterCreditYieldPct = r.NetAfterTaxYieldPct
 	if loan != nil {
 		r.Financing = financing(r, *loan)
+		r.NetAfterCreditYieldPct = pct(r.NetAnnualIncomeCents-r.Financing.AnnualCreditCostCents, r.AcquisitionCostCents)
 		if !loan.FirstPaymentMonth.IsZero() && len(loan.Payments) > 0 {
 			after := Evaluate(p, s, nil).MonthlyNetIncomeCents
 			r.Timeline = timeline(r.MonthlyNetIncomeCents, after, r.Financing.OwnContributionCents, *loan)

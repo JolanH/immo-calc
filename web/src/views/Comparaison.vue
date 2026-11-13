@@ -188,6 +188,11 @@ const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[]
         label: 'Rentabilité nette après impôts',
         value: (c) => pct(c.result?.netAfterTaxYieldPct),
       },
+      {
+        key: 'after-credit-yield',
+        label: 'Rentabilité nette après crédit',
+        value: (c) => pct(c.result?.netAfterCreditYieldPct),
+      },
     ],
   },
   {
@@ -340,7 +345,11 @@ const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[]
                   <span v-else>{{ dash }}</span>
                 </td>
               </tr>
-              <tr v-else :data-test="`row-${row.key}`">
+              <tr
+                v-else
+                :data-test="`row-${row.key}`"
+                :class="{ 'compare-kpi': row.key === 'after-credit-yield' }"
+              >
                 <th scope="row">{{ row.label }}</th>
                 <td v-for="c in columns" :key="c.id" class="num">{{ row.value(c) }}</td>
               </tr>

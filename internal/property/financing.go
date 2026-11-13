@@ -12,6 +12,7 @@ type Financing struct {
 	CashFlowBeforeTaxCents int64 `json:"cashFlowBeforeTaxCents"` // R/12 − mensualité
 	CashFlowAfterTaxCents  int64 `json:"cashFlowAfterTaxCents"`  // RN/12 − mensualité
 	OwnContributionCents   int64 `json:"ownContributionCents"`   // apport: A + fees − principal
+	AnnualCreditCostCents  int64 `json:"annualCreditCostCents"`  // coût total du crédit spread per year
 	// ReturnOnContributionPct is 12 × cash-flow after tax / apport, or nil
 	// (shown « n/a ») when there is no positive own contribution.
 	ReturnOnContributionPct *float64 `json:"returnOnContributionPct"`
@@ -28,6 +29,8 @@ func FiguresOf(p loan.Params) (LoanFigures, error) {
 		FeesCents:         res.TotalFeesCents,
 		MonthlyTotalCents: res.MonthlyTotalCents,
 		FirstPaymentMonth: p.FirstPaymentMonth,
+		TotalCostCents:    res.TotalCostCents,
+		DurationMonths:    p.DurationMonths,
 		Payments:          paymentsOf(res),
 	}
 	for _, inst := range res.Schedule[:min(12, len(res.Schedule))] {
@@ -44,6 +47,9 @@ func financing(r Result, l LoanFigures) *Financing {
 		CashFlowBeforeTaxCents: roundCents(float64(r.IncomeBeforeTaxCents)/12) - l.MonthlyTotalCents,
 		CashFlowAfterTaxCents:  r.MonthlyNetIncomeCents - l.MonthlyTotalCents,
 		OwnContributionCents:   r.AcquisitionCostCents + l.FeesCents - l.PrincipalCents,
+	}
+	if l.DurationMonths > 0 {
+		f.AnnualCreditCostCents = roundCents(float64(l.TotalCostCents) * 12 / float64(l.DurationMonths))
 	}
 	if f.OwnContributionCents > 0 {
 		v := pct(12*f.CashFlowAfterTaxCents, f.OwnContributionCents)

@@ -74,6 +74,7 @@ function evaluation(loanId: string) {
     grossYieldPct: 5.16,
     netYieldPct: 3.32,
     netAfterTaxYieldPct: 1.75,
+    netAfterCreditYieldPct: loanId === LOAN1 ? 1.12 : loanId === LOAN2 ? 0.4 : 1.75,
     financing: financed
       ? {
           monthlyPaymentCents: loanId === LOAN1 ? 28_980 : 50_000,
@@ -194,6 +195,21 @@ describe('Comparaison', () => {
     expect(cell(wrapper, 'net-monthly', 1)).toBe('237,99 €')
     expect(cell(wrapper, 'after-tax-yield', 0)).toBe('1,75 %')
     expect(cell(wrapper, 'regime', 0)).toBe('Micro-foncier')
+  })
+
+  it("highlights « Rentabilité nette après crédit », following each column's loan", async () => {
+    stubApi()
+    const { wrapper } = await mountAt(`/biens/comparer?biens=${A},${B}`)
+
+    const row = wrapper.get('[data-test="row-after-credit-yield"]')
+    expect(row.get('th').text()).toBe('Rentabilité nette après crédit')
+    expect(row.classes()).toContain('compare-kpi')
+    expect(cell(wrapper, 'after-credit-yield', 0)).toBe('1,12 %')
+    expect(cell(wrapper, 'after-credit-yield', 1)).toBe('1,75 %')
+
+    await wrapper.findAll('[data-test="row-loan"] select')[1].setValue(LOAN2)
+    await flushPromises()
+    expect(cell(wrapper, 'after-credit-yield', 1)).toBe('0,40 %')
   })
 
   it("starts each column on the bien's own loan", async () => {

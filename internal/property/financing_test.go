@@ -100,6 +100,8 @@ func TestFinancingFigures(t *testing.T) {
 		CashFlowBeforeTaxCents: 16_020,     // 450 € − 289,80 €
 		CashFlowAfterTaxCents:  1_170,      // 301,50 € − 289,80 €
 		OwnContributionCents:   11_375_000, // 162 750 € + 1 000 € fees − 50 000 €
+		// (16 551,57 € interest + 3 000 € insurance + 1 000 € fees) / 20 years.
+		AnnualCreditCostCents: 102_758,
 	}
 	got := *f
 	got.ReturnOnContributionPct = nil
