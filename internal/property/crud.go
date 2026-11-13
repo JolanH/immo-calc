@@ -60,35 +60,30 @@ type candidate struct {
 	in Input
 }
 
-// loanParams is a loan's terms with another amount: the home page's active
-// loan is a template, each bien borrowing its own acquisition cost.
-func loanParams(l loan.Loan, principalCents int64) loan.Params {
-	p := l.Params()
-	p.PrincipalCents = principalCents
-	return p
-}
-
 // evaluateAll evaluates candidates together: the micro-regime ceilings are
-// checked against the rent collected by all of them. With a template loan,
-// every candidate is financed on its terms for its own acquisition cost,
+// checked against the rent collected by all of them. With an active loan
+// (home page), every candidate is financed by that loan exactly as saved,
 // whatever its own linked loan.
-func (s *Service) evaluateAll(items []candidate, template *loan.Loan) ([]Result, error) {
+func (s *Service) evaluateAll(items []candidate, activeLoan *loan.Loan) ([]Result, error) {
 	settings, err := s.Settings()
 	if err != nil {
 		return nil, err
+	}
+	var activeFigures *LoanFigures
+	if activeLoan != nil {
+		f, err := FiguresOf(activeLoan.Params())
+		if err != nil {
+			return nil, fmt.Errorf("active loan %s: %w", activeLoan.ID, err)
+		}
+		activeFigures = &f
 	}
 	figures := map[string]*LoanFigures{}
 	results := make([]Result, len(items))
 	totals := map[Regime]int64{}
 	for i, it := range items {
 		var lf *LoanFigures
-		if template != nil {
-			cost := roundCents(float64(it.in.PriceCents) * (1 + settings.NotaryFeePct/100))
-			f, err := FiguresOf(loanParams(*template, cost))
-			if err != nil {
-				return nil, fmt.Errorf("active loan for property %s: %w", it.id, err)
-			}
-			lf = &f
+		if activeFigures != nil {
+			lf = activeFigures
 		} else if cached, ok := figures[it.in.LoanID]; ok {
 			lf = cached
 		} else {
@@ -145,7 +140,7 @@ func wholeEuros(cents int64) string {
 // ListOptions narrow or adjust the property list.
 type ListOptions struct {
 	LoanID       string // only the properties linked to this loan
-	ActiveLoanID string // apply this loan as a template to every property (home page)
+	ActiveLoanID string // finance every property with this loan, as saved (home page)
 }
 
 // List returns every saved property with its key results, optionally only
@@ -154,8 +149,8 @@ func (s *Service) List(loanID string) ([]Summary, error) {
 	return s.ListWith(ListOptions{LoanID: loanID})
 }
 
-// template returns the active loan, or nil when none is asked for.
-func (s *Service) template(activeLoanID string) (*loan.Loan, error) {
+// activeLoan returns the active loan, or nil when none is asked for.
+func (s *Service) activeLoan(activeLoanID string) (*loan.Loan, error) {
 	if activeLoanID == "" {
 		return nil, nil
 	}
@@ -170,7 +165,7 @@ func (s *Service) template(activeLoanID string) (*loan.Loan, error) {
 }
 
 // evaluateSaved evaluates every saved property.
-func (s *Service) evaluateSaved(template *loan.Loan) ([]Property, []Result, error) {
+func (s *Service) evaluateSaved(activeLoan *loan.Loan) ([]Property, []Result, error) {
 	props, err := s.properties()
 	if err != nil {
 		return nil, nil, err
@@ -179,17 +174,17 @@ func (s *Service) evaluateSaved(template *loan.Loan) ([]Property, []Result, erro
 	for i, p := range props {
 		items[i] = candidate{p.ID, p.Input}
 	}
-	results, err := s.evaluateAll(items, template)
+	results, err := s.evaluateAll(items, activeLoan)
 	return props, results, err
 }
 
-// evaluateWithTemplate evaluates one saved property with a template loan.
-func (s *Service) evaluateWithTemplate(id, activeLoanID string) (Result, error) {
-	template, err := s.template(activeLoanID)
+// evaluateWithActiveLoan evaluates one saved property with the active loan.
+func (s *Service) evaluateWithActiveLoan(id, activeLoanID string) (Result, error) {
+	activeLoan, err := s.activeLoan(activeLoanID)
 	if err != nil {
 		return Result{}, err
 	}
-	props, results, err := s.evaluateSaved(template)
+	props, results, err := s.evaluateSaved(activeLoan)
 	if err != nil {
 		return Result{}, err
 	}
@@ -203,11 +198,11 @@ func (s *Service) evaluateWithTemplate(id, activeLoanID string) (Result, error) 
 
 // ListWith returns the saved properties with their key results.
 func (s *Service) ListWith(opts ListOptions) ([]Summary, error) {
-	template, err := s.template(opts.ActiveLoanID)
+	activeLoan, err := s.activeLoan(opts.ActiveLoanID)
 	if err != nil {
 		return nil, err
 	}
-	props, results, err := s.evaluateSaved(template)
+	props, results, err := s.evaluateSaved(activeLoan)
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +221,8 @@ func (s *Service) ListWith(opts ListOptions) ([]Summary, error) {
 			cf := r.Financing.CashFlowAfterTaxCents
 			sum.CashFlowAfterTaxCents = &cf
 		}
-		if template != nil {
-			sum.LoanID, sum.LoanName = template.ID, template.Name
+		if activeLoan != nil {
+			sum.LoanID, sum.LoanName = activeLoan.ID, activeLoan.Name
 		} else if ref := s.loanRef(p.LoanID); ref != nil {
 			sum.LoanName = ref.Name
 		}

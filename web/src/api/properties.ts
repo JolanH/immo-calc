@@ -90,8 +90,8 @@ const path = (id: string) => `/api/properties/${encodeURIComponent(id)}`
 
 /**
  * Lists saved properties: only those using `loanId` if given; with
- * `activeLoanId`, that loan is applied to every property as a template (home
- * page), each borrowing its own price + notary fees.
+ * `activeLoanId`, every property is financed by that loan exactly as saved
+ * (home page).
  */
 export function listProperties(
   options: { loanId?: string; activeLoanId?: string } = {},

@@ -368,45 +368,57 @@ func TestPropertyListOrDetailNamesThreeOrMoreProperties(t *testing.T) {
 	}
 }
 
-func TestActiveLoanTemplateAppliesToEveryProperty(t *testing.T) {
+// The user's case (2026-11-13): « SE appart 1 » with the active loan
+// « Conso Immo » (15 000 € at 5 % over 5 years, 283,07 €/month). The loan
+// applies exactly as saved: cash-flow after tax = 104,30 − 283,07 € = −178,77 €.
+func TestActiveLoanAppliesExactlyAsSaved(t *testing.T) {
 	f := newFixture(t)
-	template := saveLoan(t, f, "Prêt type") // 3 %, 20 ans, assurance 0,3 %, 1 000 € de frais
-	own := saveLoan(t, f, "Prêt du bien")
-	withOwnLoan := validPropertyInput()
-	withOwnLoan.LoanID = own.ID
-	_, _ = f.svc.Create(validPropertyInput())
+	conso, err := f.loans.Create(loan.Input{
+		Name: "Conso Immo", PrincipalCents: 1_500_000, AnnualRatePct: 5, DurationMonths: 60, FirstPaymentMonth: "2027-01",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	other := saveLoan(t, f, "Prêt du bien")
+	appart := Input{
+		Name: "SE appart 1", PriceCents: 3_400_000, DPE: "C", MonthlyRentCents: 36_000,
+		MonthlyRecoverableChargesCents: 5_000, AnnualPropertyTaxCents: 65_000, AnnualCondoFeesCents: 70_000,
+		TaxRegime: MicroFoncier,
+	}
+	withOwnLoan := appart
+	withOwnLoan.Name = "SE appart 2"
+	withOwnLoan.LoanID = other.ID
+	_, _ = f.svc.Create(appart)
 	_, _ = f.svc.Create(withOwnLoan)
 
-	list, err := f.svc.ListWith(ListOptions{ActiveLoanID: template.ID})
+	list, err := f.svc.ListWith(ListOptions{ActiveLoanID: conso.ID})
 
 	if err != nil || len(list) != 2 {
 		t.Fatalf("list = %+v, %v", list, err)
 	}
-	// Each bien borrows its own acquisition cost (162 750 €) on the template's terms.
-	want, _ := FiguresOf(loanParams(template, 16_275_000))
-	for i, s := range list {
-		if s.LoanID != template.ID || s.LoanName != "Prêt type" || s.CashFlowAfterTaxCents == nil {
-			t.Fatalf("list[%d] = %+v", i, s)
+	for _, s := range list {
+		if s.MonthlyNetIncomeCents != 10_430 {
+			t.Fatalf("%s: revenus mensuels après impôts = %d, want 104,30 €", s.Name, s.MonthlyNetIncomeCents)
 		}
-		if got := *s.CashFlowAfterTaxCents; got != 23_799-want.MonthlyTotalCents {
-			t.Errorf("list[%d] cash-flow = %d, want %d", i, got, 23_799-want.MonthlyTotalCents)
+		if s.LoanID != conso.ID || s.CashFlowAfterTaxCents == nil || *s.CashFlowAfterTaxCents != -17_877 {
+			t.Errorf("%s: loan = %s, cash-flow = %v, want −178,77 € with « Conso Immo »", s.Name, s.LoanName, s.CashFlowAfterTaxCents)
 		}
 	}
 }
 
-func TestActiveLoanTemplateFinancing(t *testing.T) {
+func TestActiveLoanFinancingUsesTheSavedAmount(t *testing.T) {
 	f := newFixture(t)
-	template := saveLoan(t, f, "Prêt type")
+	active := saveLoan(t, f, "Prêt actif") // 50 000 €, 1 000 € de frais
 	p, _ := f.svc.Create(validPropertyInput())
 
-	res, err := f.svc.evaluateWithTemplate(p.ID, template.ID)
+	res, err := f.svc.evaluateWithActiveLoan(p.ID, active.ID)
 
 	if err != nil || res.Financing == nil {
 		t.Fatalf("res = %+v, err = %v", res, err)
 	}
-	// Apport = A + fees − A = the loan fees.
-	if res.Financing.OwnContributionCents != 100_000 {
-		t.Errorf("apport = %d, want 1 000 € (fees only)", res.Financing.OwnContributionCents)
+	// Apport = A 162 750 € + 1 000 € fees − 50 000 € borrowed.
+	if res.Financing.OwnContributionCents != 11_375_000 || res.Financing.MonthlyPaymentCents != 28_980 {
+		t.Errorf("financing = %+v", *res.Financing)
 	}
 }
 
