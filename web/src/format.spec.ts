@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatEuros, formatMonth, formatPercent } from './format'
+import { formatEuros, formatMonth, formatMonthDate, formatPercent } from './format'
 
 // Intl uses non-breaking spaces (U+00A0, U+202F) in fr-FR; compare with plain spaces.
 const plain = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ')
@@ -50,5 +50,16 @@ describe('formatMonth', () => {
 
   it('returns the input unchanged when it is not a month', () => {
     expect(formatMonth('n/a')).toBe('n/a')
+  })
+})
+
+describe('formatMonthDate', () => {
+  it('shows a month as the first day, DD/MM/YYYY', () => {
+    expect(formatMonthDate('2032-01')).toBe('01/01/2032')
+    expect(formatMonthDate('2058-11')).toBe('01/11/2058')
+  })
+
+  it('returns the input unchanged when it is not a month', () => {
+    expect(formatMonthDate('')).toBe('')
   })
 })

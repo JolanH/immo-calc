@@ -303,4 +303,72 @@ describe('BienDetail (new property)', () => {
     expect(link.text()).toBe('Voir le prêt →')
     expect(link.attributes('href')).toBe('/prets/aaaaaaaaaaaaaaaa')
   })
+
+  describe('« Date de rentabilité »', () => {
+    const financing = {
+      monthlyPaymentCents: 28_307,
+      cashFlowBeforeTaxCents: -15_000,
+      cashFlowAfterTaxCents: -17_877,
+      ownContributionCents: 2_189_000,
+      returnOnContributionPct: -9.8,
+    }
+    const timeline = {
+      startMonth: '2027-01',
+      positiveCashFlowMonth: '2032-01',
+      paybackMonth: '2058-01',
+      paybackAtStart: false,
+      points: [{ month: '2027-01', cashFlowCents: -17_877, cumulativeCents: -2_206_877 }],
+    }
+
+    it('shows both dates with a loan, and the chart', async () => {
+      stubApi(() => json({ ...result, financing, timeline }))
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      const card = plain(wrapper.get('[data-test="profit-dates"]').text())
+      expect(card).toContain('Date de rentabilité')
+      expect(card).toContain('Cash-flow mensuel positif : 01/01/2032')
+      expect(card).toContain('Apport récupéré : 01/01/2058')
+      expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(true)
+    })
+
+    it("says « jamais », « dès l'achat » or « au-delà de 50 ans » when relevant", async () => {
+      stubApi(() =>
+        json({
+          ...result,
+          financing,
+          timeline: { ...timeline, positiveCashFlowMonth: '', paybackMonth: '' },
+        }),
+      )
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+      let card = wrapper.get('[data-test="profit-dates"]').text()
+      expect(card).toContain('Cash-flow mensuel positif : jamais')
+      expect(card).toContain('Apport récupéré : au-delà de 50 ans')
+
+      stubApi(() =>
+        json({
+          ...result,
+          financing,
+          timeline: { ...timeline, paybackAtStart: true, paybackMonth: '2027-01' },
+        }),
+      )
+      await wrapper.get('#bien-loyer').setValue('701')
+      vi.advanceTimersByTime(300)
+      await flushPromises()
+      card = wrapper.get('[data-test="profit-dates"]').text()
+      expect(card).toContain("Apport récupéré : dès l'achat")
+    })
+
+    it('invites to link a loan when there is none', async () => {
+      stubApi()
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      expect(wrapper.get('[data-test="profit-dates"]').text()).toContain(
+        'Associez un prêt pour calculer ces dates.',
+      )
+      expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(false)
+    })
+  })
 })

@@ -443,6 +443,14 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/views/{PretDetail,BienDetail}.vue` + specs, `web/src/components/LinkedProperties.vue` + spec
 **Scope:** S
 
+### [x] Task 34a (added 2026-11-13): profitability dates on the Bien page
+**Description:** Requested after Checkpoint D. With a linked loan, a month-by-month timeline (SPEC-property rules 16–20) gives « Cash-flow mensuel positif » and « Apport récupéré » dates, shown in a « Date de rentabilité » result card (DD/MM/YYYY) and a « Trésorerie cumulée » chart (cumulative position, zero line, both dates marked).
+**Acceptance criteria:**
+- [x] The user's case gives 01/01/2032 and 01/01/2058
+- [x] Apport ≤ 0 → « dès l'achat »; never positive → « jamais »; réel foncier after the loan uses the tax without interest deduction; no loan → no timeline, card invites to link one
+- [x] Chart: one line, zero line, both dates marked, French labels, readable in light and dark
+**Scope:** M
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

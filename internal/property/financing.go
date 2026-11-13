@@ -27,6 +27,8 @@ func FiguresOf(p loan.Params) (LoanFigures, error) {
 		PrincipalCents:    p.PrincipalCents,
 		FeesCents:         res.TotalFeesCents,
 		MonthlyTotalCents: res.MonthlyTotalCents,
+		FirstPaymentMonth: p.FirstPaymentMonth,
+		Payments:          paymentsOf(res),
 	}
 	for _, inst := range res.Schedule[:min(12, len(res.Schedule))] {
 		f.FirstYearInterest += inst.InterestCents

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import LoanChart from './LoanChart.vue'
-import { niceTicks, tickFormatter } from './chartScale'
+import { niceRange, niceTicks, tickFormatter } from './chartScale'
 import type { YearRow } from '@/api/loans'
 
 const plain = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ')
@@ -160,5 +160,20 @@ describe('tickFormatter', () => {
     expect(plain(format(0))).toBe('0 €')
     expect(plain(format(1_500_000))).toBe('15 k€')
     expect(plain(format(20_000_000))).toBe('200 k€')
+  })
+})
+
+describe('niceRange', () => {
+  it('covers a range crossing zero with round ticks', () => {
+    expect(niceRange(-3_261_613, 2_977)).toEqual([
+      -4_000_000, -3_000_000, -2_000_000, -1_000_000, 0, 1_000_000,
+    ])
+  })
+
+  it('always includes zero', () => {
+    expect(niceRange(500_000, 2_000_000)).toEqual([0, 500_000, 1_000_000, 1_500_000, 2_000_000])
+    expect(niceRange(-2_000_000, -500_000)).toEqual([
+      -2_000_000, -1_500_000, -1_000_000, -500_000, 0,
+    ])
   })
 })

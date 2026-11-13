@@ -947,3 +947,46 @@ a.app-header__name {
   white-space: normal;
   min-width: 8rem;
 }
+
+.profit-chart h2 {
+  margin: 0;
+}
+
+.profit-chart__frame {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.25rem;
+  border: none;
+}
+
+.profit-chart__line {
+  fill: none;
+  stroke: var(--chart-capital);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.profit-chart__zero {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.profit-chart__marker-line {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.profit-chart__marker-label {
+  fill: var(--text);
+  font-size: 12px;
+}
+
+.profit-chart__dot {
+  fill: var(--chart-capital);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.detail > .profit-chart {
+  margin-top: 1.5rem;
+}
