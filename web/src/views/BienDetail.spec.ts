@@ -100,6 +100,7 @@ describe('BienDetail (new property)', () => {
       'Micro-foncier (location nue)',
       'Réel foncier (location nue)',
       'Micro-BIC (location meublée)',
+      'LMNP au réel (location meublée)',
     ])
     expect(wrapper.findAll('#bien-dpe option').map((o) => o.text())).toEqual([
       'Choisir…',
@@ -148,6 +149,8 @@ describe('BienDetail (new property)', () => {
       annualPropertyTaxCents: 90_000,
       annualCondoFeesCents: 120_000,
       annualLandlordInsuranceCents: 15_000,
+      furnitureIncludedCents: 0,
+      furnitureAddedCents: 0,
       agencyManaged: false,
       taxRegime: 'micro_foncier',
       loanId: '',
@@ -177,7 +180,7 @@ describe('BienDetail (new property)', () => {
       ["Coût d'acquisition (prix + notaire)", '162 750,00 €'],
       ['Loyers encaissés (vacance déduite)', '7 700,00 €'],
       ['Taxe foncière', '900,00 €'],
-      ['Charges de copropriété', '1 200,00 €'],
+      ['Charges de copropriété non récupérables', '1 200,00 €'],
       ['Assurance PNO', '150,00 €'],
       ['Charges non récupérées pendant la vacance', '50,00 €'],
       ['Charges du propriétaire', '2 300,00 €'],
@@ -431,5 +434,114 @@ describe('BienDetail (new property)', () => {
 
       expect(wrapper.find('[data-test="after-credit-yield"]').exists()).toBe(false)
     })
+  })
+})
+
+describe('BienDetail tax regimes and furniture', () => {
+  const regimes = [
+    {
+      regime: 'micro_foncier',
+      taxableIncomeCents: 277_200,
+      annualTaxCents: 130_838,
+      netAnnualIncomeCents: 125_162,
+      netAfterTaxYieldPct: 3.39,
+      current: true,
+      best: false,
+    },
+    {
+      regime: 'reel_foncier',
+      taxableIncomeCents: 256_000,
+      annualTaxCents: 120_832,
+      netAnnualIncomeCents: 135_168,
+      netAfterTaxYieldPct: 3.66,
+      current: false,
+      best: false,
+    },
+    {
+      regime: 'micro_bic',
+      taxableIncomeCents: 198_000,
+      annualTaxCents: 96_228,
+      netAnnualIncomeCents: 159_772,
+      netAfterTaxYieldPct: 4.33,
+      current: false,
+      best: false,
+    },
+    {
+      regime: 'lmnp_reel',
+      taxableIncomeCents: 150_033,
+      annualTaxCents: 72_916,
+      netAnnualIncomeCents: 183_084,
+      netAfterTaxYieldPct: 4.96,
+      current: false,
+      best: true,
+    },
+  ]
+
+  it('compares the four regimes, marking the current one and the lowest tax', async () => {
+    stubApi(() => json({ ...result, regimes }))
+    const wrapper = await mountNew()
+    await fillReferenceFlat(wrapper)
+
+    const section = wrapper.get('[data-test="regime-section"]')
+    expect(section.get('summary').text()).toBe('Régime fiscal')
+    expect(plain(section.text())).toContain('70 % des loyers encaissés')
+    const rows = section.findAll('[data-test="regime-table"] tbody tr')
+    expect(rows.map((r) => r.get('th').text().split(/\s+/)[0])).toEqual([
+      'Micro-foncier',
+      'Réel',
+      'Micro-BIC',
+      'LMNP',
+    ])
+    const micro = wrapper.get('[data-test="regime-micro_foncier"]')
+    expect(micro.find('[data-test="tag-current"]').exists()).toBe(true)
+    expect(plain(micro.text())).toContain('1 308,38 €')
+    const lmnp = wrapper.get('[data-test="regime-lmnp_reel"]')
+    expect(lmnp.find('[data-test="tag-best"]').text()).toBe('le plus avantageux')
+    expect(plain(lmnp.text())).toContain('4,96 %')
+    expect(wrapper.findAll('[data-test="tag-best"]')).toHaveLength(1)
+  })
+
+  it('sends the furniture and lists the LMNP depreciation in « Détail du calcul »', async () => {
+    const fetchMock = stubApi(() =>
+      json({ ...result, buildingDepreciationCents: 96_617, furnitureDepreciationCents: 42_857 }),
+    )
+    const wrapper = await mountNew()
+    await wrapper.get('#bien-regime').setValue('lmnp_reel')
+    await wrapper.get('#bien-mobilier-compris').setValue('3 000')
+    await wrapper.get('#bien-mobilier-achete').setValue('500')
+    await fillReferenceFlat(wrapper)
+
+    const bodies = fetchMock.mock.calls
+      .filter(([url]) => url === '/api/properties/evaluate')
+      .map(([, init]) => JSON.parse(String(init?.body)))
+    expect(bodies.at(-1)).toMatchObject({
+      taxRegime: 'lmnp_reel',
+      furnitureIncludedCents: 300_000,
+      furnitureAddedCents: 50_000,
+    })
+    const detail = plain(wrapper.get('[data-test="calc-detail"]').text())
+    expect(detail).toContain('Amortissement du bâti (LMNP)')
+    expect(detail).toContain('966,17 €')
+    expect(detail).toContain('Amortissement du mobilier (LMNP)')
+    expect(detail).toContain('428,57 €')
+  })
+
+  it('names the condo fees as non-recoverable and explains them', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+
+    expect(wrapper.get('label[for="bien-copro"]').text()).toBe(
+      'Charges de copropriété non récupérables (par an)',
+    )
+    expect(wrapper.get('#bien-copro-hint').text()).toContain('Charges récupérables')
+    expect(wrapper.get('#bien-copro').attributes('aria-describedby')).toBe('bien-copro-hint')
+  })
+
+  it('has no depreciation rows under the other regimes', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+    await fillReferenceFlat(wrapper)
+
+    expect(wrapper.get('[data-test="calc-detail"]').text()).not.toContain('Amortissement')
   })
 })

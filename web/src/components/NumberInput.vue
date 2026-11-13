@@ -13,6 +13,8 @@ const props = defineProps<{
   suffix?: string
   error?: string
   placeholder?: string
+  /** Help text under the field. */
+  hint?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: number | null] }>()
 
@@ -49,12 +51,15 @@ function onBlur() {
         class="input"
         :placeholder="placeholder"
         :aria-invalid="error ? 'true' : undefined"
-        :aria-describedby="error ? `${id}-error` : undefined"
+        :aria-describedby="
+          [error ? `${id}-error` : '', hint ? `${id}-hint` : ''].join(' ').trim() || undefined
+        "
         @input="onInput"
         @blur="onBlur"
       />
       <span v-if="suffix" class="field__suffix" aria-hidden="true">{{ suffix }}</span>
     </div>
+    <p v-if="hint" :id="`${id}-hint`" class="field__hint">{{ hint }}</p>
     <p v-if="error" :id="`${id}-error`" role="alert" class="field-error">{{ error }}</p>
   </div>
 </template>

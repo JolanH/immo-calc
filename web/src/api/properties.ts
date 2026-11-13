@@ -1,6 +1,14 @@
 import { request } from './client'
 
-export type TaxRegime = 'micro_foncier' | 'reel_foncier' | 'micro_bic'
+export type TaxRegime = 'micro_foncier' | 'reel_foncier' | 'micro_bic' | 'lmnp_reel'
+
+/** Regime names as shown in tables (the form adds « location nue / meublée »). */
+export const REGIME_LABELS: Record<TaxRegime, string> = {
+  micro_foncier: 'Micro-foncier',
+  reel_foncier: 'Réel foncier',
+  micro_bic: 'Micro-BIC',
+  lmnp_reel: 'LMNP au réel',
+}
 
 /** A property as entered (and stored). Amounts in cents. */
 export interface PropertyInput {
@@ -12,6 +20,10 @@ export interface PropertyInput {
   annualPropertyTaxCents: number
   annualCondoFeesCents: number
   annualLandlordInsuranceCents: number
+  /** Furniture listed in the deed, part of the price (outside the notary base). */
+  furnitureIncludedCents: number
+  /** Furniture bought on top of the price. */
+  furnitureAddedCents: number
   agencyManaged: boolean
   taxRegime: TaxRegime
   loanId: string // '' = no linked loan
@@ -48,6 +60,17 @@ export interface Timeline {
   points: TimelinePoint[]
 }
 
+/** One regime applied to the bien (« Régime fiscal » section). */
+export interface RegimeComparison {
+  regime: TaxRegime
+  taxableIncomeCents: number
+  annualTaxCents: number
+  netAnnualIncomeCents: number
+  netAfterTaxYieldPct: number
+  current: boolean
+  best: boolean // lowest tax
+}
+
 export interface PropertyResult {
   acquisitionCostCents: number
   collectedRentCents: number
@@ -65,6 +88,11 @@ export interface PropertyResult {
   netAfterTaxYieldPct: number
   /** (RN − average annual credit cost) / A; equals netAfterTaxYieldPct without a loan. */
   netAfterCreditYieldPct: number
+  /** LMNP au réel depreciation (0 under the other regimes). */
+  buildingDepreciationCents?: number
+  furnitureDepreciationCents?: number
+  /** The four regimes compared on this bien. */
+  regimes?: RegimeComparison[]
   financing: Financing | null
   timeline?: Timeline | null
   warnings: PropertyWarning[]

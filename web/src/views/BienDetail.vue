@@ -7,6 +7,7 @@ import ResultCard from '@/components/ResultCard.vue'
 import FinancingCard from '@/components/FinancingCard.vue'
 import CalcDetail from '@/components/CalcDetail.vue'
 import ProfitChart from '@/components/ProfitChart.vue'
+import RegimeSection from '@/components/RegimeSection.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
 import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
 import { ApiError } from '@/api/client'
@@ -30,6 +31,7 @@ const REGIMES: { value: TaxRegime; label: string }[] = [
   { value: 'micro_foncier', label: 'Micro-foncier (location nue)' },
   { value: 'reel_foncier', label: 'Réel foncier (location nue)' },
   { value: 'micro_bic', label: 'Micro-BIC (location meublée)' },
+  { value: 'lmnp_reel', label: 'LMNP au réel (location meublée)' },
 ]
 
 // Form state: null means "not a number yet" (empty or being typed).
@@ -42,6 +44,8 @@ const form = reactive({
   annualPropertyTaxCents: null as number | null,
   annualCondoFeesCents: 0 as number | null,
   annualLandlordInsuranceCents: 0 as number | null,
+  furnitureIncludedCents: 0 as number | null,
+  furnitureAddedCents: 0 as number | null,
   agencyManaged: false,
   taxRegime: 'micro_foncier' as TaxRegime,
   loanId: '',
@@ -95,6 +99,8 @@ const evaluationInput = computed((): Omit<PropertyInput, 'name'> | null => {
     annualPropertyTaxCents: form.annualPropertyTaxCents,
     annualCondoFeesCents: form.annualCondoFeesCents ?? 0,
     annualLandlordInsuranceCents: form.annualLandlordInsuranceCents ?? 0,
+    furnitureIncludedCents: form.furnitureIncludedCents ?? 0,
+    furnitureAddedCents: form.furnitureAddedCents ?? 0,
     agencyManaged: form.agencyManaged,
     taxRegime: form.taxRegime,
     loanId: form.loanId,
@@ -119,6 +125,8 @@ function fill(p: PropertyDetail) {
     annualPropertyTaxCents: p.annualPropertyTaxCents,
     annualCondoFeesCents: p.annualCondoFeesCents,
     annualLandlordInsuranceCents: p.annualLandlordInsuranceCents,
+    furnitureIncludedCents: p.furnitureIncludedCents ?? 0,
+    furnitureAddedCents: p.furnitureAddedCents ?? 0,
     agencyManaged: p.agencyManaged,
     taxRegime: p.taxRegime,
     loanId: p.loanId,
@@ -166,6 +174,8 @@ async function save() {
     annualPropertyTaxCents: form.annualPropertyTaxCents ?? 0,
     annualCondoFeesCents: form.annualCondoFeesCents ?? 0,
     annualLandlordInsuranceCents: form.annualLandlordInsuranceCents ?? 0,
+    furnitureIncludedCents: form.furnitureIncludedCents ?? 0,
+    furnitureAddedCents: form.furnitureAddedCents ?? 0,
     agencyManaged: form.agencyManaged,
     taxRegime: form.taxRegime,
     loanId: form.loanId,
@@ -297,7 +307,8 @@ async function remove() {
         <MoneyInput
           id="bien-copro"
           v-model="form.annualCondoFeesCents"
-          label="Charges de copropriété (par an)"
+          label="Charges de copropriété non récupérables (par an)"
+          hint="La part des appels du syndic qui reste à votre charge. La part refacturée au locataire va dans « Charges récupérables »."
           :error="errors.annualCondoFeesCents"
         />
         <MoneyInput
@@ -305,6 +316,20 @@ async function remove() {
           v-model="form.annualLandlordInsuranceCents"
           label="Assurance PNO (par an)"
           :error="errors.annualLandlordInsuranceCents"
+        />
+        <MoneyInput
+          id="bien-mobilier-compris"
+          v-model="form.furnitureIncludedCents"
+          label="Mobilier compris dans le prix"
+          hint="Meubles listés dans l'acte de vente : exclus des frais de notaire, amortis en LMNP au réel."
+          :error="errors.furnitureIncludedCents"
+        />
+        <MoneyInput
+          id="bien-mobilier-achete"
+          v-model="form.furnitureAddedCents"
+          label="Mobilier acheté en plus"
+          hint="Ajouté au coût d'acquisition, amorti en LMNP au réel."
+          :error="errors.furnitureAddedCents"
         />
         <label class="checkbox">
           <input id="bien-agence" v-model="form.agencyManaged" type="checkbox" />
@@ -425,6 +450,11 @@ async function remove() {
           :property-tax-cents="form.annualPropertyTaxCents ?? 0"
           :condo-fees-cents="form.annualCondoFeesCents ?? 0"
           :insurance-cents="form.annualLandlordInsuranceCents ?? 0"
+        />
+        <RegimeSection
+          v-if="result?.regimes?.length"
+          :regimes="result.regimes"
+          :financed="!!result.financing"
         />
         <ProfitChart
           v-if="result?.timeline"

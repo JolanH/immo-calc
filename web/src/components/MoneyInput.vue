@@ -9,6 +9,8 @@ defineProps<{
   modelValue: number | null
   error?: string
   placeholder?: string
+  /** Help text under the field. */
+  hint?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: number | null] }>()
 </script>
@@ -23,6 +25,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: number | null] }>()
     suffix="€"
     :error="error"
     :placeholder="placeholder"
+    :hint="hint"
     @update:model-value="emit('update:modelValue', $event)"
   />
 </template>

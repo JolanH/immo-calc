@@ -204,6 +204,8 @@ async function linkToProperty(propertyId: string, loanId: string): Promise<Prope
     annualPropertyTaxCents: p.annualPropertyTaxCents,
     annualCondoFeesCents: p.annualCondoFeesCents,
     annualLandlordInsuranceCents: p.annualLandlordInsuranceCents,
+    furnitureIncludedCents: p.furnitureIncludedCents,
+    furnitureAddedCents: p.furnitureAddedCents,
     agencyManaged: p.agencyManaged,
     taxRegime: p.taxRegime,
     loanId,

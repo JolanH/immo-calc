@@ -1096,3 +1096,50 @@ a.app-header__name {
   background: var(--surface);
   cursor: pointer;
 }
+
+.field__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* « Régime fiscal » section on the Bien page. */
+.regime-section__list {
+  margin: 0.75rem 0;
+}
+
+.regime-section__list dt {
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.regime-section__list dd {
+  margin: 0.15rem 0 0;
+}
+
+.regime-section__kind {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.regime-section__current th,
+.regime-section__current td {
+  background: var(--accent-soft);
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.tag--best {
+  border-color: transparent;
+  background: var(--success-bg);
+  color: var(--success-text);
+}
