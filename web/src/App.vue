@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { ApiError, request } from '@/api/client'
 import ExternalChangeBanner from '@/components/ExternalChangeBanner.vue'
+
+const route = useRoute()
+
+const navLinks = [
+  { to: '/biens', label: 'Biens' },
+  { to: '/prets', label: 'Prêts' },
+  { to: '/parametres', label: 'Paramètres' },
+]
+
+/** A section stays highlighted on its sub-pages (/prets/123 → Prêts). */
+function inSection(path: string): boolean {
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
 
 const stopped = ref(false)
 const quitError = ref('')
@@ -26,9 +39,15 @@ async function quit() {
     <header class="app-header">
       <span class="app-header__name">immo-calc</span>
       <nav class="app-nav">
-        <RouterLink to="/biens">Biens</RouterLink>
-        <RouterLink to="/prets">Prêts</RouterLink>
-        <RouterLink to="/parametres">Paramètres</RouterLink>
+        <RouterLink
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
+          :class="{ 'nav-active': inSection(link.to) }"
+          :aria-current="inSection(link.to) ? 'page' : undefined"
+        >
+          {{ link.label }}
+        </RouterLink>
       </nav>
       <button type="button" class="app-header__quit" data-test="quit" @click="quit">Quitter</button>
     </header>

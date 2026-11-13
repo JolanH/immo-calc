@@ -56,4 +56,24 @@ describe('router', () => {
       ['Paramètres', '/parametres'],
     ])
   })
+
+  it.each([
+    ['/prets', 'Prêts'],
+    ['/prets/aaaaaaaaaaaaaaaa', 'Prêts'],
+    ['/prets/nouveau', 'Prêts'],
+    ['/biens', 'Biens'],
+    ['/parametres', 'Paramètres'],
+  ])('highlights the section of %s in the navigation', async (path, section) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('offline'))),
+    )
+    const { wrapper } = await mountAt(path)
+
+    const active = wrapper
+      .findAll('header nav a')
+      .filter((a) => a.attributes('aria-current') === 'page')
+    expect(active.map((a) => a.text())).toEqual([section])
+    vi.unstubAllGlobals()
+  })
 })
