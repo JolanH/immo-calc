@@ -18,6 +18,8 @@ type Input struct {
 	AnnualPropertyTaxCents         int64  `json:"annualPropertyTaxCents" yaml:"annual_property_tax_cents"`
 	AnnualCondoFeesCents           int64  `json:"annualCondoFeesCents" yaml:"annual_condo_fees_cents"`
 	AnnualLandlordInsuranceCents   int64  `json:"annualLandlordInsuranceCents" yaml:"annual_landlord_insurance_cents"`
+	FurnitureIncludedCents         int64  `json:"furnitureIncludedCents" yaml:"furniture_included_cents,omitempty"`
+	FurnitureAddedCents            int64  `json:"furnitureAddedCents" yaml:"furniture_added_cents,omitempty"`
 	AgencyManaged                  bool   `json:"agencyManaged" yaml:"agency_managed"`
 	TaxRegime                      Regime `json:"taxRegime" yaml:"tax_regime"`
 	LoanID                         string `json:"loanId" yaml:"loan_id,omitempty"`
@@ -39,6 +41,8 @@ func (in Input) Params() Params {
 		AnnualLandlordInsuranceCents:   in.AnnualLandlordInsuranceCents,
 		AgencyManaged:                  in.AgencyManaged,
 		TaxRegime:                      in.TaxRegime,
+		FurnitureIncludedCents:         in.FurnitureIncludedCents,
+		FurnitureAddedCents:            in.FurnitureAddedCents,
 		DPE:                            in.DPE,
 	}
 }
@@ -54,6 +58,8 @@ var inputFields = []struct{ json, yaml string }{
 	{"annualPropertyTaxCents", "annual_property_tax_cents"},
 	{"annualCondoFeesCents", "annual_condo_fees_cents"},
 	{"annualLandlordInsuranceCents", "annual_landlord_insurance_cents"},
+	{"furnitureIncludedCents", "furniture_included_cents"},
+	{"furnitureAddedCents", "furniture_added_cents"},
 	{"taxRegime", "tax_regime"},
 	{"loanId", "loan_id"},
 }
@@ -93,13 +99,21 @@ func ValidateParams(in Input, loans LoanSource) map[string]string {
 		errs["annualPropertyTaxCents"] = "La taxe foncière doit être comprise entre 0 et 50 000 € par an"
 	}
 	if !inRange(in.AnnualCondoFeesCents, 0, 5_000_000) {
-		errs["annualCondoFeesCents"] = "Les charges de copropriété doivent être comprises entre 0 et 50 000 € par an"
+		errs["annualCondoFeesCents"] = "Les charges de copropriété non récupérables doivent être comprises entre 0 et 50 000 € par an"
 	}
 	if !inRange(in.AnnualLandlordInsuranceCents, 0, 500_000) {
 		errs["annualLandlordInsuranceCents"] = "L'assurance PNO doit être comprise entre 0 et 5 000 € par an"
 	}
+	if in.FurnitureIncludedCents < 0 {
+		errs["furnitureIncludedCents"] = "Le mobilier compris ne peut pas être négatif"
+	} else if in.FurnitureIncludedCents > in.PriceCents {
+		errs["furnitureIncludedCents"] = "Le mobilier compris ne peut pas dépasser le prix"
+	}
+	if !inRange(in.FurnitureAddedCents, 0, 10_000_000) {
+		errs["furnitureAddedCents"] = "Le mobilier acheté en plus doit être compris entre 0 et 100 000 €"
+	}
 	switch in.TaxRegime {
-	case MicroFoncier, ReelFoncier, MicroBIC:
+	case MicroFoncier, ReelFoncier, MicroBIC, LMNPReel:
 	default:
 		errs["taxRegime"] = "Choisissez un régime fiscal"
 	}
