@@ -55,6 +55,9 @@ func Update[T any](s *Store, key string, fn func(*T) error) error {
 
 	sections := maps.Clone(s.sections)
 	sections[key] = &node
+	if err := s.checkDocument(sections); err != nil {
+		return err
+	}
 	return s.saveLocked(sections)
 }
 

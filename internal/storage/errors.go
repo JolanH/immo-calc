@@ -104,3 +104,13 @@ func child(node *yaml.Node, seg string) *yaml.Node {
 	}
 	return nil
 }
+
+// DocumentError is a document check failure that points at a value in a
+// section (Path is relative to that section, as for FieldError).
+type DocumentError struct {
+	Section string
+	Path    string
+	Message string // French
+}
+
+func (e *DocumentError) Error() string { return e.Message }
