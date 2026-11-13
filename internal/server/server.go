@@ -17,6 +17,8 @@ type Config struct {
 	Version string
 	// Static is the built frontend. When nil, only the API is served.
 	Static fs.FS
+	// Shutdown is called after POST /api/shutdown has been answered.
+	Shutdown func()
 }
 
 // New returns the root HTTP handler.
@@ -29,13 +31,33 @@ func New(cfg Config) http.Handler {
 			Version string `json:"version"`
 		}{"ok", AppName, cfg.Version})
 	})
+	mux.Handle("POST /api/shutdown", RequireSameOrigin(shutdownHandler(cfg.Shutdown)))
+
 	apiFallback := func(w http.ResponseWriter, r *http.Request) { apiNotMatched(mux, w, r) }
 	mux.HandleFunc("/api/", apiFallback)
 	mux.HandleFunc("/api", apiFallback)
 	if cfg.Static != nil {
 		mux.Handle("/", staticHandler(cfg.Static))
 	}
-	return mux
+
+	apiOnly := requireLoopbackHost(mux)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api" || strings.HasPrefix(r.URL.Path, "/api/") {
+			apiOnly.ServeHTTP(w, r)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+}
+
+func shutdownHandler(shutdown func()) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		WriteJSON(w, http.StatusOK, struct{}{})
+		if shutdown != nil {
+			// The answer is written; stop in the background so it reaches the browser.
+			go shutdown()
+		}
+	}
 }
 
 // apiNotMatched answers API requests no route matched: 405 when the path
