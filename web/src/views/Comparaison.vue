@@ -12,6 +12,7 @@ import {
   type PropertyDetail,
   type PropertyResult,
   type PropertySummary,
+  type TaxRegime,
   REGIME_LABELS,
 } from '@/api/properties'
 import { formatEuros, formatPercent } from '@/format'
@@ -28,6 +29,8 @@ interface Column {
   detail: PropertyDetail | null
   error: string
   loanId: string
+  /** The regime applied in this column (the bien's own until changed). */
+  regime: TaxRegime | ''
   result: PropertyResult | null
 }
 
@@ -49,6 +52,7 @@ function syncUrl() {
   if (columns.length) {
     query.biens = columns.map((c) => c.id).join(',')
     query.prets = columns.map((c) => c.loanId).join(',')
+    query.regimes = columns.map((c) => c.regime).join(',')
   }
   void router.replace({ path: route.path, query })
 }
@@ -73,7 +77,7 @@ async function evaluate(col: Column) {
         furnitureIncludedCents: d.furnitureIncludedCents,
         furnitureAddedCents: d.furnitureAddedCents,
         agencyManaged: d.agencyManaged,
-        taxRegime: d.taxRegime,
+        taxRegime: col.regime || d.taxRegime,
         loanId: col.loanId,
       },
       col.id,
@@ -85,13 +89,26 @@ async function evaluate(col: Column) {
   }
 }
 
-/** Adds a column; loanId undefined means « the bien's own loan ». */
-async function addColumn(id: string, loanId?: string) {
-  const col = reactive<Column>({ id, detail: null, error: '', loanId: loanId ?? '', result: null })
+const isRegime = (v: string | undefined): v is TaxRegime => !!v && v in REGIME_LABELS
+
+/**
+ * Adds a column; loanId undefined means « the bien's own loan », a missing or
+ * unknown regime « the bien's own regime ».
+ */
+async function addColumn(id: string, loanId?: string, regime?: string) {
+  const col = reactive<Column>({
+    id,
+    detail: null,
+    error: '',
+    loanId: loanId ?? '',
+    regime: isRegime(regime) ? regime : '',
+    result: null,
+  })
   columns.push(col)
   try {
     col.detail = await getProperty(id)
     if (loanId === undefined) col.loanId = col.detail.loanId
+    if (!col.regime) col.regime = col.detail.taxRegime
     await evaluate(col)
   } catch (e) {
     col.error = message(e)
@@ -101,14 +118,24 @@ async function addColumn(id: string, loanId?: string) {
 onMounted(async () => {
   const ids = [...new Set((queryList('biens') ?? []).filter((id) => ID.test(id)))].slice(0, MAX)
   const chosenLoans = queryList('prets')
+  const chosenRegimes = queryList('regimes')
   const [loanList, biens] = await Promise.all([
     listLoans().catch(() => []),
     listProperties().catch(() => []),
-    ...ids.map((id, i) => addColumn(id, chosenLoans ? (chosenLoans[i] ?? '') : undefined)),
+    ...ids.map((id, i) =>
+      addColumn(id, chosenLoans ? (chosenLoans[i] ?? '') : undefined, chosenRegimes?.[i]),
+    ),
   ])
   loans.value = loanList
   allBiens.value = biens
 })
+
+async function changeRegime(col: Column, regime: string) {
+  if (!isRegime(regime)) return
+  col.regime = regime
+  syncUrl()
+  await evaluate(col)
+}
 
 async function changeLoan(col: Column, loanId: string) {
   col.loanId = loanId
@@ -137,7 +164,7 @@ const pct = (v: number | undefined) => (v === undefined ? dash : formatPercent(v
 
 /** Text rows: [key, label, value of a column]. */
 type Row = { key: string; label: string; value: (c: Column) => string }
-const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[] = [
+const sections: { title: string; rows: (Row | 'regime' | 'dpe' | 'loan' | 'warnings')[] }[] = [
   {
     title: 'Bien',
     rows: [
@@ -148,11 +175,7 @@ const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[]
         value: (c) => money(c.result?.acquisitionCostCents),
       },
       { key: 'rent', label: 'Loyer', value: (c) => money(c.detail?.monthlyRentCents) },
-      {
-        key: 'regime',
-        label: 'Régime fiscal',
-        value: (c) => (c.detail ? REGIME_LABELS[c.detail.taxRegime] : dash),
-      },
+      'regime',
       'dpe',
     ],
   },
@@ -309,6 +332,23 @@ const sections: { title: string; rows: (Row | 'dpe' | 'loan' | 'warnings')[] }[]
                 <th scope="row">DPE</th>
                 <td v-for="c in columns" :key="c.id">
                   <DpeBadge v-if="c.detail" :dpe="c.detail.dpe" />
+                  <span v-else>{{ dash }}</span>
+                </td>
+              </tr>
+              <tr v-else-if="row === 'regime'" data-test="row-regime">
+                <th scope="row">Régime fiscal</th>
+                <td v-for="c in columns" :key="c.id">
+                  <select
+                    v-if="c.detail"
+                    class="input"
+                    :value="c.regime"
+                    :aria-label="`Régime fiscal appliqué à ${c.detail.name}`"
+                    @change="changeRegime(c, ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option v-for="(label, value) in REGIME_LABELS" :key="value" :value="value">
+                      {{ label }}
+                    </option>
+                  </select>
                   <span v-else>{{ dash }}</span>
                 </td>
               </tr>

@@ -23,6 +23,7 @@ type Summary struct {
 	PriceCents             int64     `json:"priceCents"`
 	MonthlyRentCents       int64     `json:"monthlyRentCents"`
 	DPE                    string    `json:"dpe"`
+	TaxRegime              Regime    `json:"taxRegime"`
 	NetAfterTaxYieldPct    float64   `json:"netAfterTaxYieldPct"`
 	NetAfterCreditYieldPct float64   `json:"netAfterCreditYieldPct"`
 	MonthlyNetIncomeCents  int64     `json:"monthlyNetIncomeCents"`
@@ -223,7 +224,7 @@ func (s *Service) ListWith(opts ListOptions) ([]Summary, error) {
 		}
 		r := results[i]
 		sum := Summary{
-			ID: p.ID, Name: p.Name, PriceCents: p.PriceCents, MonthlyRentCents: p.MonthlyRentCents, DPE: p.DPE,
+			ID: p.ID, Name: p.Name, PriceCents: p.PriceCents, MonthlyRentCents: p.MonthlyRentCents, DPE: p.DPE, TaxRegime: p.TaxRegime,
 			NetAfterTaxYieldPct: r.NetAfterTaxYieldPct, NetAfterCreditYieldPct: r.NetAfterCreditYieldPct,
 			MonthlyNetIncomeCents: r.MonthlyNetIncomeCents,
 			LoanID:                p.LoanID, Warnings: r.Warnings,

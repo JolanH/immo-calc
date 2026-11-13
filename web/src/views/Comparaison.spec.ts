@@ -58,8 +58,8 @@ const loans = [
   },
 ]
 
-/** An evaluation whose figures reveal which loan was used. */
-function evaluation(loanId: string) {
+/** An evaluation whose figures reveal which loan and regime were used. */
+function evaluation(loanId: string, taxRegime = 'micro_foncier') {
   const financed = loanId !== ''
   return {
     acquisitionCostCents: 16_275_000,
@@ -75,7 +75,7 @@ function evaluation(loanId: string) {
     monthlyNetIncomeCents: 23_799,
     grossYieldPct: 5.16,
     netYieldPct: 3.32,
-    netAfterTaxYieldPct: 1.75,
+    netAfterTaxYieldPct: taxRegime === 'lmnp_reel' ? 4.96 : 1.75,
     netAfterCreditYieldPct: loanId === LOAN1 ? 1.12 : loanId === LOAN2 ? 0.4 : 1.75,
     financing: financed
       ? {
@@ -122,7 +122,8 @@ function stubApi() {
       return b ? json(b) : json({ error: { code: 'not_found', message: 'Bien introuvable' } }, 404)
     }
     if (method === 'POST' && url.startsWith('/api/properties/evaluate?id=')) {
-      return json(evaluation(JSON.parse(String(init.body)).loanId))
+      const body = JSON.parse(String(init.body))
+      return json(evaluation(body.loanId, body.taxRegime))
     }
     throw new Error(`unexpected call ${method} ${url}`)
   })
@@ -196,7 +197,14 @@ describe('Comparaison', () => {
     expect(cell(wrapper, 'price', 0)).toBe('150 000,00 €')
     expect(cell(wrapper, 'net-monthly', 1)).toBe('237,99 €')
     expect(cell(wrapper, 'after-tax-yield', 0)).toBe('1,75 %')
-    expect(cell(wrapper, 'regime', 0)).toBe('Micro-foncier')
+    const regime = wrapper.findAll('[data-test="row-regime"] select')[0]
+    expect((regime.element as HTMLSelectElement).value).toBe('micro_foncier')
+    expect(regime.findAll('option').map((o) => o.text())).toEqual([
+      'Micro-foncier',
+      'Réel foncier',
+      'Micro-BIC',
+      'LMNP au réel',
+    ])
   })
 
   it("highlights « Rentabilité nette après crédit », following each column's loan", async () => {
@@ -313,5 +321,38 @@ describe('Comparaison', () => {
     expect(wrapper.text()).toContain(
       'Sélectionnez de 2 à 4 biens dans la liste des biens pour les comparer.',
     )
+  })
+
+  it('applies a distinct regime to one column only and keeps it in the URL', async () => {
+    const fetchMock = stubApi()
+    const { wrapper, router } = await mountAt(`/biens/comparer?biens=${A},${B}`)
+    fetchMock.mockClear()
+
+    await wrapper.findAll('[data-test="row-regime"] select')[1].setValue('lmnp_reel')
+    await flushPromises()
+
+    const calls = fetchMock.mock.calls
+    expect(calls).toHaveLength(1)
+    expect(calls[0][0]).toBe(`/api/properties/evaluate?id=${B}`)
+    expect(JSON.parse(String(calls[0][1]?.body)).taxRegime).toBe('lmnp_reel')
+    expect(calls.some(([, init]) => init?.method === 'PUT')).toBe(false) // the bien isn't changed
+    expect(cell(wrapper, 'after-tax-yield', 1)).toBe('4,96 %')
+    expect(cell(wrapper, 'after-tax-yield', 0)).toBe('1,75 %')
+    expect(router.currentRoute.value.query.regimes).toBe('micro_foncier,lmnp_reel')
+  })
+
+  it('restores the regimes from the URL, ignoring unknown values', async () => {
+    const fetchMock = stubApi()
+    const { wrapper } = await mountAt(
+      `/biens/comparer?biens=${A},${B}&prets=,&regimes=lmnp_reel,bogus`,
+    )
+
+    const selects = wrapper.findAll('[data-test="row-regime"] select')
+    expect((selects[0].element as HTMLSelectElement).value).toBe('lmnp_reel')
+    expect((selects[1].element as HTMLSelectElement).value).toBe('micro_foncier')
+    const regimes = fetchMock.mock.calls
+      .filter(([url]) => url.startsWith('/api/properties/evaluate'))
+      .map(([, init]) => JSON.parse(String(init?.body)).taxRegime)
+    expect(regimes).toEqual(['lmnp_reel', 'micro_foncier'])
   })
 })
