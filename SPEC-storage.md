@@ -122,6 +122,12 @@ func Get[T any](s *Store, key string) (T, error)
 func Update[T any](s *Store, key string, fn func(*T) error) error
 // RegisterSection declares a section and its validator (called at startup by loan/property).
 func (s *Store) RegisterSection(key string, validate func(raw []byte) error)
+
+// A validator returns a *FieldError to point at the bad value. Path is relative to the
+// section ("[2].principal_cents", "marginal_tax_rate_pct"); storage maps it to the YAML
+// line for the startup error. Message is French. Any other error is reported on the
+// section's own line.
+type FieldError struct{ Path, Message string }
 ```
 
 ### UI: Paramètres → Données
