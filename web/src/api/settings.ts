@@ -8,6 +8,7 @@ export interface Settings {
   notaryFeePct: number
   vacancyMonthsPerYear: number
   agencyFeePct: number
+  accentColor: string // "#rrggbb", the interface's main colour
 }
 
 export function getSettings(): Promise<Settings> {

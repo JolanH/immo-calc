@@ -9,6 +9,7 @@ const defaults = {
   notaryFeePct: 8.5,
   vacancyMonthsPerYear: 1,
   agencyFeePct: 7,
+  accentColor: '#8b1a1a',
 }
 
 function json(body: unknown, status = 200) {
@@ -111,5 +112,38 @@ describe('SettingsForm', () => {
 
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false)
     expect(wrapper.get('#param-notaire-error').text()).toBe('Ce champ est obligatoire')
+  })
+
+  describe('Couleur principale', () => {
+    afterEach(() => document.documentElement.removeAttribute('style'))
+
+    it('previews the colour live and saves it', async () => {
+      const fetchMock = stubApi((body) => json(body))
+      const wrapper = mount(SettingsForm)
+      await flushPromises()
+      const picker = wrapper.get('#param-couleur')
+      expect(picker.attributes('type')).toBe('color')
+      expect(value(wrapper, 'param-couleur')).toBe('#8b1a1a')
+
+      await picker.setValue('#1f6feb')
+      expect(document.documentElement.style.getPropertyValue('--brand')).toBe('#1f6feb')
+
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')
+      expect(JSON.parse(String(put?.[1]?.body)).accentColor).toBe('#1f6feb')
+    })
+
+    it('resets to dark red', async () => {
+      stubApi()
+      const wrapper = mount(SettingsForm)
+      await flushPromises()
+      await wrapper.get('#param-couleur').setValue('#1f6feb')
+
+      await wrapper.get('[data-test="reset-colour"]').trigger('click')
+
+      expect(value(wrapper, 'param-couleur')).toBe('#8b1a1a')
+      expect(document.documentElement.style.getPropertyValue('--brand')).toBe('#8b1a1a')
+    })
   })
 })

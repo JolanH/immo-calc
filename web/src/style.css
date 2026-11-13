@@ -3,9 +3,10 @@
   --surface: #ffffff;
   --text: #1f2328;
   --muted: #5f6670;
-  --accent: #1f6feb;
-  --accent-text: #ffffff;
-  --accent-soft: #e8f0fd;
+  /* Main colour: set by theme.ts from the « Couleur principale » setting. */
+  --accent: var(--brand, #8b1a1a);
+  --accent-text: var(--brand-text, #ffffff);
+  --accent-soft: color-mix(in srgb, var(--accent) 9%, #ffffff);
   --border: #d8dbe0;
   /* Chart series: validated categorical slots 1-3 (dataviz reference palette). */
   --chart-capital: #2a78d6;
@@ -30,9 +31,9 @@
     --surface: #1f2228;
     --text: #e6e8eb;
     --muted: #9aa1ab;
-    --accent: #58a6ff;
-    --accent-text: #0d1117;
-    --accent-soft: #1b2a3f;
+    --accent: var(--brand-dark, #d77a7a);
+    --accent-text: var(--brand-dark-text, #0b0b0b);
+    --accent-soft: color-mix(in srgb, var(--accent) 16%, #1f2228);
     --border: #353a42;
     --chart-capital: #3987e5;
     --chart-interest: #d95926;
@@ -1084,4 +1085,14 @@ a.app-header__name {
   color: var(--accent);
   font-weight: 600;
   background: var(--accent-soft);
+}
+
+.colour-input {
+  width: 3rem;
+  height: 2.2rem;
+  padding: 0.1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
 }

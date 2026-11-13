@@ -479,11 +479,11 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] The chart is in the results panel, after « Détail du calcul »; text stays readable at that width
 **Scope:** XS
 
-### [ ] Task 34f (added 2026-11-13): dark red primary colour, customisable
+### [x] Task 34f (added 2026-11-13): dark red primary colour, customisable
 **Description:** Requested by the user: the accent becomes dark red (#8b1a1a), customisable in Paramètres (`settings.accent_color`); dark mode uses a derived lighter shade with ≥ 4,5:1 contrast. Charts keep their validated palette.
 **Acceptance criteria:**
-- [ ] Default accent is dark red in light and dark mode; the colour picker changes it live and saving keeps it across restarts
-- [ ] Old data files without `accent_color` still load (default); invalid colours are refused with a French message
+- [x] Default accent is dark red in light and dark mode; the colour picker changes it live and saving keeps it across restarts
+- [x] Old data files without `accent_color` still load (default); invalid colours are refused with a French message
 **Scope:** M
 
 ### [ ] Checkpoint D — v1 done

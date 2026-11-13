@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
+	"strings"
 
 	"go.yaml.in/yaml/v3"
 
@@ -26,6 +28,9 @@ type Settings struct {
 	NotaryFeePct                float64 `json:"notaryFeePct" yaml:"notary_fee_pct"`
 	VacancyMonthsPerYear        float64 `json:"vacancyMonthsPerYear" yaml:"vacancy_months_per_year"`
 	AgencyFeePct                float64 `json:"agencyFeePct" yaml:"agency_fee_pct"`
+	// AccentColor is the UI's main colour, "#rrggbb" (not a financial input;
+	// kept here so it travels with export/import).
+	AccentColor string `json:"accentColor" yaml:"accent_color,omitempty"`
 }
 
 // DefaultSettings applies when the data file has no settings section.
@@ -41,7 +46,23 @@ func DefaultSettings() Settings {
 		NotaryFeePct:              8.5,
 		VacancyMonthsPerYear:      1,
 		AgencyFeePct:              7,
+		AccentColor:               DefaultAccentColor,
 	}
+}
+
+// DefaultAccentColor is dark red (chosen by the user, 2026-11-13).
+const DefaultAccentColor = "#8b1a1a"
+
+var accentPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// withDefaults fills values a settings section may lack (written before
+// they existed) and normalises the colour.
+func withDefaults(s Settings) Settings {
+	if s.AccentColor == "" {
+		s.AccentColor = DefaultAccentColor
+	}
+	s.AccentColor = strings.ToLower(s.AccentColor)
+	return s
 }
 
 var taxBrackets = []float64{0, 11, 30, 41, 45}
@@ -54,6 +75,7 @@ var settingsFields = []struct{ json, yaml string }{
 	{"notaryFeePct", "notary_fee_pct"},
 	{"vacancyMonthsPerYear", "vacancy_months_per_year"},
 	{"agencyFeePct", "agency_fee_pct"},
+	{"accentColor", "accent_color"},
 }
 
 func between(v, lo, hi float64) bool { return v >= lo && v <= hi && !math.IsNaN(v) }
@@ -83,6 +105,9 @@ func ValidateSettings(s Settings) map[string]string {
 	}
 	if !between(s.AgencyFeePct, 0, 15) {
 		errs["agencyFeePct"] = "Les frais de gestion doivent être compris entre 0 et 15 %"
+	}
+	if s.AccentColor != "" && !accentPattern.MatchString(s.AccentColor) {
+		errs["accentColor"] = "La couleur doit être au format #rrggbb"
 	}
 	return errs
 }

@@ -41,7 +41,7 @@ func TestDefaultsApplyWithoutASettingsSection(t *testing.T) {
 
 	want := Settings{
 		MarginalTaxRatePct: 30, SocialChargesUnfurnishedPct: 17.2, SocialChargesFurnishedPct: 18.6,
-		NotaryFeePct: 8.5, VacancyMonthsPerYear: 1, AgencyFeePct: 7,
+		NotaryFeePct: 8.5, VacancyMonthsPerYear: 1, AgencyFeePct: 7, AccentColor: "#8b1a1a",
 	}
 	if err != nil || got != want {
 		t.Errorf("settings = %+v, err = %v", got, err)
@@ -214,5 +214,44 @@ func TestSettingsEndpoints(t *testing.T) {
 	malformed := serveProperty(h, settingsRequest(http.MethodPut, `{`, localOrigin))
 	if malformed.Code != http.StatusBadRequest {
 		t.Errorf("malformed: status = %d", malformed.Code)
+	}
+}
+
+func TestAccentColorDefaultsToDarkRed(t *testing.T) {
+	if DefaultSettings().AccentColor != "#8b1a1a" {
+		t.Errorf("default accent = %q", DefaultSettings().AccentColor)
+	}
+	// A settings section written before the colour existed still loads, with the default.
+	path := writeData(t, "schema_version: 1\nsettings:\n  marginal_tax_rate_pct: 41\n  social_charges_unfurnished_pct: 17.2\n"+
+		"  social_charges_furnished_pct: 18.6\n  notary_fee_pct: 8.5\n  vacancy_months_per_year: 1\n  agency_fee_pct: 7\n")
+	got, err := NewService(openStore(t, path), nil).Settings()
+	if err != nil || got.AccentColor != "#8b1a1a" || got.MarginalTaxRatePct != 41 {
+		t.Errorf("settings = %+v, err = %v", got, err)
+	}
+}
+
+func TestAccentColorValidationAndPersistence(t *testing.T) {
+	for _, bad := range []string{"red", "#8b1a1", "#8b1a1aff", "8b1a1a", "#gggggg"} {
+		s := DefaultSettings()
+		s.AccentColor = bad
+		if errs := ValidateSettings(s); errs["accentColor"] != "La couleur doit être au format #rrggbb" {
+			t.Errorf("%q: errors = %v", bad, errs)
+		}
+	}
+	path := filepath.Join(t.TempDir(), "immo-calc.yaml")
+	s := DefaultSettings()
+	s.AccentColor = "#1F6FEB"
+	saved, err := NewService(openStore(t, path), nil).UpdateSettings(s)
+	if err != nil || saved.AccentColor != "#1f6feb" {
+		t.Fatalf("saved = %+v, err = %v", saved, err)
+	}
+	got, _ := NewService(openStore(t, path), nil).Settings()
+	if got.AccentColor != "#1f6feb" {
+		t.Errorf("after restart = %q", got.AccentColor)
+	}
+	s.AccentColor = ""
+	reset, _ := NewService(openStore(t, path), nil).UpdateSettings(s)
+	if reset.AccentColor != "#8b1a1a" {
+		t.Errorf("empty colour = %q, want the default", reset.AccentColor)
 	}
 }

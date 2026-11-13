@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import NumberInput from './NumberInput.vue'
 import RateInput from './RateInput.vue'
 import { ApiError } from '@/api/client'
 import { getSettings, updateSettings, type Settings } from '@/api/settings'
 import { formatInputRate, parseRate } from '@/parse'
+import { applyAccent, DEFAULT_ACCENT } from '@/theme'
 
 const TAX_BRACKETS = [0, 11, 30, 41, 45]
 const REQUIRED = 'Ce champ est obligatoire'
 
-type Form = { [K in keyof Settings]: number | null }
+type Form = { [K in Exclude<keyof Settings, 'accentColor'>]: number | null }
 
 const form = reactive<Form>({
   marginalTaxRatePct: null,
@@ -19,6 +20,20 @@ const form = reactive<Form>({
   vacancyMonthsPerYear: null,
   agencyFeePct: null,
 })
+/** « Couleur principale »: previewed live, kept only when saved. */
+const accent = ref(DEFAULT_ACCENT)
+const savedAccent = ref(DEFAULT_ACCENT)
+watch(accent, (c) => applyAccent(c))
+// Leaving without saving puts the saved colour back.
+onBeforeUnmount(() => applyAccent(savedAccent.value))
+
+function takeSettings(s: Settings) {
+  const { accentColor, ...numbers } = s
+  Object.assign(form, numbers)
+  accent.value = accentColor || DEFAULT_ACCENT
+  savedAccent.value = accent.value
+}
+
 const loaded = ref(false)
 const errors = ref<Record<string, string>>({})
 const error = ref('')
@@ -31,7 +46,7 @@ function showError(e: unknown) {
 
 onMounted(async () => {
   try {
-    Object.assign(form, await getSettings())
+    takeSettings(await getSettings())
     loaded.value = true
   } catch (e) {
     showError(e)
@@ -51,7 +66,12 @@ async function save() {
 
   saving.value = true
   try {
-    Object.assign(form, await updateSettings(form as Settings))
+    takeSettings(
+      await updateSettings({
+        ...(form as Omit<Settings, 'accentColor'>),
+        accentColor: accent.value,
+      }),
+    )
     status.value = 'Paramètres enregistrés'
   } catch (e) {
     if (e instanceof ApiError && Object.keys(e.fields).length > 0) errors.value = e.fields
@@ -120,6 +140,22 @@ async function save() {
         label="Frais de gestion locative (des loyers encaissés)"
         :error="errors.agencyFeePct"
       />
+      <div class="field">
+        <label for="param-couleur">Couleur principale de l'interface</label>
+        <div class="field__control">
+          <input id="param-couleur" v-model="accent" type="color" class="colour-input" />
+          <code>{{ accent }}</code>
+          <button
+            type="button"
+            class="button"
+            data-test="reset-colour"
+            @click="accent = DEFAULT_ACCENT"
+          >
+            Rouge foncé par défaut
+          </button>
+        </div>
+        <p v-if="errors.accentColor" role="alert" class="field-error">{{ errors.accentColor }}</p>
+      </div>
       <p v-if="status" role="status" class="alert alert--success">{{ status }}</p>
       <div class="actions">
         <button type="submit" class="button button--primary" :disabled="saving">Enregistrer</button>
