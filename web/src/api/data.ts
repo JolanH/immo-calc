@@ -27,3 +27,15 @@ export function openFile(path?: string): Promise<DataInfo | undefined> {
     path === undefined ? undefined : { path },
   )
 }
+
+/**
+ * Creates an empty data file and switches to it. Without a path the server
+ * shows a native "Enregistrer sous" dialog. Resolves to undefined on cancel.
+ */
+export function newFile(path?: string): Promise<DataInfo | undefined> {
+  return request<DataInfo | undefined>(
+    'POST',
+    '/api/data/new',
+    path === undefined ? undefined : { path },
+  )
+}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -103,4 +104,31 @@ func (h *Handlers) afterSwitch(path string) {
 	if err := WriteAppConfig(h.cfg.ConfigPath, AppConfig{LastDataFile: path}); err != nil {
 		slog.Warn("could not remember the data file", "config", h.cfg.ConfigPath, "err", err)
 	}
+}
+
+// newFileName is proposed in the "Enregistrer sous" dialog.
+const newFileName = "immo-calc-nouveau.yaml"
+
+func (h *Handlers) newFile(w http.ResponseWriter, r *http.Request) {
+	path, ok := h.choosePath(w, r, func(p Picker) (string, error) { return p.SaveAs(newFileName) })
+	if !ok {
+		return
+	}
+	if filepath.Ext(path) == "" {
+		path += ".yaml"
+	}
+	if err := h.store.CreateNew(path); err != nil {
+		var createErr *createError
+		switch {
+		case errors.Is(err, fs.ErrExist):
+			server.WriteError(w, http.StatusBadRequest, "file_exists", err.Error(), map[string]string{"path": "Ce fichier existe déjà"})
+		case errors.As(err, &createErr):
+			server.WriteError(w, http.StatusBadRequest, "invalid_path", err.Error(), map[string]string{"path": "Impossible de créer ce fichier"})
+		default:
+			WriteSaveError(w, err)
+		}
+		return
+	}
+	h.afterSwitch(path)
+	server.WriteJSON(w, http.StatusOK, h.currentInfo())
 }
