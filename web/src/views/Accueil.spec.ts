@@ -68,17 +68,61 @@ describe('Accueil', () => {
     expect(wrapper.find('nav[aria-label="Fil d\'Ariane"]').exists()).toBe(false)
   })
 
-  it('lists the loans with their monthly total and a link to each', async () => {
+  it('shows each loan with its amount, duration and monthly total, and a link to it', async () => {
     stubApi({
       'GET /api/loans': () => json(loans),
       'GET /api/active-loan': () => json({ loanId: null }),
     })
     const { wrapper } = await mountHome()
 
-    const pane = wrapper.get('[data-test="home-prets"]')
-    expect(plain(pane.text())).toContain('Crédit Mutuel')
-    expect(plain(pane.text())).toContain('1 209,92 €')
-    expect(pane.findAll('a').map((a) => a.attributes('href'))).toContain('/prets/bbbbbbbbbbbbbbbb')
+    const rows = wrapper.findAll('[data-test="loan-row"]')
+    expect(rows).toHaveLength(2)
+    const first = plain(rows[0].text())
+    expect(first).toContain('Crédit Mutuel')
+    expect(first).toContain('200 000 € · 20 ans')
+    expect(first).toContain('1 209,92 € / mois')
+    expect(plain(rows[1].text())).toContain('150 000 € · 25 ans')
+    const link = rows[1].get('a')
+    expect(link.attributes('href')).toBe('/prets/bbbbbbbbbbbbbbbb')
+    expect(link.attributes('aria-label')).toBe('Voir le prêt BNP')
+  })
+
+  it('selects a loan when anywhere on its row is clicked, and highlights it', async () => {
+    const fetchMock = stubApi({
+      'GET /api/loans': () => json(loans),
+      'GET /api/active-loan': () => json({ loanId: null }),
+      'PUT /api/active-loan': (init) => json(JSON.parse(String(init.body))),
+    })
+    const { wrapper } = await mountHome()
+    const rows = () => wrapper.findAll('[data-test="loan-row"]')
+    expect(rows().some((r) => r.classes('home__loan--active'))).toBe(false)
+    expect(wrapper.get('[data-test="no-loan-row"]').classes()).toContain('home__loan--active')
+
+    // The row is the <label> of the radio: a click on its text selects it.
+    expect(rows()[1].element.tagName).toBe('LABEL')
+    await rows()[1].get('input[type="radio"]').setValue(true)
+    await flushPromises()
+
+    expect(rows()[1].classes()).toContain('home__loan--active')
+    expect(rows()[0].classes()).not.toContain('home__loan--active')
+    expect(wrapper.get('[data-test="no-loan-row"]').classes()).not.toContain('home__loan--active')
+    const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ loanId: 'bbbbbbbbbbbbbbbb' })
+  })
+
+  it('opening a loan from its link does not change the selection', async () => {
+    const fetchMock = stubApi({
+      'GET /api/loans': () => json(loans),
+      'GET /api/active-loan': () => json({ loanId: null }),
+      'GET /api/loans/aaaaaaaaaaaaaaaa': () =>
+        json({ error: { code: 'not_found', message: 'x' } }, 404),
+    })
+    const { wrapper } = await mountHome()
+
+    await wrapper.findAll('[data-test="loan-row"]')[0].get('a').trigger('click')
+    await flushPromises()
+
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false)
   })
 
   it('selects « Aucun » until a loan is active', async () => {

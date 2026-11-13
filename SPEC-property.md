@@ -178,7 +178,7 @@ Only inputs are stored, and results are always recomputed. A missing `settings` 
 The home page « Accueil » (`/`) has two panes:
 
 - **Left (~80 % width): the Biens list**, the same columns as `/biens`, with **Nouveau bien**.
-- **Right (~20 % width): a simplified list of saved loans** (name and monthly total), each linking to its loan page, with a selector to pick **one active loan** (or « Aucun »). The selection is session-only (server memory, see `SPEC-loan.md`).
+- **Right (~20 % width): a simplified list of saved loans**: name, **amount and duration** (« 200 000 € · 20 ans ») and monthly total, each with a link to its loan page. One **active loan** (or « Aucun ») is picked by clicking anywhere on its row; the active row is highlighted. The rows are a radio group underneath, so the choice also works with the keyboard and screen readers. The selection is session-only (server memory, see `SPEC-loan.md`).
 
 **Active loan and profitability:** while an active loan is selected, it **overrides** every bien's own linked loan in the home page's Biens list: the Financement figures shown there (Mensualité, Cash-flow, Apport, Rendement sur apport, and the `reel_foncier` interest deduction) use the active loan for every bien. With « Aucun », each bien uses its own linked loan, as on `/biens`. The bien detail page and `/biens` always use the bien's own link.
 
