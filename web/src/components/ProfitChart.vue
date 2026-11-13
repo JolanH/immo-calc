@@ -2,12 +2,14 @@
 import { computed, ref } from 'vue'
 import type { Timeline } from '@/api/properties'
 import { formatEuros, formatMonth, formatMonthDate } from '@/format'
+import { paybackDate, positiveDate } from '@/profitDates'
 import { niceRange, tickFormatter } from './chartScale'
 
 // « Trésorerie cumulée »: −apport plus every month's cash-flow after tax, with
 // the zero line and the two profitability dates marked (SPEC-property.md
 // rules 16–20). One series, one axis.
-const props = defineProps<{ timeline: Timeline }>()
+// financed: whether a loan's installments are subtracted (for the subtitle).
+const props = defineProps<{ timeline: Timeline; financed?: boolean }>()
 
 const WIDTH = 1100
 const HEIGHT = 280
@@ -63,7 +65,9 @@ const markers = computed(() =>
 const summary = computed(() => {
   const t = props.timeline
   const positive = t.positiveCashFlowMonth
-    ? `cash-flow mensuel positif le ${formatMonthDate(t.positiveCashFlowMonth)}`
+    ? t.positiveCashFlowMonth === t.startMonth
+      ? 'cash-flow mensuel positif dès le premier mois'
+      : `cash-flow mensuel positif le ${formatMonthDate(t.positiveCashFlowMonth)}`
     : 'cash-flow mensuel jamais positif'
   const payback = t.paybackAtStart
     ? "apport récupéré dès l'achat"
@@ -106,7 +110,11 @@ function onKey(event: KeyboardEvent) {
   <section v-if="n > 0" class="card profit-chart">
     <h2>Trésorerie cumulée</h2>
     <p class="placeholder">
-      Apport de départ, puis chaque mois : revenus après impôts − mensualité du prêt.
+      {{
+        financed
+          ? 'Apport de départ, puis chaque mois : revenus après impôts − mensualité du prêt.'
+          : 'Apport de départ (prix + notaire), puis chaque mois : revenus après impôts.'
+      }}
     </p>
     <div
       class="loan-chart__frame profit-chart__frame"
@@ -158,7 +166,8 @@ function onKey(event: KeyboardEvent) {
             :text-anchor="x(m.index) > WIDTH - 200 ? 'end' : 'start'"
             :dx="x(m.index) > WIDTH - 200 ? -4 : 4"
           >
-            {{ m.label }} · {{ formatMonthDate(m.month) }}
+            {{ m.label }} ·
+            {{ m.key === 'positive' ? positiveDate(timeline) : paybackDate(timeline) }}
           </text>
         </g>
         <polyline class="profit-chart__line" :points="line" data-test="cumulative-line" />

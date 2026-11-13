@@ -37,6 +37,9 @@ type Params struct {
 	AgencyManaged                  bool
 	TaxRegime                      Regime
 	DPE                            string
+	// StartMonth starts the profitability timeline of a bien without a loan
+	// (the month after today); zero means no timeline without a loan.
+	StartMonth loan.Month
 }
 
 // LoanFigures is what the evaluation needs from a linked loan.
@@ -108,8 +111,8 @@ func socialChargesPct(r Regime, s Settings) float64 {
 
 // Evaluate applies the SPEC-property.md calculation rules. Amounts are
 // rounded to the cent as they are computed, so the figures shown add up
-// (R = E − CH, RN = R − I). loan is nil without a linked loan.
-func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
+// (R = E − CH, RN = R − I). lf (the loan's figures) is nil without a loan.
+func Evaluate(p Params, s Settings, lf *LoanFigures) Result {
 	var r Result
 	r.AcquisitionCostCents = roundCents(float64(p.PriceCents) * (1 + s.NotaryFeePct/100))
 	r.CollectedRentCents = roundCents(float64(p.MonthlyRentCents) * (12 - s.VacancyMonthsPerYear))
@@ -129,8 +132,8 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 		// Year-1 interest and borrower insurance of the linked loan are
 		// deductible; a deficit is floored at 0 below, not carried over.
 		r.TaxableIncomeCents = r.IncomeBeforeTaxCents
-		if loan != nil {
-			r.TaxableIncomeCents -= loan.FirstYearInterest + loan.FirstYearInsurance
+		if lf != nil {
+			r.TaxableIncomeCents -= lf.FirstYearInterest + lf.FirstYearInsurance
 		}
 	default:
 		r.TaxableIncomeCents = roundCents(float64(r.CollectedRentCents) * microFoncierTaxableShare)
@@ -148,13 +151,20 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 	r.NetAfterTaxYieldPct = pct(r.NetAnnualIncomeCents, r.AcquisitionCostCents)
 
 	r.NetAfterCreditYieldPct = r.NetAfterTaxYieldPct
-	if loan != nil {
-		r.Financing = financing(r, *loan)
+	if lf != nil {
+		r.Financing = financing(r, *lf)
 		r.NetAfterCreditYieldPct = pct(r.NetAnnualIncomeCents-r.Financing.AnnualCreditCostCents, r.AcquisitionCostCents)
-		if !loan.FirstPaymentMonth.IsZero() && len(loan.Payments) > 0 {
-			after := Evaluate(p, s, nil).MonthlyNetIncomeCents
-			r.Timeline = timeline(r.MonthlyNetIncomeCents, after, r.Financing.OwnContributionCents, *loan)
+		if !lf.FirstPaymentMonth.IsZero() && len(lf.Payments) > 0 {
+			unfinanced := p
+			unfinanced.StartMonth = loan.Month{} // only its monthly income is needed
+			after := Evaluate(unfinanced, s, nil).MonthlyNetIncomeCents
+			r.Timeline = timeline(r.MonthlyNetIncomeCents, after, r.Financing.OwnContributionCents,
+				lf.Payments, lf.FirstPaymentMonth)
 		}
+	} else if !p.StartMonth.IsZero() {
+		// Without a loan everything is paid with own funds: apport = A.
+		r.Timeline = timeline(r.MonthlyNetIncomeCents, r.MonthlyNetIncomeCents, r.AcquisitionCostCents,
+			nil, p.StartMonth)
 	}
 
 	r.Warnings = []Warning{}

@@ -411,7 +411,7 @@ async function remove() {
                   Apport récupéré : {{ paybackDate(result.timeline) }}
                 </strong>
               </template>
-              <span v-else class="placeholder">Associez un prêt pour calculer ces dates.</span>
+              <span v-else class="placeholder">—</span>
             </div>
           </template>
           <p v-else-if="!error" class="placeholder">
@@ -428,6 +428,10 @@ async function remove() {
         />
       </div>
     </div>
-    <ProfitChart v-if="!loadError && result?.timeline" :timeline="result.timeline" />
+    <ProfitChart
+      v-if="!loadError && result?.timeline"
+      :timeline="result.timeline"
+      :financed="!!result.financing"
+    />
   </section>
 </template>

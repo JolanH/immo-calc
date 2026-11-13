@@ -86,13 +86,14 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 15b. **Rentabilité nette après crédit** (added 2026-11-13, the headline KPI for choosing between biens and loans) = `(RN − coût annuel moyen du crédit) / A`, where the average annual credit cost = the loan's **coût total du crédit** (interest + insurance + fees) × 12 / its duration in months, rounded to the cent. Principal repaid is not a cost (it builds equity). **Without a loan** the credit cost is 0, so it equals the « nette après impôts » yield, which keeps every bien comparable. Shown highlighted on the Bien page (Rentabilité card), as a column of the Biens lists (`/biens` and the home page, which uses the active loan) and as a highlighted row of the comparison (following each column's loan).
   Reference: « SE appart 1 » with « Conso Immo » (coût total 1 984,13 € over 5 years → 396,83 €/an): (1 251,62 − 396,83) / 36 890 = **2,32 %** (3,39 % without the loan).
 
-**Dates de rentabilité** (with a linked loan; added 2026-11-13 at the user's request). A month-by-month timeline starting at the loan's first installment:
+**Dates de rentabilité** (added 2026-11-13 at the user's request; extended the same day to biens without a loan). A month-by-month timeline starting at the loan's first installment or, **without a loan, the month after today** (the default first installment of a new loan):
 
-16. **Cash-flow of month k** = `RN/12` − (installment k + insurance k) while the loan runs, then `RN'/12` after the last installment, where `RN'` is the net annual income without the loan (under `reel_foncier` the interest deduction stops; the micro regimes are unchanged).
-17. **Cumulative position** starts at −Apport and adds each month's cash-flow.
-18. **« Cash-flow mensuel positif »** = the first month whose cash-flow is > 0 (« jamais » if it never is).
-19. **« Apport récupéré »** = the first month the cumulative position is ≥ 0; « dès l'achat » when the apport isn't positive, « au-delà de 50 ans » if not reached within 50 years.
-20. Dates are months; the UI shows them as `01/MM/YYYY`. Without a linked loan there is no start date: no timeline, and the card invites to link a loan.
+16. **Cash-flow of month k** = `RN/12` − (installment k + insurance k) while the loan runs (without a loan: `RN/12` every month), then `RN'/12` after the last installment, where `RN'` is the net annual income without the loan (under `reel_foncier` the interest deduction stops; the micro regimes are unchanged).
+17. **Cumulative position** starts at −Apport (without a loan, Apport = `A`: everything is paid with own funds) and adds each month's cash-flow.
+18. **« Cash-flow mensuel positif »** = the first month whose cash-flow is > 0; « Immédiat » when that is the first month, « Jamais » if it never is.
+19. **« Apport récupéré »** = the first month the cumulative position is ≥ 0; « Dès l'achat » when the apport isn't positive, « Au-delà de 50 ans » if not reached within 50 years.
+20. Dates are months; the UI shows them as `01/MM/YYYY`. Without a loan the dates depend on today's date (the start month moves forward).
+  Reference without a loan: « SE appart 1 » unfinanced, evaluated in November 2026 (start 12/2026, apport 36 890 €, +104,30 €/month): cash-flow mensuel positif « Immédiat », apport récupéré **01/05/2056**.
 
 Reference (user's case): « SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, CP 700 €, micro-foncier, revenus mensuels après impôts 104,30 €) with « Conso Immo » (15 000 € à 5 % sur 5 ans, first installment 01/2027, apport 21 890 €): cash-flow mensuel positif **01/01/2032**, apport récupéré **01/01/2058**.
 

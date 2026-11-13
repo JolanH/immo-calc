@@ -21,12 +21,13 @@ type Timeline struct {
 	Points                []TimelinePoint `json:"points"`
 }
 
-// timeline walks month by month from the loan's first installment: the
-// monthly net income minus that month's installment while the loan runs,
-// then the net income without the loan. The points run a year past the last
-// date found (or to the horizon).
-func timeline(netDuring, netAfter, apport int64, l LoanFigures) *Timeline {
-	t := &Timeline{StartMonth: l.FirstPaymentMonth.String(), PaybackAtStart: apport <= 0}
+// timeline walks month by month from start (the loan's first installment,
+// or the month after today without a loan): the monthly net income minus
+// that month's installment while payments last, then the net income without
+// the loan. The points run a year past the last date found (or to the
+// horizon).
+func timeline(netDuring, netAfter, apport int64, payments []int64, start loan.Month) *Timeline {
+	t := &Timeline{StartMonth: start.String(), PaybackAtStart: apport <= 0}
 	if t.PaybackAtStart {
 		t.PaybackMonth = t.StartMonth
 	}
@@ -34,11 +35,11 @@ func timeline(netDuring, netAfter, apport int64, l LoanFigures) *Timeline {
 	last := horizonMonths
 	for k := 1; k <= last && k <= horizonMonths; k++ {
 		cashFlow := netAfter
-		if k <= len(l.Payments) {
-			cashFlow = netDuring - l.Payments[k-1]
+		if k <= len(payments) {
+			cashFlow = netDuring - payments[k-1]
 		}
 		cumulative += cashFlow
-		month := l.FirstPaymentMonth.Add(k - 1).String()
+		month := start.Add(k - 1).String()
 		t.Points = append(t.Points, TimelinePoint{Month: month, CashFlowCents: cashFlow, CumulativeCents: cumulative})
 		if t.PositiveCashFlowMonth == "" && cashFlow > 0 {
 			t.PositiveCashFlowMonth = month
@@ -47,7 +48,7 @@ func timeline(netDuring, netAfter, apport int64, l LoanFigures) *Timeline {
 			t.PaybackMonth = month
 		}
 		// Once both dates are known (and the loan is over), show one more year.
-		if last == horizonMonths && t.PositiveCashFlowMonth != "" && t.PaybackMonth != "" && k >= len(l.Payments) {
+		if last == horizonMonths && t.PositiveCashFlowMonth != "" && t.PaybackMonth != "" && k >= len(payments) {
 			last = k + 12
 		}
 	}

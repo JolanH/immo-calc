@@ -93,7 +93,9 @@ func (s *Service) evaluateAll(items []candidate, activeLoan *loan.Loan) ([]Resul
 			}
 			figures[it.in.LoanID] = lf
 		}
-		results[i] = Evaluate(it.in.Params(), settings, lf)
+		params := it.in.Params()
+		params.StartMonth = s.startMonth()
+		results[i] = Evaluate(params, settings, lf)
 		totals[it.in.TaxRegime] += results[i].CollectedRentCents
 	}
 	for i, it := range items {
@@ -102,6 +104,13 @@ func (s *Service) evaluateAll(items []candidate, activeLoan *loan.Loan) ([]Resul
 		}
 	}
 	return results, nil
+}
+
+// startMonth is the month after today: where a bien without a loan starts its
+// profitability timeline (like a new loan's default first installment).
+func (s *Service) startMonth() loan.Month {
+	now := s.now()
+	return loan.Month{Year: now.Year(), Month: int(now.Month())}.Next()
 }
 
 // ceilingWarning warns when the rent collected by all properties of a micro
