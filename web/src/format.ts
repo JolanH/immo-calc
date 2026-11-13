@@ -28,6 +28,12 @@ const monthFormats = {
   long: new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }),
 }
 
+/** formatMonthDate("2032-01") → "01/01/2032": a month shown as its first day. */
+export function formatMonthDate(month: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(month)
+  return m ? `01/${m[2]}/${m[1]}` : month
+}
+
 /** formatMonth("2026-12") → "déc. 2026"; with "long" → "décembre 2026". */
 export function formatMonth(month: string, style: 'short' | 'long' = 'short'): string {
   const m = /^(\d{4})-(\d{2})$/.exec(month)

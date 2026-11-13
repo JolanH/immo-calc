@@ -31,6 +31,22 @@ export interface PropertyWarning {
   message: string
 }
 
+/** One month of the « Trésorerie cumulée » chart. */
+export interface TimelinePoint {
+  month: string // "YYYY-MM"
+  cashFlowCents: number
+  cumulativeCents: number
+}
+
+/** Profitability dates (with a linked loan). */
+export interface Timeline {
+  startMonth: string
+  positiveCashFlowMonth: string // '' = never
+  paybackMonth: string // '' = not within 50 years
+  paybackAtStart: boolean
+  points: TimelinePoint[]
+}
+
 export interface PropertyResult {
   acquisitionCostCents: number
   collectedRentCents: number
@@ -47,6 +63,7 @@ export interface PropertyResult {
   netYieldPct: number
   netAfterTaxYieldPct: number
   financing: Financing | null
+  timeline?: Timeline | null
   warnings: PropertyWarning[]
 }
 

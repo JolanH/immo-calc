@@ -25,6 +25,26 @@ export function niceTicks(max: number): number[] {
   return ticks
 }
 
+/**
+ * Round ticks covering [min, max] and always including 0: the smallest step
+ * of the form {1, 2, 2.5, 5} × 10^k needing at most five intervals.
+ */
+export function niceRange(min: number, max: number): number[] {
+  const lo = Math.min(min, 0)
+  const hi = Math.max(max, 0)
+  if (lo === hi) return [0, 1]
+  for (let magnitude = 1; ; magnitude *= 10) {
+    for (const n of NICE) {
+      const step = n * magnitude
+      const first = Math.floor(lo / step)
+      const last = Math.ceil(hi / step)
+      if (last - first <= MAX_INTERVALS) {
+        return Array.from({ length: last - first + 1 }, (_, i) => (first + i) * step || 0)
+      }
+    }
+  }
+}
+
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 })
 const full = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
 
@@ -33,7 +53,7 @@ const full = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
  * compact on an axis that reaches it ("50 k€", "1,5 M€"). One style per axis.
  */
 export function tickFormatter(ticks: number[]): (cents: number) => string {
-  const top = (ticks.at(-1) ?? 0) / 100
+  const top = Math.max(...ticks.map(Math.abs), 0) / 100
   if (top < 10_000) return (cents) => `${full.format(cents / 100)}\u00a0€`
   return (cents) => {
     const text = compact.format(cents / 100).replace(/\s/g, '\u00a0')

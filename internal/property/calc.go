@@ -1,6 +1,10 @@
 package property
 
-import "math"
+import (
+	"math"
+
+	"immo-calc/internal/loan"
+)
 
 // Regime is the tax regime of a property's rental income.
 type Regime string
@@ -42,6 +46,8 @@ type LoanFigures struct {
 	MonthlyTotalCents  int64 // monthly payment, insurance included
 	FirstYearInterest  int64 // interest of the first 12 installments
 	FirstYearInsurance int64 // borrower insurance of the first 12 installments
+	FirstPaymentMonth  loan.Month
+	Payments           []int64 // each installment, insurance included
 }
 
 // Warning is shown above a property's results.
@@ -71,6 +77,7 @@ type Result struct {
 	NetAfterTaxYieldPct float64 `json:"netAfterTaxYieldPct"`
 
 	Financing *Financing `json:"financing"` // with a linked loan only
+	Timeline  *Timeline  `json:"timeline"`  // profitability dates, with a dated loan only
 	Warnings  []Warning  `json:"warnings"`
 }
 
@@ -137,6 +144,10 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 
 	if loan != nil {
 		r.Financing = financing(r, *loan)
+		if !loan.FirstPaymentMonth.IsZero() && len(loan.Payments) > 0 {
+			after := Evaluate(p, s, nil).MonthlyNetIncomeCents
+			r.Timeline = timeline(r.MonthlyNetIncomeCents, after, r.Financing.OwnContributionCents, *loan)
+		}
 	}
 
 	r.Warnings = []Warning{}

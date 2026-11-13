@@ -84,6 +84,16 @@ Notation: `L` = monthly rent excluding charges, `C` = monthly recoverable charge
 14. **Apport** = `A` + loan fees − loan amount. If ≤ 0, the return on contribution shows « n/a ».
 15. **Rendement sur apport** = `12 × cash-flow après impôts / Apport`
 
+**Dates de rentabilité** (with a linked loan; added 2026-11-13 at the user's request). A month-by-month timeline starting at the loan's first installment:
+
+16. **Cash-flow of month k** = `RN/12` − (installment k + insurance k) while the loan runs, then `RN'/12` after the last installment, where `RN'` is the net annual income without the loan (under `reel_foncier` the interest deduction stops; the micro regimes are unchanged).
+17. **Cumulative position** starts at −Apport and adds each month's cash-flow.
+18. **« Cash-flow mensuel positif »** = the first month whose cash-flow is > 0 (« jamais » if it never is).
+19. **« Apport récupéré »** = the first month the cumulative position is ≥ 0; « dès l'achat » when the apport isn't positive, « au-delà de 50 ans » if not reached within 50 years.
+20. Dates are months; the UI shows them as `01/MM/YYYY`. Without a linked loan there is no start date: no timeline, and the card invites to link a loan.
+
+Reference (user's case): « SE appart 1 » (prix 34 000 €, loyer 360 €, charges 50 €, TF 650 €, CP 700 €, micro-foncier, revenus mensuels après impôts 104,30 €) with « Conso Immo » (15 000 € à 5 % sur 5 ans, first installment 01/2027, apport 21 890 €): cash-flow mensuel positif **01/01/2032**, apport récupéré **01/01/2058**.
+
 Rounding: compute in `float64`, round each displayed amount to the cent and each rate to 2 decimals.
 
 ### Reference example (becomes a unit test)
@@ -201,6 +211,7 @@ The home page « Accueil » (`/`) has two panes:
   - Live results on the right (debounced `evaluate`) as cards: **Revenus mensuels bruts**, **Revenus mensuels après impôts**, **Revenu annuel net**, **Rentabilité** (brute / nette / **après impôts**).
   - A collapsible « Détail du calcul » lists A, E, each owner charge, R, revenu imposable and impôt, so the figures can be checked.
   - With a loan, the « Financement » card shows Mensualité, Cash-flow avant/après impôts, Apport and Rendement sur apport.
+  - A **« Date de rentabilité »** result card shows « Cash-flow mensuel positif : DD/MM/YYYY » and « Apport récupéré : DD/MM/YYYY » (rules 16–20), and a **« Trésorerie cumulée »** chart below the Financement card plots the cumulative position over time with a zero line and both dates marked.
   - The DPE warning and regime-ceiling warnings appear above the results.
   - Actions: Enregistrer, Dupliquer, Supprimer (confirmation), unsaved-changes guard.
 - **/parametres: Hypothèses et fiscalité** section (TMI, PS location nue, PS location meublée, notaire, vacance, gestion), next to the *Données* section from `storage`.

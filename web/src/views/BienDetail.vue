@@ -6,6 +6,7 @@ import MoneyInput from '@/components/MoneyInput.vue'
 import ResultCard from '@/components/ResultCard.vue'
 import FinancingCard from '@/components/FinancingCard.vue'
 import CalcDetail from '@/components/CalcDetail.vue'
+import ProfitChart from '@/components/ProfitChart.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
 import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
 import { ApiError } from '@/api/client'
@@ -19,9 +20,21 @@ import {
   updateProperty,
   type PropertyDetail,
   type PropertyInput,
+  type Timeline,
   type TaxRegime,
 } from '@/api/properties'
-import { formatPercent } from '@/format'
+import { formatMonthDate, formatPercent } from '@/format'
+
+/** « Cash-flow mensuel positif » date, or « jamais ». */
+function positiveDate(t: Timeline): string {
+  return t.positiveCashFlowMonth ? formatMonthDate(t.positiveCashFlowMonth) : 'jamais'
+}
+
+/** « Apport récupéré » date, « dès l'achat » or « au-delà de 50 ans ». */
+function paybackDate(t: Timeline): string {
+  if (t.paybackAtStart) return "dès l'achat"
+  return t.paybackMonth ? formatMonthDate(t.paybackMonth) : 'au-delà de 50 ans'
+}
 
 const DPE_CLASSES = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const REGIMES: { value: TaxRegime; label: string }[] = [
@@ -391,6 +404,16 @@ async function remove() {
                 Après impôts {{ formatPercent(result.netAfterTaxYieldPct) }}
               </strong>
             </div>
+            <div class="result-card" data-test="profit-dates">
+              <span class="result-card__label">Date de rentabilité</span>
+              <template v-if="result.timeline">
+                <span>Cash-flow mensuel positif : {{ positiveDate(result.timeline) }}</span>
+                <strong class="result-card__value--accent">
+                  Apport récupéré : {{ paybackDate(result.timeline) }}
+                </strong>
+              </template>
+              <span v-else class="placeholder">Associez un prêt pour calculer ces dates.</span>
+            </div>
           </template>
           <p v-else-if="!error" class="placeholder">
             Saisissez le prix, le loyer, la taxe foncière et la classe DPE pour voir les résultats.
@@ -406,5 +429,6 @@ async function remove() {
         />
       </div>
     </div>
+    <ProfitChart v-if="!loadError && result?.timeline" :timeline="result.timeline" />
   </section>
 </template>
