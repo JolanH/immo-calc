@@ -125,6 +125,7 @@ Result JSON (camelCase, cents):
 **/prets: Prêts list.** Table with Nom, Montant, Taux, Durée, Mensualité (assurance incluse), Coût total du crédit. Clicking a row opens the loan. Buttons: **Nouvelle simulation**. Empty state: « Aucune simulation de prêt. » with the same button.
 
 **/prets/nouveau and /prets/:id: Prêt page.**
+- **Breadcrumb** above the title: « Prêts › <nom du prêt> », or « Prêts › Nouvelle simulation » for an unsaved loan. « Prêts » links to the list.
 - **Left, form:** Nom, Montant, Taux, Durée (ans, whole years only), Première échéance (month picker, « décembre 2026 »). A collapsible section « Assurance et frais » holds Taux assurance, Frais de dossier, Frais de garantie. Amounts are typed in euros with French formatting (`200 000`, `3,5`).
 - **Right, live results** (debounced `simulate`, ~300 ms): Mensualité hors assurance, Assurance mensuelle, **Mensualité totale**, Intérêts totaux, Coût de l'assurance, Frais, **Coût total du crédit**, Montant total remboursé.
 - **Actions:** **Enregistrer** (create/update), **Dupliquer**, **Supprimer** (confirmation; shows the French `loan_in_use` message if blocked). Leaving with unsaved changes asks for confirmation.

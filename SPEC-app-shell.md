@@ -76,6 +76,7 @@ Calling an existing API path with an unsupported method returns `405 {"error":{"
 - Each page shows its title and "Fonctionnalité à venir".
 - Unknown route: "Page introuvable" with a link back to Biens.
 - Plain, readable CSS with no UI framework. Usable on a laptop screen. No mobile-specific work.
+- Detail pages (a loan, a property) show a **breadcrumb** above their title, e.g. « Prêts › Appart Lyon », whose first item links back to the list (added 2026-11-13 at the user's request). It is a `<nav aria-label="Fil d'Ariane">` with the current page marked `aria-current="page"`.
 - `web/src/format.ts`: `formatEuros(cents)` → `"1 234,56 €"` and `formatPercent(value)` → `"3,50 %"`, using `Intl` with `fr-FR`.
 
 ### Packaging

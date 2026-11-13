@@ -307,6 +307,13 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/components/LoanChart.vue` + spec, `web/src/views/PretDetail.vue`
 **Scope:** M
 
+### [x] Task 25a (added 2026-11-13): breadcrumb on detail pages
+**Description:** Requested at Checkpoint C. `AppBreadcrumb` (« Prêts › <nom du prêt> », « Prêts › Nouvelle simulation ») above the loan page title, « Prêts » linking back to the list. Reusable for the property pages (« Biens › <nom> »). Specs updated (`SPEC-app-shell.md`, `SPEC-loan.md`).
+**Acceptance criteria:**
+- [x] Labelled `<nav aria-label="Fil d'Ariane">`, current page marked `aria-current="page"`
+- [x] « Prêts » navigates back to the list (component + page tests)
+**Scope:** XS
+
 ### [ ] Checkpoint C — loan done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` coverage ≥ 90 %
 - [x] loan acceptance criteria 1–8 verified; storage AC 5 (external edit → 409 banner → Recharger) verified end to end
