@@ -115,9 +115,12 @@ git tag v1.2.0
 git push origin v1.2.0
 ```
 
-After lint and tests pass on Linux and Windows, CI runs `make build`, checks the binaries report exactly the tag as their version, and uploads them as artifacts of the workflow run (Actions tab → the run → *Artifacts*):
+After lint and tests pass on Linux and Windows, CI runs `make build` and checks that the binaries report exactly the tag as their version. It then publishes a **GitHub Release** named after the tag (repo page → *Releases*), with:
 
-- `immo-calc-v1.2.0-linux-amd64`: a `.tar.gz` (to keep the executable bit) and `SHA256SUMS`;
-- `immo-calc-v1.2.0-windows-amd64`: the `.exe` and `SHA256SUMS`.
+- `immo-calc-v1.2.0-linux-amd64.tar.gz`: the Linux executable (in a tarball to keep its executable bit);
+- `immo-calc-windows-amd64.exe`: the Windows executable;
+- `SHA256SUMS`: checksums of both, to check with `sha256sum -c SHA256SUMS`.
+
+The release notes list the commits since the previous tag. A tag with a suffix, such as `v1.2.0-rc1`, is published as a pre-release. Re-running the workflow for a tag replaces the release's files. The same files also stay available as artifacts of the workflow run (Actions tab → the run → *Artifacts*).
 
 To build them locally instead: `make build`, then look in `dist/`.

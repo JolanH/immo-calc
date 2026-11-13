@@ -162,3 +162,44 @@ jobs:
             dist/immo-calc-windows-amd64.exe
             dist/SHA256SUMS
           if-no-files-found: error
+
+  # Publishes the binaries as a GitHub Release named after the tag (repo page →
+  # Releases). Kept apart from the build so only this short job, which runs no
+  # project code, gets write access to the repository.
+  publish-release:
+    name: Publish GitHub Release
+    needs: release-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download the built executables
+        uses: actions/download-artifact@v4
+        with:
+          pattern: immo-calc-${{ github.ref_name }}-*
+          path: release
+          # Both artifacts carry the same SHA256SUMS; merging keeps one copy.
+          merge-multiple: true
+
+      - name: Verify checksums
+        working-directory: release
+        run: sha256sum -c SHA256SUMS
+
+      # Creates the release, or replaces its files when the workflow is re-run.
+      # A tag with a suffix (v1.2.0-rc1) is marked as a pre-release.
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          files=(release/*)
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+          else
+            flags=()
+            [[ "$GITHUB_REF_NAME" == *-* ]] && flags+=(--prerelease)
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+              --verify-tag --title "immo-calc $GITHUB_REF_NAME" --generate-notes "${flags[@]}"
+          fi
