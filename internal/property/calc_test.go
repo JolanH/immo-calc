@@ -212,3 +212,37 @@ func TestEvaluateIncludesTheDPEWarning(t *testing.T) {
 		t.Errorf("DPE D warnings = %+v", got)
 	}
 }
+
+// The tax breakdown shown under « Comment est calculé l'impôt » adds up to
+// the annual tax: IR + PS = I.
+func TestTaxDetailSplitsIncomeTaxAndSocialCharges(t *testing.T) {
+	res := Evaluate(referenceFlat(MicroFoncier, false), referenceSettings, nil)
+	d := res.TaxDetail
+
+	if d.MarginalTaxRatePct != 30 || d.SocialChargesPct != 17.2 {
+		t.Errorf("rates = %v / %v, want 30 / 17,2", d.MarginalTaxRatePct, d.SocialChargesPct)
+	}
+	if d.IncomeTaxCents != 161_700 { // 5 390 € × 30 %
+		t.Errorf("IR = %d, want 1 617 €", d.IncomeTaxCents)
+	}
+	if d.IncomeTaxCents+d.SocialChargesCents != res.AnnualTaxCents {
+		t.Errorf("IR %d + PS %d != I %d", d.IncomeTaxCents, d.SocialChargesCents, res.AnnualTaxCents)
+	}
+	if d.LoanCostsCents != 0 {
+		t.Errorf("loan costs = %d without a loan", d.LoanCostsCents)
+	}
+}
+
+func TestTaxDetailReportsDeductedLoanCostsUnderTheReelRegimes(t *testing.T) {
+	lf := &LoanFigures{FirstYearInterest: 300_000, FirstYearInsurance: 20_000}
+	for _, tt := range []struct {
+		regime Regime
+		want   int64
+		ps     float64
+	}{{ReelFoncier, 320_000, 17.2}, {LMNPReel, 320_000, 18.6}, {MicroFoncier, 0, 17.2}, {MicroBIC, 0, 18.6}} {
+		d := Evaluate(referenceFlat(tt.regime, false), referenceSettings, lf).TaxDetail
+		if d.LoanCostsCents != tt.want || d.SocialChargesPct != tt.ps {
+			t.Errorf("%s: loan costs = %d, PS = %v; want %d, %v", tt.regime, d.LoanCostsCents, d.SocialChargesPct, tt.want, tt.ps)
+		}
+	}
+}
