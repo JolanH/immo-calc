@@ -16,12 +16,46 @@ func (e *ValidationError) Error() string { return fmt.Sprintf("invalid input: %v
 // Service reads and writes the property module's data.
 type Service struct {
 	store *storage.Store
+	loans LoanSource
 }
 
 // NewService returns a service over store, whose sections must have been
-// registered with RegisterSections.
-func NewService(store *storage.Store) *Service {
-	return &Service{store: store}
+// registered with RegisterSections. loans resolves linked loans.
+func NewService(store *storage.Store, loans LoanSource) *Service {
+	return &Service{store: store, loans: loans}
+}
+
+// loanFigures returns the figures of a linked loan, or nil without one.
+func (s *Service) loanFigures(loanID string) (*LoanFigures, error) {
+	if loanID == "" || s.loans == nil {
+		return nil, nil
+	}
+	l, err := s.loans.Get(loanID)
+	if err != nil {
+		return nil, err
+	}
+	f, err := FiguresOf(l.Params())
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
+// EvaluateInput validates an unsaved input (name not required) and evaluates
+// it with the current settings and its linked loan.
+func (s *Service) EvaluateInput(in Input) (Result, error) {
+	if errs := ValidateParams(in, s.loans); len(errs) > 0 {
+		return Result{}, &ValidationError{Fields: errs}
+	}
+	settings, err := s.Settings()
+	if err != nil {
+		return Result{}, err
+	}
+	loanFig, err := s.loanFigures(in.LoanID)
+	if err != nil {
+		return Result{}, err
+	}
+	return Evaluate(in.Params(), settings, loanFig), nil
 }
 
 // Settings returns the global settings, or the defaults when the data file

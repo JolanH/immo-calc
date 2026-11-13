@@ -379,7 +379,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{financing,calc}.go` + tests, `SPEC-property.md`
 **Scope:** S
 
-### [ ] Task 30: Property validator + `POST /api/properties/evaluate`
+### [x] Task 30: Property validator + `POST /api/properties/evaluate`
 **Description:** `property.Input` validation (spec ranges, DPE A–G, regime enum, French messages; `loan_id` must exist when set). `evaluate` returns results, détail du calcul figures, warnings and financement (if `loanId`).
 **Acceptance criteria:**
 - [ ] Each rule tested with its French message; unknown `loanId` → field error
