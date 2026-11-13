@@ -98,10 +98,30 @@ type Result struct {
 	FurnitureDepreciationCents int64 `json:"furnitureDepreciationCents"`
 	// Regimes compares the four regimes on this bien (« Régime fiscal »).
 	Regimes []RegimeComparison `json:"regimes"`
+	// TaxDetail explains how AnnualTaxCents is produced, step by step.
+	TaxDetail TaxDetail `json:"taxDetail"`
 
 	Financing *Financing `json:"financing"` // with a linked loan only
 	Timeline  *Timeline  `json:"timeline"`  // profitability dates, with a dated loan only
 	Warnings  []Warning  `json:"warnings"`
+}
+
+// TaxDetail is the breakdown of the annual tax (« Comment est calculé
+// l'impôt »): every figure the taxable income and the tax are built from, so
+// a human can redo the calculation. IncomeTax + SocialCharges = the annual tax.
+type TaxDetail struct {
+	Regime             Regime  `json:"regime"`
+	MarginalTaxRatePct float64 `json:"marginalTaxRatePct"` // TMI
+	SocialChargesPct   float64 `json:"socialChargesPct"`
+	// Year-1 borrower interest and insurance, deducted under the réel regimes
+	// only (0 under the micro regimes and without a loan).
+	LoanInterestCents  int64 `json:"loanInterestCents"`
+	LoanInsuranceCents int64 `json:"loanInsuranceCents"`
+	LoanCostsCents     int64 `json:"loanCostsCents"` // interest + insurance
+	// RawTaxableCents is the base before the floor at 0 (negative = deficit).
+	RawTaxableCents    int64 `json:"rawTaxableCents"`
+	IncomeTaxCents     int64 `json:"incomeTaxCents"`     // IR = taxable × TMI
+	SocialChargesCents int64 `json:"socialChargesCents"` // PS = I − IR
 }
 
 func roundCents(v float64) int64 { return int64(math.Round(v)) }
@@ -145,6 +165,7 @@ func Evaluate(p Params, s Settings, lf *LoanFigures) Result {
 	t := taxFor(p.TaxRegime, p, s, r, lf)
 	r.TaxableIncomeCents, r.AnnualTaxCents = t.taxable, t.tax
 	r.BuildingDepreciationCents, r.FurnitureDepreciationCents = t.building, t.furniture
+	r.TaxDetail = taxDetail(p.TaxRegime, s, t)
 	r.NetAnnualIncomeCents = r.IncomeBeforeTaxCents - r.AnnualTaxCents
 	r.MonthlyGrossIncomeCents = p.MonthlyRentCents
 	r.MonthlyNetIncomeCents = roundCents(float64(r.NetAnnualIncomeCents) / 12)
@@ -203,16 +224,29 @@ func notaryFees(p Params, s Settings) int64 {
 type taxOutcome struct {
 	taxable, tax        int64
 	building, furniture int64 // LMNP au réel depreciation
+	rawTaxable          int64 // before the floor at 0
+	interest, insurance int64 // year-1 loan costs actually deducted
+}
+
+// taxDetail builds the breakdown of a regime's tax outcome.
+func taxDetail(regime Regime, s Settings, t taxOutcome) TaxDetail {
+	ir := roundCents(float64(t.taxable) * s.MarginalTaxRatePct / 100)
+	return TaxDetail{
+		Regime: regime, MarginalTaxRatePct: s.MarginalTaxRatePct, SocialChargesPct: socialChargesPct(regime, s),
+		LoanInterestCents: t.interest, LoanInsuranceCents: t.insurance, LoanCostsCents: t.interest + t.insurance,
+		RawTaxableCents: t.rawTaxable, IncomeTaxCents: ir, SocialChargesCents: t.tax - ir,
+	}
 }
 
 // taxFor applies a regime's rule (SPEC-property.md rule 5) to an evaluated
 // bien (E, CH and R already computed in r).
 func taxFor(regime Regime, p Params, s Settings, r Result, lf *LoanFigures) taxOutcome {
 	var t taxOutcome
-	loanCosts := int64(0)
+	var interest, insurance int64
 	if lf != nil {
-		loanCosts = lf.FirstYearInterest + lf.FirstYearInsurance
+		interest, insurance = lf.FirstYearInterest, lf.FirstYearInsurance
 	}
+	loanCosts := interest + insurance
 	switch regime {
 	case MicroBIC:
 		t.taxable = roundCents(float64(r.CollectedRentCents) * microBICTaxableShare)
@@ -220,15 +254,18 @@ func taxFor(regime Regime, p Params, s Settings, r Result, lf *LoanFigures) taxO
 		// Year-1 interest and borrower insurance are deductible; a deficit is
 		// floored at 0 below, not carried over.
 		t.taxable = r.IncomeBeforeTaxCents - loanCosts
+		t.interest, t.insurance = interest, insurance
 	case LMNPReel:
 		t.building = roundCents((float64(p.PriceCents-p.FurnitureIncludedCents)*lmnpBuildingShare +
 			float64(notaryFees(p, s))) / lmnpBuildingYears)
 		t.furniture = roundCents(float64(p.FurnitureIncludedCents+p.FurnitureAddedCents) / lmnpFurnitureYears)
 		// Depreciation is used only up to the result: it never creates a deficit.
 		t.taxable = r.IncomeBeforeTaxCents - loanCosts - t.building - t.furniture
+		t.interest, t.insurance = interest, insurance
 	default:
 		t.taxable = roundCents(float64(r.CollectedRentCents) * microFoncierTaxableShare)
 	}
+	t.rawTaxable = t.taxable
 	t.taxable = max(t.taxable, 0)
 	t.tax = roundCents(float64(t.taxable) * (s.MarginalTaxRatePct + socialChargesPct(regime, s)) / 100)
 	return t
