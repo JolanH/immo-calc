@@ -451,3 +451,36 @@ a {
 .button--danger:hover {
   border-color: var(--error-text);
 }
+
+.amortization {
+  margin-top: 2rem;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmented__option {
+  padding: 0.35rem 0.9rem;
+  border: none;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.segmented__option + .segmented__option {
+  border-left: 1px solid var(--border);
+}
+
+.segmented__option[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.table tbody th {
+  font-weight: normal;
+}

@@ -22,3 +22,15 @@ export function formatEuros(cents: number): string {
 export function formatPercent(value: number): string {
   return `${percent.format(value)}\u00a0%`
 }
+
+const monthFormats = {
+  short: new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric' }),
+  long: new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }),
+}
+
+/** formatMonth("2026-12") → "déc. 2026"; with "long" → "décembre 2026". */
+export function formatMonth(month: string, style: 'short' | 'long' = 'short'): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(month)
+  if (!m) return month
+  return monthFormats[style].format(new Date(Number(m[1]), Number(m[2]) - 1, 1))
+}

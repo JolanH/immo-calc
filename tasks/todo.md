@@ -287,7 +287,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/loan/{service,handlers}.go` + tests, `web/src/views/PretDetail.vue` + spec
 **Scope:** S
 
-### [ ] Task 24: Amortization table (Annuel / Mensuel)
+### [x] Task 24: Amortization table (Annuel / Mensuel)
 **Description:** Below the results: table with an **Annuel / Mensuel** toggle (annual by default). Columns Année/Mois, Échéance, Intérêts, Capital remboursé, Assurance, Capital restant dû; French month labels (« déc. 2026 ») and partial-year labels.
 **Acceptance criteria:**
 - [ ] Toggle switches views; annual is the default
