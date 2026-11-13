@@ -18,7 +18,7 @@ DOCKER_RUN_HOST := $(DOCKER_RUN) --init --network host
 GO_RUN := $(DOCKER_RUN) $(GO_IMAGE)
 NODE_RUN := $(DOCKER_RUN) -w /src/web $(NODE_IMAGE)
 
-.PHONY: help images test test-go test-web lint lint-go lint-web run
+.PHONY: help images test test-go test-web lint lint-go lint-web run build
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -61,3 +61,12 @@ lint-web: web/node_modules/.installed
 
 run: web/dist/index.html ## Build and run the app → http://localhost:8421
 	$(DOCKER_RUN_HOST) $(GO_IMAGE) go run ./cmd/immo-calc
+
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+GO_BUILD := env CGO_ENABLED=0 GOARCH=amd64 go build -trimpath
+LDFLAGS := -s -w -X main.version=$(VERSION)
+
+build: web/dist/index.html ## Cross-compile Linux and Windows binaries into dist/
+	$(GO_RUN) $(GO_BUILD) -ldflags "$(LDFLAGS)" -o dist/immo-calc-linux-amd64 ./cmd/immo-calc
+	$(GO_RUN) env GOOS=windows $(GO_BUILD) -ldflags "$(LDFLAGS) -H windowsgui" \
+		-o dist/immo-calc-windows-amd64.exe ./cmd/immo-calc
