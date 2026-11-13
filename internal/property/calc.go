@@ -74,9 +74,6 @@ type Result struct {
 	Warnings  []Warning  `json:"warnings"`
 }
 
-// Financing is the « Financement » card, filled in a later step.
-type Financing struct{}
-
 func roundCents(v float64) int64 { return int64(math.Round(v)) }
 
 func roundPct(v float64) float64 { return math.Round(v*100) / 100 }
@@ -117,7 +114,12 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 	case MicroBIC:
 		r.TaxableIncomeCents = roundCents(float64(r.CollectedRentCents) * microBICTaxableShare)
 	case ReelFoncier:
+		// Year-1 interest and borrower insurance of the linked loan are
+		// deductible; a deficit is floored at 0 below, not carried over.
 		r.TaxableIncomeCents = r.IncomeBeforeTaxCents
+		if loan != nil {
+			r.TaxableIncomeCents -= loan.FirstYearInterest + loan.FirstYearInsurance
+		}
 	default:
 		r.TaxableIncomeCents = roundCents(float64(r.CollectedRentCents) * microFoncierTaxableShare)
 	}
@@ -132,6 +134,10 @@ func Evaluate(p Params, s Settings, loan *LoanFigures) Result {
 	r.GrossYieldPct = pct(12*p.MonthlyRentCents, r.AcquisitionCostCents)
 	r.NetYieldPct = pct(r.IncomeBeforeTaxCents, r.AcquisitionCostCents)
 	r.NetAfterTaxYieldPct = pct(r.NetAnnualIncomeCents, r.AcquisitionCostCents)
+
+	if loan != nil {
+		r.Financing = financing(r, *loan)
+	}
 
 	r.Warnings = []Warning{}
 	if w := DPEWarning(p.DPE); w != nil {
