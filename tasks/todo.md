@@ -62,7 +62,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `cmd/immo-calc/{main,config,config_test}.go`, `Makefile`
 **Scope:** S
 
-### [ ] Task 6: Port selection, single instance, browser launch
+### [x] Task 6: Port selection, single instance, browser launch
 **Description:** Bind `127.0.0.1:<port>`. If it's taken, probe `/api/health`: if it's immo-calc, open the browser on it and exit 0; otherwise bind `127.0.0.1:0`. `internal/browser` picks `xdg-open` / `rundll32 url.dll,FileProtocolHandler` per OS through an injected runner. Skip the browser with `--no-browser`.
 **Acceptance criteria:**
 - [ ] Unit tests with injected listen/probe functions cover: free port, taken by immo-calc (exit 0, no server), taken by something else (random port, URL logged)
