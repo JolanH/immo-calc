@@ -222,7 +222,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/loan/{calc,round}.go`, `internal/loan/calc_test.go`
 **Scope:** S
 
-### [ ] Task 18: Month dating + calendar-year grouping + property-style checks
+### [x] Task 18: Month dating + calendar-year grouping + property-style checks
 **Description:** Date installment k at `first_payment_month + (k−1)`. Yearly view grouped by calendar year with installment counts for partial years. Generated-input checks: remaining reaches 0, Σ principal = amount, Σ interest = total, payment monotonic in rate and amount.
 **Acceptance criteria:**
 - [ ] Partial first/last years show the right counts (e.g. start 2026-11 → « 2026 (2 échéances) »)

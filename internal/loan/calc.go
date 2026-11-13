@@ -19,12 +19,14 @@ type Params struct {
 	InsuranceRatePct    float64 // borrower insurance, % of the initial principal per year
 	ApplicationFeeCents int64   // frais de dossier
 	GuaranteeFeeCents   int64   // frais de garantie (caution or hypothèque)
+	FirstPaymentMonth   Month   // month of installment 1; zero means undated
 }
 
 // Installment is one row of the amortization schedule. PaymentCents is
 // principal + interest, insurance excluded.
 type Installment struct {
 	Index          int
+	Month          Month // zero when the loan has no first payment month
 	PaymentCents   int64
 	InterestCents  int64
 	PrincipalCents int64
@@ -43,6 +45,19 @@ type Result struct {
 	TotalCostCents        int64 // coût total du crédit: interest + insurance + fees
 	TotalRepaidCents      int64 // principal + interest + insurance
 	Schedule              []Installment
+	Yearly                []YearRow // by calendar year; empty for an undated loan
+}
+
+// YearRow sums the installments of one calendar year. The first and last
+// years can be partial (Installments < 12).
+type YearRow struct {
+	Year           int
+	Installments   int
+	PaymentCents   int64
+	InterestCents  int64
+	PrincipalCents int64
+	InsuranceCents int64
+	RemainingCents int64 // remaining principal after the year's last installment
 }
 
 // roundCents rounds to the nearest cent, half away from zero.
@@ -99,8 +114,13 @@ func Compute(p Params) (Result, error) {
 			principal = remaining // last installment: repay exactly what's left
 		}
 		remaining -= principal
+		var month Month
+		if !p.FirstPaymentMonth.IsZero() {
+			month = p.FirstPaymentMonth.Add(k - 1)
+		}
 		res.Schedule = append(res.Schedule, Installment{
 			Index:          k,
+			Month:          month,
 			PaymentCents:   principal + interest,
 			InterestCents:  interest,
 			PrincipalCents: principal,
@@ -114,7 +134,28 @@ func Compute(p Params) (Result, error) {
 		}
 	}
 
+	if !p.FirstPaymentMonth.IsZero() {
+		res.Yearly = yearly(res.Schedule)
+	}
 	res.TotalCostCents = res.TotalInterestCents + res.TotalInsuranceCents + res.TotalFeesCents
 	res.TotalRepaidCents = p.PrincipalCents + res.TotalInterestCents + res.TotalInsuranceCents
 	return res, nil
+}
+
+// yearly groups dated installments by calendar year.
+func yearly(schedule []Installment) []YearRow {
+	var rows []YearRow
+	for _, inst := range schedule {
+		if len(rows) == 0 || rows[len(rows)-1].Year != inst.Month.Year {
+			rows = append(rows, YearRow{Year: inst.Month.Year})
+		}
+		row := &rows[len(rows)-1]
+		row.Installments++
+		row.PaymentCents += inst.PaymentCents
+		row.InterestCents += inst.InterestCents
+		row.PrincipalCents += inst.PrincipalCents
+		row.InsuranceCents += inst.InsuranceCents
+		row.RemainingCents = inst.RemainingCents
+	}
+	return rows
 }
