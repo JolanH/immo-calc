@@ -118,7 +118,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] `make test`, `make lint`, `make build` pass from a clean checkout
 - [x] app-shell acceptance criteria 1–11 verified (2 and 11 by hand on a Windows machine: no console window, French message box on fatal error)
   - Verified on Linux: 1, 3–10 by Claude; 2 by the user (binary opens the web UI).
-  - **Windows check deferred (2026-11-13), assumed OK:** criterion 2 (double-click opens the browser on /biens) and 11 (no console window, French message box naming `immo-calc.log` on a fatal error). To be tested by the user on a Windows machine later.
+  - **Windows check deferred (2026-11-13), assumed OK:** criterion 2 (double-click opens the browser on the home page) and 11 (no console window, French message box naming `immo-calc.log` on a fatal error). To be tested by the user on a Windows machine later.
 - [x] Human review before Phase 2
 
 ---
