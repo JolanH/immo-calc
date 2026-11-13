@@ -785,7 +785,7 @@ a.app-header__name {
   grid-column: 1 / -1;
 }
 
-.bien-results {
+.bien-main {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -1269,4 +1269,82 @@ a.app-header__name {
   margin: 0.4rem 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+/* Bien detail, three columns: form | gestion, fiscalité, financement | synthetic cards. */
+.detail__layout--bien {
+  grid-template-columns: minmax(15rem, 20%) minmax(0, 1fr) minmax(13rem, 25%);
+}
+
+.detail__layout--bien > .detail__form {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.detail__layout--bien > .bien-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.detail__layout--bien > .bien-summary {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+}
+
+/* All the synthetic cards in one compact column. */
+.bien-summary .detail__results {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.bien-summary .result-card {
+  gap: 0.1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.bien-summary .result-card__label {
+  font-size: 0.8rem;
+}
+
+.bien-summary .result-card__value {
+  font-size: 1.05rem;
+}
+
+/* Narrow screens: the cards go in a row above the form and the details. */
+@media (max-width: 1100px) {
+  .detail__layout--bien {
+    grid-template-columns: minmax(15rem, 2fr) minmax(0, 3fr);
+  }
+
+  .detail__layout--bien > .bien-summary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .detail__layout--bien > .detail__form {
+    grid-row: 2;
+  }
+
+  .detail__layout--bien > .bien-main {
+    grid-row: 2;
+  }
+
+  .bien-summary .detail__results {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .detail__layout--bien {
+    grid-template-columns: 1fr;
+  }
+
+  .detail__layout--bien > .detail__form,
+  .detail__layout--bien > .bien-main,
+  .detail__layout--bien > .bien-summary {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }

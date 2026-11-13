@@ -248,7 +248,7 @@ async function remove() {
     />
     <h1>{{ loadedId ? savedName : 'Nouveau bien' }}</h1>
     <p v-if="loadError" role="alert" class="alert alert--error">{{ loadError }}</p>
-    <div v-else class="detail__layout">
+    <div v-else class="detail__layout detail__layout--bien" data-test="bien-layout">
       <form id="bien-form" class="card detail__form" novalidate @submit.prevent="save">
         <div class="field">
           <label for="bien-nom">Nom</label>
@@ -361,28 +361,10 @@ async function remove() {
         </div>
       </form>
 
-      <div class="bien-results">
-        <div v-if="result?.warnings.length" data-test="warnings" class="warnings">
-          <p
-            v-for="w in result.warnings"
-            :key="w.message"
-            role="alert"
-            class="warning"
-            :class="`warning--${w.severity}`"
-          >
-            {{ w.message }}
-          </p>
-        </div>
+      <aside class="bien-summary" data-test="bien-summary" aria-label="Résultats">
         <div class="detail__results" data-test="results" aria-live="polite">
           <p v-if="error" role="alert" class="alert alert--error">{{ error }}</p>
           <template v-if="result">
-            <ResultCard label="Revenus mensuels bruts" :cents="result.monthlyGrossIncomeCents" />
-            <ResultCard
-              label="Revenus mensuels après impôts"
-              :cents="result.monthlyNetIncomeCents"
-              highlight
-            />
-            <ResultCard label="Revenu annuel net" :cents="result.netAnnualIncomeCents" />
             <div class="result-card" data-test="yields">
               <span class="result-card__label">Rentabilité</span>
               <span>Brute {{ formatPercent(result.grossYieldPct) }}</span>
@@ -401,6 +383,13 @@ async function remove() {
                 Après crédit {{ formatPercent(result.netAfterCreditYieldPct) }}
               </strong>
             </div>
+            <ResultCard
+              label="Revenus mensuels après impôts"
+              :cents="result.monthlyNetIncomeCents"
+              highlight
+            />
+            <ResultCard label="Revenus mensuels bruts" :cents="result.monthlyGrossIncomeCents" />
+            <ResultCard label="Revenu annuel net" :cents="result.netAnnualIncomeCents" />
             <div class="result-card" data-test="profit-dates">
               <span class="result-card__label">Date de rentabilité</span>
               <template v-if="result.timeline">
@@ -414,6 +403,19 @@ async function remove() {
           </template>
           <p v-else-if="!error" class="placeholder">
             Saisissez le prix, le loyer, la taxe foncière et la classe DPE pour voir les résultats.
+          </p>
+        </div>
+      </aside>
+      <div class="bien-main" data-test="bien-main">
+        <div v-if="result?.warnings.length" data-test="warnings" class="warnings">
+          <p
+            v-for="w in result.warnings"
+            :key="w.message"
+            role="alert"
+            class="warning"
+            :class="`warning--${w.severity}`"
+          >
+            {{ w.message }}
           </p>
         </div>
         <section
