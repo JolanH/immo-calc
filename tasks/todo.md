@@ -265,7 +265,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/loan/{service,section}.go` + tests, `internal/loan/handlers.go`, `cmd/immo-calc/main.go`
 **Scope:** M
 
-### [ ] Task 22: Prêts list + save/load + unsaved-changes guard
+### [x] Task 22: Prêts list + save/load + unsaved-changes guard
 **Description:** `/prets` table (Nom, Montant, Taux, Durée, Mensualité totale, Coût total), row click, **Nouvelle simulation**, empty state. Prêt page: **Enregistrer** (create → navigate to `/prets/:id`, or update), loads `/prets/:id`. `useUnsavedGuard` composable (router guard + `beforeunload`).
 **Acceptance criteria:**
 - [ ] Saved loan appears in the list; after restart it's there with identical results

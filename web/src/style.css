@@ -4,6 +4,7 @@
   --text: #1f2328;
   --muted: #5f6670;
   --accent: #1f6feb;
+  --accent-text: #ffffff;
   --border: #d8dbe0;
   --error-bg: #fde8e8;
   --error-text: #8a1c1c;
@@ -23,6 +24,7 @@
     --text: #e6e8eb;
     --muted: #9aa1ab;
     --accent: #58a6ff;
+    --accent-text: #0d1117;
     --border: #353a42;
     --error-bg: #3d1d1d;
     --error-text: #ffb4b4;
@@ -369,4 +371,75 @@ a {
   display: block;
   width: 100%;
   box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.button--primary:hover {
+  filter: brightness(1.1);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table__row--link {
+  cursor: pointer;
+}
+
+.table__row--link:hover {
+  background: var(--bg);
 }

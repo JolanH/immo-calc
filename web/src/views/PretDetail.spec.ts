@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory } from 'vue-router'
 import { createAppRouter } from '@/router'
-import PretDetail from './PretDetail.vue'
+import App from '@/App.vue'
+
+type FetchLike = (url: string, init?: RequestInit) => Promise<Response>
 
 const plain = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ')
 
@@ -26,7 +28,8 @@ async function mountPage() {
   const router = createAppRouter(createMemoryHistory())
   router.push('/prets/nouveau')
   await router.isReady()
-  const wrapper = mount(PretDetail, { global: { plugins: [router] } })
+  // Mounted through App so the page sits in <RouterView> like in the real app.
+  const wrapper = mount(App, { global: { plugins: [router] } })
   await flushPromises()
   return wrapper
 }
@@ -54,7 +57,9 @@ describe('PretDetail (new loan)', () => {
   })
 
   it('simulates while typing, without saving, and shows the results', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(simulation())))
+    const fetchMock = vi.fn<FetchLike>(() =>
+      Promise.resolve(new Response(JSON.stringify(simulation()))),
+    )
     vi.stubGlobal('fetch', fetchMock)
     const wrapper = await mountPage()
 
@@ -63,10 +68,10 @@ describe('PretDetail (new loan)', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
 
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/loans/simulate')
-    expect(JSON.parse(init.body)).toMatchObject({
+    const simulateCalls = fetchMock.mock.calls.filter(([url]) => url === '/api/loans/simulate')
+    expect(simulateCalls).toHaveLength(1)
+    const init = simulateCalls[0][1]!
+    expect(JSON.parse(String(init.body))).toMatchObject({
       principalCents: 20_000_000,
       annualRatePct: 3.5,
       durationMonths: 240,
@@ -101,7 +106,7 @@ describe('PretDetail (new loan)', () => {
     vi.advanceTimersByTime(1000)
     await flushPromises()
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/loans/simulate')).toHaveLength(0)
     expect(wrapper.get('[data-test="results"]').text()).toContain('Saisissez')
   })
 
@@ -115,7 +120,7 @@ describe('PretDetail (new loan)', () => {
     }
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify(error), { status: 400 })),
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify(error), { status: 400 }))),
     )
     const wrapper = await mountPage()
 
@@ -130,7 +135,9 @@ describe('PretDetail (new loan)', () => {
   })
 
   it('sends insurance and fees from the collapsible section', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(simulation())))
+    const fetchMock = vi.fn<FetchLike>(() =>
+      Promise.resolve(new Response(JSON.stringify(simulation()))),
+    )
     vi.stubGlobal('fetch', fetchMock)
     const wrapper = await mountPage()
 
@@ -142,7 +149,7 @@ describe('PretDetail (new loan)', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
 
-    expect(JSON.parse(fetchMock.mock.calls.at(-1)![1].body)).toMatchObject({
+    expect(JSON.parse(String(fetchMock.mock.calls.at(-1)![1]!.body))).toMatchObject({
       insuranceRatePct: 0.3,
       applicationFeeCents: 100_000,
       guaranteeFeeCents: 250_000,

@@ -20,10 +20,7 @@ describe('router', () => {
     expect(wrapper.find('h1').text()).toBe('Biens')
   })
 
-  it.each([
-    ['/biens', 'Biens'],
-    ['/prets', 'Prêts'],
-  ])('shows the placeholder page for %s', async (path, title) => {
+  it.each([['/biens', 'Biens']])('shows the placeholder page for %s', async (path, title) => {
     const { wrapper } = await mountAt(path)
     expect(wrapper.find('h1').text()).toBe(title)
     expect(wrapper.text()).toContain('Fonctionnalité à venir')

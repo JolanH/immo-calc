@@ -9,7 +9,9 @@ export const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/biens' },
   { path: '/biens', name: 'biens', component: BiensListe },
   { path: '/prets', name: 'prets', component: PretsListe },
-  { path: '/prets/nouveau', name: 'pret-nouveau', component: PretDetail },
+  // One route for new (/prets/nouveau) and saved loans, so the page stays
+  // mounted when a new loan is saved and its URL changes.
+  { path: '/prets/:id', name: 'pret', component: PretDetail },
   { path: '/parametres', name: 'parametres', component: Parametres },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound },
 ]
