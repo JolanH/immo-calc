@@ -34,7 +34,8 @@ At the end of this module there is no business feature yet. There is a working, 
    | `--debug` | `false` | Verbose logs |
    | `--version` | — | Print the version and exit |
 2. Bind `127.0.0.1:<port>`. If the port is taken:
-   - If `GET http://127.0.0.1:<port>/api/health` answers as immo-calc, **another instance is already running**: open the browser on it and exit with code 0.
+   - If `GET http://127.0.0.1:<port>/api/health` answers as immo-calc **with the same version**, another instance is already running: open the browser on it and exit with code 0.
+   - If it answers as immo-calc **with a different version** (typically a forgotten tab from an older build), stop it silently with `POST /api/shutdown` (sending its own origin), wait up to 5 s for the port to be released, then bind it and start normally. No message is shown; the replacement is logged. If the old instance doesn't stop in time, fall back to a random free port (next point).
    - Otherwise, bind a random free port on `127.0.0.1`.
 3. Log the URL and the startup details (version, data file path) to the log file (see *Logging*), and to stdout when there is one (Linux terminal, `make` targets).
 4. Open the default browser on the URL, unless `--no-browser` is set.
@@ -43,7 +44,7 @@ At the end of this module there is no business feature yet. There is a working, 
 
 - The **"Quitter"** button in the UI is the normal way to stop the app. It calls `POST /api/shutdown`. The server answers 200, the UI shows "immo-calc est arrêté, vous pouvez fermer cet onglet", and the process stops gracefully.
 - Ctrl+C / SIGTERM (Linux terminal, `make` targets) also stops the server gracefully.
-- Because there is no console window, a forgotten tab leaves the app running in the background. That is accepted. Double-clicking the executable again just reopens the browser on the running instance.
+- Because there is no console window, a forgotten tab leaves the app running in the background. That is accepted. Double-clicking the same executable again just reopens the browser on the running instance; launching a different version replaces it (see *Startup*).
 
 ### Logging and errors (no console)
 
@@ -87,7 +88,7 @@ Calling an existing API path with an unsupported method returns `405 {"error":{"
 
 1. `make build` produces both binaries from a clean checkout, with only Docker and make on the host.
 2. Running the Linux binary (and the Windows one, checked manually on a Windows machine) opens the browser on `/biens` showing the French layout within 3 s.
-3. Running a second instance while the first is up opens the browser on the first instance and exits 0. No second server is started.
+3. Running a second instance of the same version while the first is up opens the browser on the first instance and exits 0. No second server is started. Running a different version stops the first one through `/api/shutdown` and takes over its port.
 4. When port 8421 is taken by another program, the app starts on a free port and prints that URL.
 5. `GET /api/health` returns the documented JSON with the injected version.
 6. Deep links like `/prets/123` reload correctly (SPA fallback). Unknown `/api/x` returns a 404 JSON error.
@@ -100,7 +101,7 @@ Calling an existing API path with an unsupported method returns `405 {"error":{"
 ## Testing
 
 - `internal/server`: `httptest` tests for health, shutdown (origin check, triggers the shutdown callback), 404 JSON, SPA fallback, static assets served from a test `fs.FS`.
-- Port selection and "already running" detection: unit tests with injected listener/probe functions.
+- Port selection, "already running" detection and replacement of a different version: unit tests with injected listener/probe/shutdown functions.
 - `internal/browser`: test command selection per OS via an injected `exec` runner. No browser is actually launched.
 - Flags/config parsing: table-driven tests.
 - Logging: the log file path falls back to the temp directory when the executable's directory isn't writable. Fatal-error reporting goes through an injected notifier, tested without opening a real dialog.

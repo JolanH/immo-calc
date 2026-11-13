@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 )
 
 // fakeListener is a net.Listener that only reports its address.
@@ -20,7 +21,7 @@ func (l fakeListener) Addr() net.Addr {
 	return a
 }
 
-// fakeNet records every address it was asked to bind. Ports in busy fail.
+// fakeNet records every address it was asked to bind. Addresses in busy fail.
 type fakeNet struct {
 	busy  map[string]bool
 	calls []string
@@ -37,14 +38,38 @@ func (f *fakeNet) listen(network, addr string) (net.Listener, error) {
 	return fakeListener{addr: addr}, nil
 }
 
-func probeAnswering(answer bool) func(string) bool {
-	return func(string) bool { return answer }
+// fakeInstance is what answers on the preferred port, if anything.
+type fakeInstance struct {
+	running    bool
+	version    string
+	net        *fakeNet
+	stops      bool // shutting it down frees the port
+	shutdowns  int
+	shutdownTo string
 }
 
-func TestListenOnFreePreferredPort(t *testing.T) {
+func (f *fakeInstance) probe(string) (string, bool) { return f.version, f.running }
+
+func (f *fakeInstance) shutdown(base string) error {
+	f.shutdowns++
+	f.shutdownTo = base
+	if f.stops {
+		delete(f.net.busy, "127.0.0.1:8421")
+	}
+	return nil
+}
+
+func newBinder(n *fakeNet, inst *fakeInstance) binder {
+	inst.net = n
+	return binder{listen: n.listen, probe: inst.probe, shutdown: inst.shutdown, sleep: func(time.Duration) {}}
+}
+
+const ourVersion = "v2"
+
+func TestBindOnFreePreferredPort(t *testing.T) {
 	n := &fakeNet{}
 
-	ln, err := listen(8421, n.listen, probeAnswering(false))
+	ln, err := newBinder(n, &fakeInstance{}).bind(8421, ourVersion)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -54,10 +79,11 @@ func TestListenOnFreePreferredPort(t *testing.T) {
 	}
 }
 
-func TestListenDetectsRunningInstance(t *testing.T) {
+func TestBindDetectsTheSameVersionAlreadyRunning(t *testing.T) {
 	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true}}
+	inst := &fakeInstance{running: true, version: ourVersion}
 
-	_, err := listen(8421, n.listen, probeAnswering(true))
+	_, err := newBinder(n, inst).bind(8421, ourVersion)
 
 	var running *alreadyRunningError
 	if !errors.As(err, &running) {
@@ -66,15 +92,47 @@ func TestListenDetectsRunningInstance(t *testing.T) {
 	if running.URL != "http://127.0.0.1:8421/" {
 		t.Errorf("url = %s", running.URL)
 	}
-	if len(n.calls) != 1 {
-		t.Errorf("bound %d times, want no second server: %v", len(n.calls), n.calls)
+	if inst.shutdowns != 0 || len(n.calls) != 1 {
+		t.Errorf("shutdowns = %d, binds = %v: the running instance must be left alone", inst.shutdowns, n.calls)
 	}
 }
 
-func TestListenFallsBackToRandomPortWhenTakenByAnotherProgram(t *testing.T) {
+func TestBindReplacesADifferentVersion(t *testing.T) {
 	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true}}
+	inst := &fakeInstance{running: true, version: "v1", stops: true}
 
-	ln, err := listen(8421, n.listen, probeAnswering(false))
+	ln, err := newBinder(n, inst).bind(8421, ourVersion)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if inst.shutdowns != 1 || inst.shutdownTo != "http://127.0.0.1:8421" {
+		t.Errorf("shutdowns = %d to %q", inst.shutdowns, inst.shutdownTo)
+	}
+	if got := ln.Addr().String(); got != "127.0.0.1:8421" {
+		t.Errorf("addr = %s, want the preferred port taken over", got)
+	}
+}
+
+func TestBindFallsBackWhenTheOldVersionDoesNotStop(t *testing.T) {
+	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true}}
+	inst := &fakeInstance{running: true, version: "v1", stops: false}
+
+	ln, err := newBinder(n, inst).bind(8421, ourVersion)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := ln.Addr().String(); got != "127.0.0.1:54321" {
+		t.Errorf("addr = %s, want a random port", got)
+	}
+}
+
+func TestBindFallsBackToRandomPortWhenTakenByAnotherProgram(t *testing.T) {
+	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true}}
+	inst := &fakeInstance{running: false}
+
+	ln, err := newBinder(n, inst).bind(8421, ourVersion)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -82,21 +140,25 @@ func TestListenFallsBackToRandomPortWhenTakenByAnotherProgram(t *testing.T) {
 	if got := ln.Addr().String(); got != "127.0.0.1:54321" {
 		t.Errorf("addr = %s", got)
 	}
+	if inst.shutdowns != 0 {
+		t.Error("tried to shut down a program that isn't immo-calc")
+	}
 }
 
-func TestListenReturnsErrorWhenNothingCanBeBound(t *testing.T) {
+func TestBindReturnsErrorWhenNothingCanBeBound(t *testing.T) {
 	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true, "127.0.0.1:0": true}}
 
-	if _, err := listen(8421, n.listen, probeAnswering(false)); err == nil {
+	if _, err := newBinder(n, &fakeInstance{}).bind(8421, ourVersion); err == nil {
 		t.Fatal("expected an error")
 	}
 }
 
-func TestListenOnlyEverBindsLoopback(t *testing.T) {
+func TestBindOnlyEverBindsLoopback(t *testing.T) {
 	n := &fakeNet{busy: map[string]bool{"127.0.0.1:8421": true}}
+	b := newBinder(n, &fakeInstance{running: true, version: "v1"})
 
-	_, _ = listen(8421, n.listen, probeAnswering(false))
-	_, _ = listen(0, n.listen, probeAnswering(false))
+	_, _ = b.bind(8421, ourVersion)
+	_, _ = b.bind(0, ourVersion)
 
 	for _, addr := range n.calls {
 		if !strings.HasPrefix(addr, "127.0.0.1:") {
@@ -105,15 +167,16 @@ func TestListenOnlyEverBindsLoopback(t *testing.T) {
 	}
 }
 
-func TestProbeHealthRecognisesImmoCalc(t *testing.T) {
+func TestProbeHealthReadsTheVersion(t *testing.T) {
 	tests := []struct {
-		name string
-		body string
-		want bool
+		name        string
+		body        string
+		wantVersion string
+		wantOK      bool
 	}{
-		{"immo-calc", `{"status":"ok","app":"immo-calc","version":"dev"}`, true},
-		{"another app", `{"status":"ok","app":"other"}`, false},
-		{"not json", `<html>`, false},
+		{"immo-calc", `{"status":"ok","app":"immo-calc","version":"871b22c"}`, "871b22c", true},
+		{"another app", `{"status":"ok","app":"other","version":"1"}`, "", false},
+		{"not json", `<html>`, "", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -126,15 +189,44 @@ func TestProbeHealthRecognisesImmoCalc(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			if got := probeHealth(srv.URL); got != tt.want {
-				t.Errorf("probeHealth = %v, want %v", got, tt.want)
+			version, ok := probeHealth(srv.URL)
+
+			if version != tt.wantVersion || ok != tt.wantOK {
+				t.Errorf("probeHealth = (%q, %v), want (%q, %v)", version, ok, tt.wantVersion, tt.wantOK)
 			}
 		})
 	}
 }
 
 func TestProbeHealthFalseWhenNothingAnswers(t *testing.T) {
-	if probeHealth("http://127.0.0.1:1") {
+	if _, ok := probeHealth("http://127.0.0.1:1"); ok {
 		t.Error("expected false")
+	}
+}
+
+func TestShutdownInstanceSendsItsOwnOrigin(t *testing.T) {
+	var gotMethod, gotPath, gotOrigin string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod, gotPath, gotOrigin = r.Method, r.URL.Path, r.Header.Get("Origin")
+		_, _ = w.Write([]byte("{}"))
+	}))
+	defer srv.Close()
+
+	if err := shutdownInstance(srv.URL); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotMethod != http.MethodPost || gotPath != "/api/shutdown" || gotOrigin != srv.URL {
+		t.Errorf("got %s %s with Origin %q", gotMethod, gotPath, gotOrigin)
+	}
+}
+
+func TestShutdownInstanceReportsRefusal(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	if err := shutdownInstance(srv.URL); err == nil {
+		t.Error("expected an error")
 	}
 }

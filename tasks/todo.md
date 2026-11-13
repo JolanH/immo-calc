@@ -106,6 +106,14 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `Makefile`, `web/vite.config.ts`, `docker/*`, `scripts/smoke.sh` (or `cmd/immo-calc/smoke_test.go`)
 **Scope:** S
 
+### [x] Task 9a (added 2026-11-13): replace a different running version
+**Description:** Requested after Checkpoint B: a forgotten instance of an older build kept answering, so a new binary just opened the browser on it. Now, when the preferred port answers as immo-calc with a different version, the new binary stops it silently with `POST /api/shutdown`, waits up to 5 s for the port, and starts in its place (random port if it doesn't stop). Same version: unchanged (open the browser on it, exit 0). Spec updated in `SPEC-app-shell.md`.
+**Acceptance criteria:**
+- [x] Different version running → it's shut down and the new one takes over the port (unit tests + two real binaries)
+- [x] Same version running → browser opened on it, exit 0, no shutdown
+- [x] Old version that won't stop → random free port
+**Scope:** S
+
 ### [x] Checkpoint A — app-shell done
 - [x] `make test`, `make lint`, `make build` pass from a clean checkout
 - [x] app-shell acceptance criteria 1–11 verified (2 and 11 by hand on a Windows machine: no console window, French message box on fatal error)
