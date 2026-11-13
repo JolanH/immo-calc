@@ -103,9 +103,3 @@ func validateSettingsSection(raw []byte) error {
 	}
 	return nil
 }
-
-// RegisterSections declares the property module's sections and validators.
-// Call it before the store is loaded.
-func RegisterSections(store *storage.Store) {
-	store.RegisterSection(SettingsKey, validateSettingsSection)
-}

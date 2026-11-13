@@ -10,12 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"immo-calc/internal/loan"
 	"immo-calc/internal/storage"
 )
 
 func openStore(t *testing.T, path string) *storage.Store {
 	t.Helper()
 	store := storage.New()
+	loan.RegisterSection(store)
 	RegisterSections(store)
 	if err := store.Load(path); err != nil {
 		t.Fatalf("load: %v", err)
