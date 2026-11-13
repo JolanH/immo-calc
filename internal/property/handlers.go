@@ -22,6 +22,20 @@ func NewHandlers(svc *Service) *Handlers {
 func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/settings", h.getSettings)
 	mux.Handle("PUT /api/settings", server.RequireSameOrigin(http.HandlerFunc(h.putSettings)))
+	mux.Handle("POST /api/properties/evaluate", server.RequireSameOrigin(http.HandlerFunc(h.evaluate)))
+}
+
+func (h *Handlers) evaluate(w http.ResponseWriter, r *http.Request) {
+	var in Input
+	if !server.DecodeJSON(w, r, &in) {
+		return
+	}
+	res, err := h.svc.EvaluateInput(in)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	server.WriteJSON(w, http.StatusOK, res)
 }
 
 // writeServiceError maps service errors to API answers.

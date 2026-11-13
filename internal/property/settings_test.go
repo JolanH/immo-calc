@@ -33,7 +33,7 @@ func writeData(t *testing.T, content string) string {
 }
 
 func TestDefaultsApplyWithoutASettingsSection(t *testing.T) {
-	svc := NewService(openStore(t, filepath.Join(t.TempDir(), "absent.yaml")))
+	svc := NewService(openStore(t, filepath.Join(t.TempDir(), "absent.yaml")), nil)
 
 	got, err := svc.Settings()
 
@@ -56,7 +56,7 @@ settings:
   vacancy_months_per_year: 0.5
   agency_fee_pct: 6
 `)
-	svc := NewService(openStore(t, path))
+	svc := NewService(openStore(t, path), nil)
 
 	got, _ := svc.Settings()
 
@@ -67,7 +67,7 @@ settings:
 
 func TestUpdateSettingsSurvivesARestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "immo-calc.yaml")
-	svc := NewService(openStore(t, path))
+	svc := NewService(openStore(t, path), nil)
 	s := DefaultSettings()
 	s.MarginalTaxRatePct = 11
 	s.VacancyMonthsPerYear = 1.5
@@ -76,7 +76,7 @@ func TestUpdateSettingsSurvivesARestart(t *testing.T) {
 		t.Fatalf("update: %v", err)
 	}
 
-	got, _ := NewService(openStore(t, path)).Settings()
+	got, _ := NewService(openStore(t, path), nil).Settings()
 	if got != s {
 		t.Errorf("after restart = %+v, want %+v", got, s)
 	}
@@ -126,7 +126,7 @@ func TestSettingsValidation(t *testing.T) {
 
 func TestUpdateSettingsRejectsInvalidValues(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "immo-calc.yaml")
-	svc := NewService(openStore(t, path))
+	svc := NewService(openStore(t, path), nil)
 	s := DefaultSettings()
 	s.MarginalTaxRatePct = 12
 
@@ -182,7 +182,7 @@ func serveProperty(h *Handlers, req *http.Request) *httptest.ResponseRecorder {
 const localOrigin = "http://127.0.0.1:8421"
 
 func TestSettingsEndpoints(t *testing.T) {
-	h := NewHandlers(NewService(openStore(t, filepath.Join(t.TempDir(), "immo-calc.yaml"))))
+	h := NewHandlers(NewService(openStore(t, filepath.Join(t.TempDir(), "immo-calc.yaml")), nil))
 
 	got := serveProperty(h, settingsRequest(http.MethodGet, "", localOrigin))
 	var s Settings

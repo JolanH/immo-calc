@@ -74,6 +74,9 @@ func main() {
 		Picker:     storage.ZenityPicker{},
 	})
 
+	loans := loan.NewService(data.store)
+	loanHandlers := loan.NewHandlers(loans)
+
 	url := appURL(ln)
 	slog.Info("immo-calc started", "version", version, "url", url,
 		"data", data.store.Path(), "config", data.configPath, "log", logPath)
@@ -86,8 +89,8 @@ func main() {
 			Version:  version,
 			Static:   web.Dist(),
 			Shutdown: stop,
-			Routes: []func(*http.ServeMux){dataHandlers.Register, loan.NewHandlers(loan.NewService(data.store)).Register,
-				property.NewHandlers(property.NewService(data.store)).Register,
+			Routes: []func(*http.ServeMux){dataHandlers.Register, loanHandlers.Register,
+				property.NewHandlers(property.NewService(data.store, loans)).Register,
 			},
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
