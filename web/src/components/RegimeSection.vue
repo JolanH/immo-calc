@@ -2,7 +2,7 @@
 import { REGIME_LABELS, type RegimeComparison, type TaxRegime } from '@/api/properties'
 import { formatEuros, formatPercent } from '@/format'
 
-// « Régime fiscal »: how each regime taxes the rent, and the four of them
+// « Régime fiscal » (shown in a modal): how each regime taxes the rent, and the four of them
 // applied to this bien with the same settings and loan (SPEC-property.md,
 // UI; docs/tax-regimes.md).
 defineProps<{ regimes: RegimeComparison[]; financed?: boolean }>()
@@ -28,8 +28,7 @@ const EXPLANATIONS: Record<TaxRegime, { kind: string; text: string }> = {
 </script>
 
 <template>
-  <details class="card calc-detail regime-section" data-test="regime-section">
-    <summary>Régime fiscal</summary>
+  <div class="regime-section" data-test="regime-section">
     <p class="placeholder">
       Les régimes « micro » sont une simplification : un abattement forfaitaire remplace les charges
       réelles. Le régime réel est plus avantageux quand les charges{{
@@ -87,5 +86,5 @@ const EXPLANATIONS: Record<TaxRegime, { kind: string; text: string }> = {
       Location nue et meublée ne sont pas interchangeables : le meublé suppose un logement équipé.
       Impôt de la 1re année, conservé dans le temps.
     </p>
-  </details>
+  </div>
 </template>
