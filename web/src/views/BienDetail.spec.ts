@@ -535,13 +535,16 @@ describe('BienDetail tax regimes and furniture', () => {
     },
   ]
 
-  it('compares the four regimes, marking the current one and the lowest tax', async () => {
+  it('compares the four regimes in a modal, marking the current one and the lowest tax', async () => {
     stubApi(() => json({ ...result, regimes }))
     const wrapper = await mountNew()
     await fillReferenceFlat(wrapper)
 
-    const section = wrapper.get('[data-test="regime-section"]')
-    expect(section.get('summary').text()).toBe('Régime fiscal')
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    await wrapper.get('[data-test="open-regimes"]').trigger('click')
+    const dialog = wrapper.get('[role="dialog"]')
+    expect(dialog.get('h2').text()).toBe('Régime fiscal')
+    const section = dialog.get('[data-test="regime-section"]')
     expect(plain(section.text())).toContain('70 % des loyers encaissés')
     const rows = section.findAll('[data-test="regime-table"] tbody tr')
     expect(rows.map((r) => r.get('th').text().split(/\s+/)[0])).toEqual([
@@ -557,6 +560,59 @@ describe('BienDetail tax regimes and furniture', () => {
     expect(lmnp.find('[data-test="tag-best"]').text()).toBe('le plus avantageux')
     expect(plain(lmnp.text())).toContain('4,96 %')
     expect(wrapper.findAll('[data-test="tag-best"]')).toHaveLength(1)
+
+    await dialog.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  const taxDetail = {
+    regime: 'micro_foncier',
+    marginalTaxRatePct: 30,
+    socialChargesPct: 17.2,
+    loanInterestCents: 0,
+    loanInsuranceCents: 0,
+    loanCostsCents: 0,
+    rawTaxableCents: 539_000,
+    incomeTaxCents: 161_700,
+    socialChargesCents: 92_708,
+  }
+
+  it('explains the annual tax in a modal from the current values of the bien', async () => {
+    stubApi(() => json({ ...result, taxDetail }))
+    const wrapper = await mountNew()
+    await fillReferenceFlat(wrapper)
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    await wrapper.get('[data-test="open-tax-detail"]').trigger('click')
+    const dialog = wrapper.get('[role="dialog"]')
+    expect(dialog.get('h2').text()).toBe("Comment est calculé l'impôt")
+    const text = plain(dialog.text())
+    for (const expected of [
+      'Loyer annuel théorique (12 × 700,00 €)',
+      'Taxe foncière',
+      '900,00 €',
+      'Abattement forfaitaire de 30 %',
+      'Revenu imposable',
+      '5 390,00 € × 30 %',
+      '1 617,00 €',
+      '5 390,00 € × 17,2 %',
+      'Impôt annuel',
+      '2 544,08 €',
+      'Revenu annuel net',
+      '2 855,92 €',
+    ]) {
+      expect(text).toContain(expected)
+    }
+
+    await dialog.get('[data-test="modal-close"]').trigger('click')
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  it('offers no tax explanation until there are results', async () => {
+    stubApi()
+    const wrapper = await mountNew()
+    expect(wrapper.find('[data-test="open-tax-detail"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="open-regimes"]').exists()).toBe(false)
   })
 
   it('sends the furniture and lists the LMNP depreciation in « Détail du calcul »', async () => {

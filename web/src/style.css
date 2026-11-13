@@ -1172,3 +1172,101 @@ a.app-header__name {
   background: var(--success-bg);
   color: var(--success-text);
 }
+
+/* Modal dialogs (tax explanation, régime fiscal). */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(48rem, 100%);
+  max-height: 90vh;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.35);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal__header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal__body {
+  padding: 1rem 1.2rem 1.2rem;
+  overflow-y: auto;
+}
+
+.bien-options__explain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* « Comment est calculé l'impôt »: one table per step. */
+.tax-explanation__section h3 {
+  margin: 1.1rem 0 0.4rem;
+  font-size: 1rem;
+}
+
+.tax-explanation__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.tax-explanation__table th,
+.tax-explanation__table td {
+  padding: 0.25rem 0.4rem;
+  text-align: left;
+  font-weight: 400;
+  vertical-align: top;
+}
+
+.tax-explanation__table td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tax-explanation__op {
+  width: 1.2rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.tax-explanation__formula {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tax-explanation__total th,
+.tax-explanation__total td {
+  font-weight: 700;
+  background: var(--accent-soft);
+}
+
+.tax-explanation__note {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

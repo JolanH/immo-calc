@@ -8,6 +8,8 @@ import FinancingCard from '@/components/FinancingCard.vue'
 import CalcDetail from '@/components/CalcDetail.vue'
 import ProfitChart from '@/components/ProfitChart.vue'
 import RegimeSection from '@/components/RegimeSection.vue'
+import AppModal from '@/components/AppModal.vue'
+import TaxExplanation from '@/components/TaxExplanation.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
 import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
 import { ApiError } from '@/api/client'
@@ -50,6 +52,9 @@ const form = reactive({
   taxRegime: 'micro_foncier' as TaxRegime,
   loanId: '',
 })
+
+// Which explanation modal is open.
+const modal = ref<'tax' | 'regimes' | null>(null)
 
 const route = useRoute()
 const router = useRouter()
@@ -450,6 +455,26 @@ async function remove() {
               Voir le prêt →
             </RouterLink>
           </div>
+          <div v-if="result?.taxDetail || result?.regimes?.length" class="bien-options__explain">
+            <button
+              v-if="result?.taxDetail"
+              type="button"
+              class="button"
+              data-test="open-tax-detail"
+              @click="modal = 'tax'"
+            >
+              Comment est calculé l'impôt ?
+            </button>
+            <button
+              v-if="result?.regimes?.length"
+              type="button"
+              class="button"
+              data-test="open-regimes"
+              @click="modal = 'regimes'"
+            >
+              Comparer les régimes
+            </button>
+          </div>
         </section>
         <FinancingCard v-if="result?.financing" :financing="result.financing" />
         <CalcDetail
@@ -459,11 +484,6 @@ async function remove() {
           :condo-fees-cents="form.annualCondoFeesCents ?? 0"
           :insurance-cents="form.annualLandlordInsuranceCents ?? 0"
         />
-        <RegimeSection
-          v-if="result?.regimes?.length"
-          :regimes="result.regimes"
-          :financed="!!result.financing"
-        />
         <ProfitChart
           v-if="result?.timeline"
           :timeline="result.timeline"
@@ -471,5 +491,29 @@ async function remove() {
         />
       </div>
     </div>
+    <AppModal :open="modal === 'tax'" title="Comment est calculé l'impôt" @close="modal = null">
+      <TaxExplanation
+        v-if="result?.taxDetail"
+        :input="{
+          regime: form.taxRegime,
+          result,
+          monthlyRentCents: form.monthlyRentCents ?? 0,
+          propertyTaxCents: form.annualPropertyTaxCents ?? 0,
+          condoFeesCents: form.annualCondoFeesCents ?? 0,
+          insuranceCents: form.annualLandlordInsuranceCents ?? 0,
+          priceCents: form.priceCents ?? 0,
+          furnitureIncludedCents: form.furnitureIncludedCents ?? 0,
+          furnitureAddedCents: form.furnitureAddedCents ?? 0,
+          agencyManaged: form.agencyManaged,
+        }"
+      />
+    </AppModal>
+    <AppModal :open="modal === 'regimes'" title="Régime fiscal" @close="modal = null">
+      <RegimeSection
+        v-if="result?.regimes?.length"
+        :regimes="result.regimes"
+        :financed="!!result.financing"
+      />
+    </AppModal>
   </section>
 </template>
