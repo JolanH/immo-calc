@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -14,7 +16,9 @@ import (
 	"syscall"
 	"time"
 
+	"immo-calc/internal/applog"
 	"immo-calc/internal/browser"
+	"immo-calc/internal/notify"
 	"immo-calc/internal/server"
 	"immo-calc/web"
 )
@@ -23,7 +27,8 @@ import (
 var version = "dev"
 
 func main() {
-	cfg, err := parseConfig(os.Args[1:], executableDir(), os.Stderr)
+	exeDir := executableDir()
+	cfg, err := parseConfig(os.Args[1:], exeDir, os.Stderr)
 	if err != nil {
 		os.Exit(2)
 	}
@@ -32,19 +37,25 @@ func main() {
 		return
 	}
 
+	logPath := setupLogging(exeDir, cfg.Debug)
+	fatal := func(err error) {
+		reportFatal(notify.Fatal, log.Printf, err, logPath)
+		os.Exit(1)
+	}
+
 	ln, err := listen(cfg.Port, net.Listen, probeHealth)
 	var running *alreadyRunningError
 	if errors.As(err, &running) {
-		log.Printf("immo-calc is already running at %s", running.URL)
+		slog.Info("immo-calc is already running, opening it", "url", running.URL)
 		openBrowser(cfg, running.URL)
 		return
 	}
 	if err != nil {
-		log.Fatalf("start: %v", err)
+		fatal(err)
 	}
 
 	url := appURL(ln)
-	log.Printf("immo-calc %s listening on %s (data: %s)", version, url, cfg.DataPath)
+	slog.Info("immo-calc started", "version", version, "url", url, "data", cfg.DataPath, "log", logPath)
 
 	// Stop on Ctrl+C / SIGTERM, or when the UI's "Quitter" calls /api/shutdown.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -59,15 +70,33 @@ func main() {
 
 	select {
 	case err := <-serveErr:
-		log.Fatalf("server: %v", err)
+		fatal(fmt.Errorf("server: %w", err))
 	case <-ctx.Done():
 	}
-	log.Printf("shutting down")
+	slog.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("graceful shutdown: %v", err)
+		slog.Warn("graceful shutdown", "err", err)
 	}
+}
+
+// setupLogging sends logs to immo-calc.log (exe dir, else temp dir) and to
+// stdout when there is one. It returns the log file path, or "" if no log
+// file could be created.
+func setupLogging(exeDir string, debug bool) string {
+	var out io.Writer = os.Stdout
+	f, path, err := applog.Open(exeDir, os.TempDir())
+	if err == nil {
+		// The file goes first: on Windows (no console) writes to stdout fail,
+		// and MultiWriter stops at the first failing writer.
+		out = io.MultiWriter(f, os.Stdout)
+	}
+	slog.SetDefault(applog.NewLogger(out, debug))
+	if err != nil {
+		slog.Warn("no log file", "err", err)
+	}
+	return path
 }
 
 func openBrowser(cfg Config, url string) {
@@ -75,7 +104,7 @@ func openBrowser(cfg Config, url string) {
 		return
 	}
 	if err := browser.Open(url); err != nil {
-		log.Printf("could not open the browser, open %s by hand: %v", url, err)
+		slog.Warn("could not open the browser, open the URL by hand", "url", url, "err", err)
 	}
 }
 
