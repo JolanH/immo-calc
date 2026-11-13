@@ -1,0 +1,164 @@
+# CI: non-regression on every push/PR; on a version tag, also builds the
+# Linux and Windows executables and uploads them as workflow artifacts.
+#
+# Every job goes through the Makefile, which runs each tool inside the
+# project's Docker images (docker/*.Dockerfile). CI therefore uses exactly the
+# same toolchain versions as local development.
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded runs on branches/PRs, never a tag (release) build.
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  verify:
+    name: Lint and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # The Makefile points GOMODCACHE, GOCACHE and HOME (npm cache) into .cache/.
+      - name: Restore build caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/gomod
+            .cache/go-build
+            .cache/home/.npm
+          # A per-commit key so the Go build cache is saved again after each run;
+          # restore falls back to the newest entry for the same dependencies.
+          key: deps-${{ runner.os }}-${{ hashFiles('go.sum', 'web/package-lock.json', 'docker/*.Dockerfile') }}-${{ github.sha }}
+          restore-keys: |
+            deps-${{ runner.os }}-${{ hashFiles('go.sum', 'web/package-lock.json', 'docker/*.Dockerfile') }}-
+            deps-${{ runner.os }}-
+
+      - name: Lint (gofmt, go vet linux+windows, eslint, prettier, vue-tsc)
+        run: make lint
+
+      - name: Tests (Go with -race, Vitest, smoke test of the binary)
+        run: make test
+
+  # The app ships as a Windows .exe, but the Docker-based jobs only compile and
+  # vet the Windows code. This job runs the Go tests and the smoke test on a
+  # real Windows host (no Docker there, so toolchains come from setup-*; keep
+  # their versions in line with docker/*.Dockerfile).
+  test-windows:
+    name: Tests on Windows
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      # Keep LF line endings so file contents match the Linux checkout.
+      - name: Disable CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.3 # docker/node.Dockerfile
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The Go packages embed web/dist, so build it first.
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npx vite build --logLevel warn
+
+      # No -race: it needs cgo and a C toolchain on Windows. Linux covers it.
+      - name: Go tests
+        run: go test -cover ./cmd/... ./internal/... ./web
+
+      - name: Smoke test of the binary
+        run: go test -count=1 -tags smoke -run TestSmoke ./cmd/immo-calc
+
+  release-build:
+    name: Build executables
+    needs: [verify, test-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          # `git describe --tags` stamps the version into the binary.
+          fetch-depth: 0
+
+      # No cache restore here on purpose: release binaries are built from a clean
+      # state, so nothing a previous run wrote into .cache/ can end up in them.
+
+      # The version stamped by `make build` must be exactly the tag (no -dirty,
+      # no -N-gSHA suffix).
+      - name: Check version matches the tag
+        run: |
+          described="$(git describe --tags --always --dirty)"
+          if [[ "$described" != "$GITHUB_REF_NAME" ]]; then
+            echo "git describe gives '$described', expected '$GITHUB_REF_NAME'" >&2
+            exit 1
+          fi
+
+      # Pure-Go (CGO_ENABLED=0) cross-compilation from Linux, as `make build` does locally.
+      - name: Build Linux and Windows binaries
+        run: make build
+
+      - name: Check binaries and version stamp
+        run: |
+          set -euo pipefail
+          ls -l dist/
+          test -x dist/immo-calc-linux-amd64
+          test -s dist/immo-calc-windows-amd64.exe
+          # The Linux binary must report exactly the tag.
+          out="$(./dist/immo-calc-linux-amd64 --version)"
+          echo "$out"
+          [[ "$out" == "immo-calc ${GITHUB_REF_NAME}" ]]
+          # The Windows binary can't run here; check the tag string is embedded.
+          grep -aqF -- "${GITHUB_REF_NAME}" dist/immo-calc-windows-amd64.exe
+
+      # upload-artifact zips files without their permissions, so the Linux binary
+      # goes in a tarball to keep its executable bit.
+      - name: Package and checksum
+        run: |
+          set -euo pipefail
+          tar -C dist -czf "dist/immo-calc-${GITHUB_REF_NAME}-linux-amd64.tar.gz" immo-calc-linux-amd64
+          (cd dist && sha256sum immo-calc-*.tar.gz immo-calc-windows-amd64.exe > SHA256SUMS && cat SHA256SUMS)
+
+      - name: Upload Linux executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: immo-calc-${{ github.ref_name }}-linux-amd64
+          path: |
+            dist/immo-calc-${{ github.ref_name }}-linux-amd64.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: immo-calc-${{ github.ref_name }}-windows-amd64
+          path: |
+            dist/immo-calc-windows-amd64.exe
+            dist/SHA256SUMS
+          if-no-files-found: error
