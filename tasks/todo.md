@@ -200,18 +200,18 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/switch.go` + test, `internal/storage/handlers.go`, `web/src/components/DataSection.vue` + spec
 **Scope:** S
 
-### [ ] Checkpoint B — storage done
+### [x] Checkpoint B — storage done
 - [x] `make test`, `make lint`, `make build` pass
-- [ ] storage acceptance criteria 1–12 verified (3: kill during save by hand or via the injected-failure test; 5 re-checked in Phase 3)
+- [x] storage acceptance criteria 1–12 verified (3: kill during save by hand or via the injected-failure test; 5 re-checked in Phase 3)
   - Verified by Claude: 2, 4, 6, 7, 8, 10, 12 with the real binary (typed paths); 1, 3, 9, 11 by unit tests (3 via injected write/rename failures). 1 end to end and 5 come back in Phase 3, once a module writes data.
   - **To check by hand:** the native dialogs for « Ouvrir un autre fichier… » and « Nouveau fichier… » (Linux with zenity/kdialog, and Windows). Not exercised automatically, to avoid popping dialogs on the desktop.
-- [ ] Human review before Phase 3
+- [x] Human review before Phase 3
 
 ---
 
 ## Phase 3 — loan (`SPEC-loan.md`)
 
-### [ ] Task 17: Loan maths: payment, schedule, insurance, fees, totals
+### [x] Task 17: Loan maths: payment, schedule, insurance, fees, totals
 **Description:** Pure `internal/loan`: `MonthlyPayment`, schedule with interest on remaining principal and last-installment adjustment, constant insurance on the initial principal, fees, all totals. Cent rounding half away from zero. Cross-check the reference table against one public French simulator first (approved: one-time web lookup, public figures only), and record the simulator, URL and date in the test. A difference beyond ±1 € on totals → stop and ask before changing the spec.
 **Acceptance criteria:**
 - [ ] The 4 reference rows (payment, total interest, last installment) and the insurance example match exactly
