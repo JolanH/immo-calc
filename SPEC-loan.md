@@ -129,7 +129,10 @@ Result JSON (camelCase, cents):
 - **Right, live results** (debounced `simulate`, ~300 ms): Mensualité hors assurance, Assurance mensuelle, **Mensualité totale**, Intérêts totaux, Coût de l'assurance, Frais, **Coût total du crédit**, Montant total remboursé.
 - **Actions:** **Enregistrer** (create/update), **Dupliquer**, **Supprimer** (confirmation; shows the French `loan_in_use` message if blocked). Leaving with unsaved changes asks for confirmation.
 - **Tableau d'amortissement** below, with an **Annuel / Mensuel** toggle (annual by default). Columns: Année (« 2027 ») or Mois (« déc. 2026 »), Échéance, Intérêts, Capital remboursé, Assurance, Capital restant dû.
-- **Graphique** between the results and the table: a **stacked bar chart, one bar per calendar year**, with **Capital remboursé** and **Intérêts** stacked (insurance not shown) and an overlaid **line for Capital restant dû** (second axis). Tooltip on hover gives the year and the three amounts in euros. There's a French legend, colours that read well in light and dark mode, and an accessible text alternative (`<title>`/`aria-label` summary plus the table below). It's built as a **hand-written SVG Vue component (`LoanChart.vue`), no chart library**: the chart is simple and this avoids a dependency.
+- **Graphique** between the results and the table, as **two charts stacked vertically that share the same years** (decided 2026-11-13, replacing a single chart with a second y-axis, which would make the two scales look comparable):
+  - « Remboursement par année »: a **stacked bar chart, one bar per calendar year**, with **Capital remboursé** and **Intérêts** stacked (insurance not shown).
+  - « Capital restant dû »: a **line chart** of the remaining principal at each year end, with its own y-axis.
+  - Tooltip on hover gives the year and the three amounts in euros, on either chart. There's a French legend, colours that read well in light and dark mode (validated palette), and an accessible text alternative (`<title>`/`aria-label` summary plus the table below). It's built as a **hand-written SVG Vue component (`LoanChart.vue`), no chart library**: the chart is simple and this avoids a dependency.
 - **« Biens liés »** section: a placeholder hidden until `property` exists. Then it lists the linked properties as links (filled through the property API).
 
 ## Acceptance Criteria
@@ -140,7 +143,7 @@ Result JSON (camelCase, cents):
 4. Invalid inputs show French messages next to the fields, and nothing is saved. The API answers `400` with `fields`.
 5. **Dupliquer** creates an independent copy. **Supprimer** removes the loan after confirmation, or shows the blocking message when a guard refuses.
 6. The annual and monthly schedules are consistent: each calendar-year row equals the sum of its months, and the schedule starts at the chosen first-payment month.
-8. The chart shows one bar per calendar year whose heights match the yearly table, plus the remaining-principal line, and it updates live with the form.
+8. The bar chart shows one bar per calendar year whose heights match the yearly table, the line chart below shows the remaining principal at each year end, and both update live with the form.
 7. A loan edited by hand in the YAML with invalid values makes the app refuse to start (storage rule), and the message names the loan.
 
 ## Testing
@@ -157,7 +160,7 @@ Result JSON (camelCase, cents):
 - Insurance: a single basis, % of the initial principal (constant premium).
 - Fees: *frais de dossier* and *frais de garantie* only.
 - Duration: whole years only (1–30).
-- Chart: yes, in v1 (hand-written SVG, no dependency).
+- Chart: yes, in v1 (hand-written SVG, no dependency): two charts sharing the years, no second y-axis.
 - First-payment month: yes. The yearly view groups by calendar year.
 
 ## Open Questions
