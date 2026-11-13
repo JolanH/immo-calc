@@ -76,6 +76,9 @@ func main() {
 
 	loans := loan.NewService(data.store)
 	loanHandlers := loan.NewHandlers(loans)
+	properties := property.NewService(data.store, loans)
+	// A loan that a property uses can't be deleted (409 naming the properties).
+	loans.RegisterDeleteGuard(properties.LoanDeleteGuard)
 
 	url := appURL(ln)
 	slog.Info("immo-calc started", "version", version, "url", url,
@@ -90,7 +93,7 @@ func main() {
 			Static:   web.Dist(),
 			Shutdown: stop,
 			Routes: []func(*http.ServeMux){dataHandlers.Register, loanHandlers.Register,
-				property.NewHandlers(property.NewService(data.store, loans)).Register,
+				property.NewHandlers(properties).Register,
 			},
 		}),
 		ReadHeaderTimeout: 10 * time.Second,

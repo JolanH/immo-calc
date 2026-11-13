@@ -334,3 +334,36 @@ func warning(r Result, code string) *Warning {
 	}
 	return nil
 }
+
+func TestDeletingALoanInUseIsRefusedNamingTheProperties(t *testing.T) {
+	f := newFixture(t)
+	f.loans.RegisterDeleteGuard(f.svc.LoanDeleteGuard)
+	used := saveLoan(t, f, "Prêt utilisé")
+	free := saveLoan(t, f, "Prêt libre")
+	in := validPropertyInput()
+	in.LoanID = used.ID
+	_, _ = f.svc.Create(in)
+
+	err := f.loans.Delete(used.ID)
+
+	var inUse *loan.InUseError
+	if !errors.As(err, &inUse) || inUse.Message != "Ce prêt est utilisé par le bien « T2 Lyon 7e »" {
+		t.Fatalf("err = %v", err)
+	}
+	if err := f.loans.Delete(free.ID); err != nil {
+		t.Errorf("free loan: %v", err)
+	}
+
+	in.Name = "Studio"
+	_, _ = f.svc.Create(in)
+	err = f.loans.Delete(used.ID)
+	if !errors.As(err, &inUse) || inUse.Message != "Ce prêt est utilisé par les biens « T2 Lyon 7e » et « Studio »" {
+		t.Errorf("two properties: err = %v", err)
+	}
+}
+
+func TestPropertyListOrDetailNamesThreeOrMoreProperties(t *testing.T) {
+	if got := usedByMessage([]string{"A", "B", "C"}); got != "Ce prêt est utilisé par les biens « A », « B » et « C »" {
+		t.Errorf("message = %q", got)
+	}
+}
