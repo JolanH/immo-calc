@@ -368,7 +368,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/property/{calc,dpe,constants}.go` + tests
 **Scope:** M
 
-### [ ] Task 29: Loan-aware maths
+### [x] Task 29: Loan-aware maths
 **Description:** From a loan's results: year-1 interest + insurance (first 12 installments) for `reel_foncier`; Financement figures (Mensualité, cash-flow before/after tax, Apport = A + fees − principal, Rendement sur apport, « n/a » when Apport ≤ 0). Add a loan reference case built from a `SPEC-loan.md` reference loan and record it in `SPEC-property.md`.
 **Acceptance criteria:**
 - [ ] `reel_foncier` taxable income reduced by year-1 interest + insurance; deficit floored at 0

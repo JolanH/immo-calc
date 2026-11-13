@@ -112,7 +112,14 @@ Common figures: A = 162 750 €, E = 7 700 €, rentabilité brute = 5,16 %.
 | **Revenus mensuels après impôts** | 193,08 € | 213,88 € | 249,16 € |
 | **Rentabilité nette après impôts** | 1,42 % | 1,58 % | 1,84 % |
 
-A reference case with a linked loan will be added during implementation, using the loan module's reference values.
+**With a linked loan** (same flat, no agency; computed with the loan rules, first-year figures = first 12 installments):
+
+| Loan | Regime | Revenu imposable | Impôt annuel | Mensualité | Cash-flow avant / après impôts | Apport | Rendement sur apport |
+|---|---|---|---|---|---|---|---|
+| 150 000 € à 4 % sur 25 ans (loan reference 2), no insurance, no fees. Intérêts année 1 : 5 935,09 € | micro-foncier | 5 390,00 € | 2 544,08 € | 791,76 € | −341,76 € / −553,77 € | 12 750,00 € | −52,12 % |
+| same | réel | 0,00 € (5 400 € − 5 935,09 € floored at 0) | 0,00 € | 791,76 € | −341,76 € / −341,76 € | 12 750,00 € | −32,17 % |
+| 50 000 € à 3 % sur 20 ans, assurance 0,30 %, 1 000 € de frais. Intérêts année 1 : 1 474,66 €, assurance : 150,00 € | réel | 3 775,34 € | 1 781,96 € | 289,80 € | 160,20 € / 11,70 € | 113 750,00 € | 0,12 % |
+| 200 000 € à 3,5 % sur 20 ans | any | — | — | 1 159,92 € | — | ≤ 0 | n/a |
 
 ## DPE warnings (loi Climat et résilience)
 
