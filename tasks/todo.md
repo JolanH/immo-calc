@@ -117,7 +117,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 
 ## Phase 2 — storage (`SPEC-storage.md`)
 
-### [ ] Task 10: Store load + validate + migrations
+### [x] Task 10: Store load + validate + migrations
 **Description:** `internal/storage.Store`: parse YAML (`go.yaml.in/yaml/v3`) into a document of raw sections; missing file → empty v1 document; missing section → empty; unknown top-level key → error; `schema_version` newer than supported → error; migration registry (tested with a fake v0 → v1). `RegisterSection(key, validate)`; validators return `FieldError{Path, Message}`, mapped to a YAML line. `Get[T]` reads a typed section. Update the `RegisterSection` sketch in `SPEC-storage.md` to the `FieldError` form (approved).
 **Acceptance criteria:**
 - [ ] Round trip of a document with test sections; empty/missing sections give zero values
