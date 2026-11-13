@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createMemoryHistory } from 'vue-router'
 import App from './App.vue'
@@ -23,11 +23,19 @@ describe('router', () => {
   it.each([
     ['/biens', 'Biens'],
     ['/prets', 'Prêts'],
-    ['/parametres', 'Paramètres'],
   ])('shows the placeholder page for %s', async (path, title) => {
     const { wrapper } = await mountAt(path)
     expect(wrapper.find('h1').text()).toBe(title)
     expect(wrapper.text()).toContain('Fonctionnalité à venir')
+  })
+
+  it('shows the Paramètres page with its Données section', async () => {
+    const info = { path: '/x.yaml', schemaVersion: 1, counts: { properties: 0, loans: 0 } }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(info))))
+    const { wrapper } = await mountAt('/parametres')
+    expect(wrapper.find('h1').text()).toBe('Paramètres')
+    expect(wrapper.find('h2').text()).toBe('Données')
+    vi.unstubAllGlobals()
   })
 
   it('shows a not-found page with a link back to Biens for unknown routes', async () => {

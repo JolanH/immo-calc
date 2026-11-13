@@ -139,7 +139,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/{save,fs}.go` + tests
 **Scope:** S
 
-### [ ] Task 12: Startup resolution, app config, refuse-to-start, data info + Données page
+### [x] Task 12: Startup resolution, app config, refuse-to-start, data info + Données page
 **Description:** Resolve the data file (`--data` > existing `last_data_file` > default), read/write `immo-calc.config.yaml` (exe dir, fallback `os.UserConfigDir()/immo-calc/`). A remembered file that has gone missing → fall back and set a warning. Load failure at startup → app-shell fatal path with the French message. `GET /api/data/info`. Map `ErrFileChangedExternally` → `409 file_changed_externally` in a shared helper. Paramètres page gets a *Données* section: path, counts, dismissible warning banner.
 **Acceptance criteria:**
 - [ ] Table-driven resolution tests (4 cases); `--data` never writes `last_data_file`
