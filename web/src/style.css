@@ -783,3 +783,75 @@ a.app-header__name {
 .settings-form > .actions {
   grid-column: 1 / -1;
 }
+
+.bien-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.warning {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  border-left: 4px solid;
+  background: var(--surface);
+}
+
+/* Reserved status palette (never reused for series); the text says it all. */
+.warning--critical {
+  border-color: #d03b3b;
+}
+
+.warning--serious {
+  border-color: #ec835a;
+}
+
+.warning--warning {
+  border-color: #fab219;
+}
+
+.result-card__value--accent {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  margin: 0.75rem 0 0;
+}
+
+.figures dt {
+  color: var(--muted);
+}
+
+.figures dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.financing h2 {
+  margin: 0;
+}
+
+.calc-detail summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
