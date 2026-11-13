@@ -2,14 +2,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 
+	"immo-calc/internal/browser"
 	"immo-calc/internal/server"
 	"immo-calc/web"
 )
@@ -27,11 +28,32 @@ func main() {
 		return
 	}
 
-	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(cfg.Port))
-	log.Printf("immo-calc %s listening on http://%s (data: %s)", version, addr, cfg.DataPath)
+	ln, err := listen(cfg.Port, net.Listen, probeHealth)
+	var running *alreadyRunningError
+	if errors.As(err, &running) {
+		log.Printf("immo-calc is already running at %s", running.URL)
+		openBrowser(cfg, running.URL)
+		return
+	}
+	if err != nil {
+		log.Fatalf("start: %v", err)
+	}
+
+	url := appURL(ln)
+	log.Printf("immo-calc %s listening on %s (data: %s)", version, url, cfg.DataPath)
+	openBrowser(cfg, url)
 	handler := server.New(server.Config{Version: version, Static: web.Dist()})
-	if err := http.ListenAndServe(addr, handler); err != nil {
+	if err := http.Serve(ln, handler); err != nil {
 		log.Fatalf("server: %v", err)
+	}
+}
+
+func openBrowser(cfg Config, url string) {
+	if cfg.NoBrowser {
+		return
+	}
+	if err := browser.Open(url); err != nil {
+		log.Printf("could not open the browser, open %s by hand: %v", url, err)
 	}
 }
 
