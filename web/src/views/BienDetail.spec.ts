@@ -119,6 +119,47 @@ describe('BienDetail (new property)', () => {
     ])
   })
 
+  it('groups agency, tax regime and loan in a panel above Financement', async () => {
+    stubApi((body) =>
+      json({
+        ...result,
+        financing: body.loanId
+          ? {
+              monthlyPaymentCents: 28_980,
+              cashFlowBeforeTaxCents: 16_020,
+              cashFlowAfterTaxCents: 1_170,
+              ownContributionCents: 11_375_000,
+              returnOnContributionPct: 0.12,
+            }
+          : null,
+      }),
+    )
+    const wrapper = await mountNew()
+
+    // Visible before any result, outside the main form but still submitted with it.
+    const panel = wrapper.get('[data-test="bien-options"]')
+    expect(panel.get('h2').text()).toBe('Gestion, fiscalité et prêt')
+    for (const id of ['bien-agence', 'bien-regime', 'bien-pret']) {
+      const control = panel.get(`#${id}`)
+      expect(wrapper.get('form').find(`#${id}`).exists()).toBe(false)
+      expect(control.attributes('form')).toBe('bien-form')
+    }
+    expect(wrapper.get('form').attributes('id')).toBe('bien-form')
+
+    await fillReferenceFlat(wrapper)
+    await wrapper.get('#bien-pret').setValue('aaaaaaaaaaaaaaaa')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    const order = ['bien-options', 'financing', 'calc-detail'].map(
+      (t) => wrapper.get(`[data-test="${t}"]`).element,
+    )
+    const follows = (a: Element, b: Element) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(follows(order[0], order[1])).toBe(true)
+    expect(follows(order[1], order[2])).toBe(true)
+  })
+
   it('waits for the required fields before evaluating', async () => {
     const fetchMock = stubApi()
     const wrapper = await mountNew()
