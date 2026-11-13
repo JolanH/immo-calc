@@ -203,6 +203,7 @@ describe('Accueil', () => {
       priceCents: 15_000_000,
       monthlyRentCents: 70_000,
       dpe: 'D',
+      taxRegime: 'reel_foncier',
       netAfterTaxYieldPct: 1.75,
       monthlyNetIncomeCents: 23_799,
       cashFlowAfterTaxCents: null,
@@ -221,6 +222,8 @@ describe('Accueil', () => {
 
       const pane = wrapper.get('[data-test="home-biens"]')
       expect(pane.get('tbody a').text()).toBe('T2 Lyon 7e')
+      expect(pane.findAll('thead th').map((th) => th.text())).toContain('Régime fiscal')
+      expect(pane.get('tbody tr').text()).toContain('Réel foncier')
       expect(pane.find('[data-test="active-loan-note"]').exists()).toBe(false)
       expect(pane.get('[data-test="new-property"]').attributes('href')).toBe('/biens/nouveau')
       expect(fetchMock.mock.calls.some(([url]) => url === '/api/properties')).toBe(true)

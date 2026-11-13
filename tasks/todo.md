@@ -494,6 +494,10 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] « Régime fiscal » compares the 4 regimes on the current bien, marks « actuel » and « le plus avantageux »
 **Scope:** L — split: (a) Go maths + API, (b) UI
 
+### [x] Task 34h (added 2026-11-13): « Régime fiscal » in the lists, per-column regime in the comparison
+- [x] Biens lists (/biens and the home page) show a « Régime fiscal » column (short name)
+- [x] Comparison: a « Régime fiscal » selector per column, defaulting to the bien's regime, not saved, kept in the URL (`regimes`); unknown values fall back to the bien's regime
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

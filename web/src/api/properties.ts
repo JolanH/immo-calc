@@ -117,6 +117,7 @@ export interface PropertySummary {
   priceCents: number
   monthlyRentCents: number
   dpe: string
+  taxRegime: TaxRegime
   netAfterTaxYieldPct: number
   netAfterCreditYieldPct: number
   monthlyNetIncomeCents: number

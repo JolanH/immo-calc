@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import DpeBadge from './DpeBadge.vue'
-import type { PropertySummary } from '@/api/properties'
+import { REGIME_LABELS, type PropertySummary } from '@/api/properties'
 import { formatEuros, formatPercent } from '@/format'
 
 // The Biens table, shared by /biens and the home page. With `selectable`,
@@ -40,6 +40,7 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
           <th scope="col" class="num">Prix</th>
           <th scope="col" class="num">Loyer</th>
           <th scope="col">DPE</th>
+          <th scope="col">Régime fiscal</th>
           <th scope="col" class="num">Rentabilité nette après impôts</th>
           <th scope="col" class="num kpi">Rentabilité nette après crédit</th>
           <th scope="col" class="num">Revenus mensuels après impôts</th>
@@ -69,6 +70,7 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
           <td class="num">{{ formatEuros(p.priceCents) }}</td>
           <td class="num">{{ formatEuros(p.monthlyRentCents) }}</td>
           <td><DpeBadge :dpe="p.dpe" /></td>
+          <td>{{ REGIME_LABELS[p.taxRegime] ?? '—' }}</td>
           <td class="num">{{ formatPercent(p.netAfterTaxYieldPct) }}</td>
           <td class="num kpi">{{ formatPercent(p.netAfterCreditYieldPct) }}</td>
           <td class="num">{{ formatEuros(p.monthlyNetIncomeCents) }}</td>

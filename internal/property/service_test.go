@@ -160,11 +160,11 @@ func TestListSummaries(t *testing.T) {
 	first := list[0]
 	if first.Name != "T2 Lyon 7e" || first.PriceCents != 15_000_000 || first.MonthlyRentCents != 70_000 || first.DPE != "D" ||
 		first.NetAfterTaxYieldPct != 1.75 || first.MonthlyNetIncomeCents != 23_799 || first.CashFlowAfterTaxCents != nil ||
-		first.LoanID != "" || first.LoanName != "" {
+		first.LoanID != "" || first.LoanName != "" || first.TaxRegime != MicroFoncier {
 		t.Errorf("list[0] = %+v", first)
 	}
 	second := list[1]
-	if second.LoanID != l.ID || second.LoanName != "Petit prêt" || second.CashFlowAfterTaxCents == nil || *second.CashFlowAfterTaxCents != 1_170 {
+	if second.TaxRegime != ReelFoncier || second.LoanID != l.ID || second.LoanName != "Petit prêt" || second.CashFlowAfterTaxCents == nil || *second.CashFlowAfterTaxCents != 1_170 {
 		t.Errorf("list[1] = %+v", second)
 	}
 }

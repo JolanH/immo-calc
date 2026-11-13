@@ -222,16 +222,17 @@ The home page « Accueil » (`/`) has two panes:
 
 ## Comparison (added 2026-11-13)
 
-Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loanId|>,…`.
+Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loanId|>,…&regimes=<regime>,…`.
 
 - **Selecting:** a checkbox column in the Biens list and in the home page's Biens pane. From the home page, while a loan is active, every column starts on the active loan (as on the home list); otherwise each bien starts on its own loan. Once 4 are ticked the others are disabled. A **Comparer (n)** button opens the comparison when at least 2 are ticked. On the comparison page a column can be removed, and a bien added while there are fewer than 4.
 - **One column per bien, one row per figure:** Prix, Coût d'acquisition, Loyer, Régime fiscal, DPE (badge); Revenus mensuels bruts, Revenus mensuels après impôts, Revenu annuel net, Rentabilité brute / nette / après impôts; Prêt (selector), Mensualité, Cash-flow avant / après impôts, Apport, Rendement sur apport; Cash-flow mensuel positif, Apport récupéré; Avertissements.
 - **A distinct loan per bien:** each column has a « Prêt » selector (« Aucun » or any saved loan), defaulting to the bien's own loan. The chosen loan applies **as saved** (rules 11–20) for that column only. It is **not saved** on the bien; it lives in the URL (`prets`), so a reload keeps the comparison.
-- Each column is computed with `POST /api/properties/evaluate?id=<bien>` and the chosen `loanId`, so the micro ceilings still count every saved bien once. A bien that no longer exists shows « Bien introuvable » in its column.
+- **A distinct regime per bien** (added 2026-11-13): the « Régime fiscal » row is a selector (the four regimes), defaulting to the bien's own regime. Like the loan, the choice applies to that column only, is **not saved** on the bien and lives in the URL (`regimes`); an unknown value falls back to the bien's regime.
+- Each column is computed with `POST /api/properties/evaluate?id=<bien>` and the chosen `loanId` and `taxRegime`, so the micro ceilings still count every saved bien once. A bien that no longer exists shows « Bien introuvable » in its column.
 
 ## UI
 
-- **/biens: Biens list.** Table with Nom, Prix, Loyer, DPE badge, Rentabilité nette après impôts, Revenus mensuels après impôts, Cash-flow après impôts (if there's a loan), Prêt (link). Button **Nouveau bien**. Empty state message.
+- **/biens: Biens list.** Table with Nom, Prix, Loyer, DPE badge, Régime fiscal (short name, added 2026-11-13; also on the home page), Rentabilité nette après impôts, Revenus mensuels après impôts, Cash-flow après impôts (if there's a loan), Prêt (link). Button **Nouveau bien**. Empty state message.
 - **/biens/nouveau and /biens/:id: Bien page.**
   - Form on the left (inputs above).
   - Live results on the right (debounced `evaluate`) as cards: **Revenus mensuels bruts**, **Revenus mensuels après impôts**, **Revenu annuel net**, **Rentabilité** (brute / nette / **après impôts**).
