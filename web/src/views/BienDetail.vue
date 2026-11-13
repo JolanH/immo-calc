@@ -198,6 +198,12 @@ async function duplicate() {
   }
 }
 
+/** Opens a loan form prefilled for this property; saving it links them. */
+async function createLoanForProperty() {
+  if (!loadedId.value) return
+  await router.push({ path: '/prets/nouveau', query: { bien: loadedId.value } })
+}
+
 async function remove() {
   if (!loadedId.value) return
   if (!window.confirm(`Supprimer le bien « ${savedName.value} » ? Cette action est définitive.`)) {
@@ -339,6 +345,14 @@ async function remove() {
           <template v-if="loadedId">
             <button type="button" class="button" data-test="duplicate" @click="duplicate">
               Dupliquer
+            </button>
+            <button
+              type="button"
+              class="button"
+              data-test="create-loan"
+              @click="createLoanForProperty"
+            >
+              Créer un prêt pour ce bien
             </button>
             <button type="button" class="button button--danger" data-test="delete" @click="remove">
               Supprimer

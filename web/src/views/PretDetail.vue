@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppBreadcrumb from '@/components/AppBreadcrumb.vue'
 import MoneyInput from '@/components/MoneyInput.vue'
 import RateInput from '@/components/RateInput.vue'
 import MonthPicker from '@/components/MonthPicker.vue'
 import ResultCard from '@/components/ResultCard.vue'
+import LinkedProperties from '@/components/LinkedProperties.vue'
 import AmortizationTable from '@/components/AmortizationTable.vue'
 import LoanChart from '@/components/LoanChart.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
@@ -22,6 +23,7 @@ import {
   type LoanDetail,
   type LoanInput,
 } from '@/api/loans'
+import { getProperty, updateProperty, type PropertyDetail } from '@/api/properties'
 
 const DEFAULT_YEARS = 20
 
@@ -46,6 +48,15 @@ const saveError = ref('')
 const saveFieldErrors = ref<Record<string, string>>({})
 const status = ref('')
 const saving = ref(false)
+
+/** « Créer un prêt pour ce bien »: the property to link the new loan to. */
+const forPropertyId = computed(() =>
+  typeof route.query.bien === 'string' && route.query.bien ? route.query.bien : null,
+)
+/** Set once the loan is saved and linked: shows « ← Retour au bien ». */
+const linkedProperty = ref<{ id: string; name: string } | null>(null)
+/** Bumped to refresh « Biens liés » after linking. */
+const linkedKey = ref(0)
 
 // Form state: null means "not a number yet" (empty or being typed).
 const form = reactive({
@@ -119,6 +130,15 @@ async function load(id: string | null) {
     } catch {
       form.name = 'Prêt 1'
     }
+    if (forPropertyId.value) {
+      try {
+        const property = await getProperty(forPropertyId.value)
+        form.name = `Prêt – ${property.name}`
+        form.principalCents = property.result.acquisitionCostCents
+      } catch (e) {
+        saveError.value = e instanceof ApiError ? e.message : String(e)
+      }
+    }
     snapshot.value = JSON.stringify(form)
     return
   }
@@ -152,7 +172,15 @@ async function save() {
     const created = loadedId.value === null
     fill(saved)
     status.value = 'Prêt enregistré'
-    if (created) await router.replace(`/prets/${saved.id}`)
+    if (created && forPropertyId.value) {
+      const property = await linkToProperty(forPropertyId.value, saved.id)
+      linkedProperty.value = { id: property.id, name: property.name }
+      status.value = `Prêt enregistré et associé au bien « ${property.name} »`
+      linkedKey.value++
+    }
+    if (created) {
+      await router.replace({ path: `/prets/${saved.id}`, query: route.query })
+    }
   } catch (e) {
     if (e instanceof ApiError && Object.keys(e.fields).length > 0) {
       saveFieldErrors.value = e.fields
@@ -162,6 +190,24 @@ async function save() {
   } finally {
     saving.value = false
   }
+}
+
+/** Sets the new loan on the property, keeping its other inputs. */
+async function linkToProperty(propertyId: string, loanId: string): Promise<PropertyDetail> {
+  const p = await getProperty(propertyId)
+  return updateProperty(propertyId, {
+    name: p.name,
+    priceCents: p.priceCents,
+    dpe: p.dpe,
+    monthlyRentCents: p.monthlyRentCents,
+    monthlyRecoverableChargesCents: p.monthlyRecoverableChargesCents,
+    annualPropertyTaxCents: p.annualPropertyTaxCents,
+    annualCondoFeesCents: p.annualCondoFeesCents,
+    annualLandlordInsuranceCents: p.annualLandlordInsuranceCents,
+    agencyManaged: p.agencyManaged,
+    taxRegime: p.taxRegime,
+    loanId,
+  })
 }
 
 function showActionError(e: unknown) {
@@ -324,6 +370,19 @@ async function remove() {
         </p>
       </div>
     </div>
+    <RouterLink
+      v-if="linkedProperty"
+      :to="`/biens/${linkedProperty.id}`"
+      class="back-link"
+      data-test="back-to-property"
+    >
+      ← Retour au bien
+    </RouterLink>
+    <LinkedProperties
+      v-if="loadedId && !loadError"
+      :key="`${loadedId}-${linkedKey}`"
+      :loan-id="loadedId"
+    />
     <LoanChart v-if="!loadError && result" :yearly="result.yearly" />
     <AmortizationTable
       v-if="!loadError && result"
