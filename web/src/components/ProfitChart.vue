@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Timeline } from '@/api/properties'
 import { formatEuros, formatMonth, formatMonthDate } from '@/format'
 import { paybackDate, positiveDate } from '@/profitDates'
@@ -11,7 +11,21 @@ import { niceRange, tickFormatter } from './chartScale'
 // financed: whether a loan's installments are subtracted (for the subtitle).
 const props = defineProps<{ timeline: Timeline; financed?: boolean }>()
 
-const WIDTH = 1100
+// The drawing takes its container's width (ResizeObserver) so that text
+// keeps its real size whatever the column; 1100 until measured.
+const width = ref(1100)
+const frame = ref<HTMLElement | null>(null)
+let observer: ResizeObserver | undefined
+
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined' || !frame.value) return
+  observer = new ResizeObserver((entries) => {
+    const w = Math.round(entries[0]?.contentRect.width ?? 0)
+    if (w > 0) width.value = w
+  })
+  observer.observe(frame.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
 const HEIGHT = 280
 const LEFT = 72
 const RIGHT = 16
@@ -20,7 +34,7 @@ const BOTTOM = 28
 
 const points = computed(() => props.timeline.points)
 const n = computed(() => points.value.length)
-const plotWidth = WIDTH - LEFT - RIGHT
+const plotWidth = computed(() => width.value - LEFT - RIGHT)
 const plotHeight = HEIGHT - TOP - BOTTOM
 
 const ticks = computed(() =>
@@ -33,7 +47,8 @@ const format = computed(() => tickFormatter(ticks.value))
 const yMin = computed(() => ticks.value[0])
 const yMax = computed(() => ticks.value.at(-1) ?? 1)
 
-const x = (i: number) => LEFT + (n.value > 1 ? (i / (n.value - 1)) * plotWidth : plotWidth / 2)
+const x = (i: number) =>
+  LEFT + (n.value > 1 ? (i / (n.value - 1)) * plotWidth.value : plotWidth.value / 2)
 const y = (cents: number) =>
   TOP + plotHeight - ((cents - yMin.value) / (yMax.value - yMin.value)) * plotHeight
 
@@ -85,8 +100,8 @@ function onPointer(event: PointerEvent) {
   const svg = (event.currentTarget as SVGElement).closest('svg')
   if (!svg) return
   const box = svg.getBoundingClientRect()
-  const vx = ((event.clientX - box.left) / box.width) * WIDTH
-  const i = Math.round(((vx - LEFT) / plotWidth) * (n.value - 1))
+  const vx = ((event.clientX - box.left) / box.width) * width.value
+  const i = Math.round(((vx - LEFT) / plotWidth.value) * (n.value - 1))
   active.value = Math.min(n.value - 1, Math.max(0, i))
 }
 
@@ -117,6 +132,7 @@ function onKey(event: KeyboardEvent) {
       }}
     </p>
     <div
+      ref="frame"
       class="loan-chart__frame profit-chart__frame"
       tabindex="0"
       data-test="profit-chart"
@@ -129,7 +145,7 @@ function onKey(event: KeyboardEvent) {
         Flèches gauche et droite pour avancer ou reculer d'un an.
       </p>
       <svg
-        :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
+        :viewBox="`0 0 ${width} ${HEIGHT}`"
         role="img"
         :aria-label="summary"
         class="loan-chart__svg"
@@ -137,7 +153,7 @@ function onKey(event: KeyboardEvent) {
         <title>{{ summary }}</title>
         <g class="loan-chart__grid">
           <g v-for="t in ticks" :key="t">
-            <line :x1="LEFT" :x2="WIDTH - RIGHT" :y1="y(t)" :y2="y(t)" />
+            <line :x1="LEFT" :x2="width - RIGHT" :y1="y(t)" :y2="y(t)" />
             <text :x="LEFT - 8" :y="y(t)" text-anchor="end" dominant-baseline="middle">
               {{ format(t) }}
             </text>
@@ -147,7 +163,7 @@ function onKey(event: KeyboardEvent) {
           class="profit-chart__zero"
           data-test="zero-line"
           :x1="LEFT"
-          :x2="WIDTH - RIGHT"
+          :x2="width - RIGHT"
           :y1="y(0)"
           :y2="y(0)"
         />
@@ -163,8 +179,8 @@ function onKey(event: KeyboardEvent) {
             class="profit-chart__marker-label"
             :x="x(m.index)"
             :y="m.key === 'positive' ? TOP - 14 : TOP - 2"
-            :text-anchor="x(m.index) > WIDTH - 200 ? 'end' : 'start'"
-            :dx="x(m.index) > WIDTH - 200 ? -4 : 4"
+            :text-anchor="x(m.index) > width - 200 ? 'end' : 'start'"
+            :dx="x(m.index) > width - 200 ? -4 : 4"
           >
             {{ m.label }} ·
             {{ m.key === 'positive' ? positiveDate(timeline) : paybackDate(timeline) }}
@@ -218,7 +234,7 @@ function onKey(event: KeyboardEvent) {
         v-if="activePoint && active !== null"
         role="tooltip"
         class="loan-chart__tooltip"
-        :style="{ left: `${(x(active) / WIDTH) * 100}%` }"
+        :style="{ left: `${(x(active) / width) * 100}%` }"
       >
         <p class="loan-chart__tooltip-title">{{ formatMonth(activePoint.month) }}</p>
         <p>

@@ -332,6 +332,18 @@ describe('BienDetail (new property)', () => {
       expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(true)
     })
 
+    it('puts the chart in the results panel, under « Détail du calcul »', async () => {
+      stubApi(() => json({ ...result, financing, timeline }))
+      const wrapper = await mountNew()
+      await fillReferenceFlat(wrapper)
+
+      const panel = wrapper.get('.bien-results').element
+      const chart = wrapper.get('[data-test="profit-chart"]').element
+      const detail = wrapper.get('[data-test="calc-detail"]').element
+      expect(panel.contains(chart)).toBe(true)
+      expect(detail.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
     it("says « jamais », « dès l'achat » or « au-delà de 50 ans » when relevant", async () => {
       stubApi(() =>
         json({

@@ -426,12 +426,12 @@ async function remove() {
           :condo-fees-cents="form.annualCondoFeesCents ?? 0"
           :insurance-cents="form.annualLandlordInsuranceCents ?? 0"
         />
+        <ProfitChart
+          v-if="result?.timeline"
+          :timeline="result.timeline"
+          :financed="!!result.financing"
+        />
       </div>
     </div>
-    <ProfitChart
-      v-if="!loadError && result?.timeline"
-      :timeline="result.timeline"
-      :financed="!!result.financing"
-    />
   </section>
 </template>

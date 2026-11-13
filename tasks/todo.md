@@ -473,6 +473,19 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 - [x] The card and the chart show for biens without a loan; « Jamais »/« Au-delà de 50 ans » when income is not positive
 **Scope:** S
 
+### [x] Task 34e (added 2026-11-13): chart in the right panel
+**Description:** Requested by the user: « Trésorerie cumulée » moves under « Détail du calcul » in the Bien page's right panel; the chart sizes its drawing to its container so labels keep their size.
+**Acceptance criteria:**
+- [x] The chart is in the results panel, after « Détail du calcul »; text stays readable at that width
+**Scope:** XS
+
+### [ ] Task 34f (added 2026-11-13): dark red primary colour, customisable
+**Description:** Requested by the user: the accent becomes dark red (#8b1a1a), customisable in Paramètres (`settings.accent_color`); dark mode uses a derived lighter shade with ≥ 4,5:1 contrast. Charts keep their validated palette.
+**Acceptance criteria:**
+- [ ] Default accent is dark red in light and dark mode; the colour picker changes it live and saving keeps it across restarts
+- [ ] Old data files without `accent_color` still load (default); invalid colours are refused with a French message
+**Scope:** M
+
 ### [ ] Checkpoint D — v1 done
 - [x] `make test`, `make lint`, `make build` pass; `internal/loan` (94,8 %) and `internal/property` (92,8 %) coverage ≥ 90 %
 - [x] property acceptance criteria 1–9 verified

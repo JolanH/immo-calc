@@ -54,6 +54,7 @@ Let the user enter a flat they are considering buying to rent out, and immediate
 | Frais de notaire | `notary_fee_pct` | **8.5** | 0 – 15, % of the price |
 | Vacance locative | `vacancy_months_per_year` | 1 | 0 – 12, step 0.5 (months without a tenant per year) |
 | Frais de gestion locative | `agency_fee_pct` | 7 | 0 – 15, % of rent collected (TTC). Applies to properties with *Gestion par une agence* = oui |
+| Couleur principale (interface) | `accent_color` | `#8b1a1a` (dark red) | `#rrggbb`; empty or missing means the default. The UI derives a lighter shade for dark mode so text stays readable (≥ 4,5:1). Added 2026-11-13 at the user's request |
 
 ## Calculation rules
 
@@ -223,7 +224,7 @@ Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loa
   - Live results on the right (debounced `evaluate`) as cards: **Revenus mensuels bruts**, **Revenus mensuels après impôts**, **Revenu annuel net**, **Rentabilité** (brute / nette / **après impôts**).
   - A collapsible « Détail du calcul » lists A, E, each owner charge, R, revenu imposable and impôt, so the figures can be checked.
   - With a loan, the « Financement » card shows Mensualité, Cash-flow avant/après impôts, Apport and Rendement sur apport.
-  - A **« Date de rentabilité »** result card shows « Cash-flow mensuel positif : DD/MM/YYYY » and « Apport récupéré : DD/MM/YYYY » (rules 16–20), and a **« Trésorerie cumulée »** chart below the Financement card plots the cumulative position over time with a zero line and both dates marked.
+  - A **« Date de rentabilité »** result card shows « Cash-flow mensuel positif : DD/MM/YYYY » and « Apport récupéré : DD/MM/YYYY » (rules 16–20), and a **« Trésorerie cumulée »** chart in the right panel, under « Détail du calcul », plots the cumulative position over time with a zero line and both dates marked.
   - The DPE warning and regime-ceiling warnings appear above the results.
   - Actions: Enregistrer, Dupliquer, Supprimer (confirmation), unsaved-changes guard.
 - **/parametres: Hypothèses et fiscalité** section (TMI, PS location nue, PS location meublée, notaire, vacance, gestion), next to the *Données* section from `storage`.
