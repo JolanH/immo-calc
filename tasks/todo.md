@@ -161,7 +161,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `internal/storage/{backup,exchange}.go` + tests, `internal/storage/handlers.go`, `web/src/components/DataSection.vue` + spec
 **Scope:** M
 
-### [ ] Task 14: Reload after an external edit
+### [x] Task 14: Reload after an external edit
 **Description:** `POST /api/data/reload`: reload from disk with normal validation; invalid → `400`, memory kept. Frontend: the api client turns any `409 file_changed_externally` into a global banner « Le fichier a été modifié en dehors d'immo-calc » with **Recharger**.
 **Acceptance criteria:**
 - [ ] Reload of a valid edited file → `200` and the new content is served; invalid → `400`, old state kept

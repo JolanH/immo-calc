@@ -35,6 +35,16 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/data/info", h.info)
 	mux.HandleFunc("GET /api/data/export", h.export)
 	mux.Handle("POST /api/data/import", server.RequireSameOrigin(http.HandlerFunc(h.importData)))
+	mux.Handle("POST /api/data/reload", server.RequireSameOrigin(http.HandlerFunc(h.reload)))
+}
+
+func (h *Handlers) reload(w http.ResponseWriter, _ *http.Request) {
+	if err := h.store.Reload(); err != nil {
+		server.WriteError(w, http.StatusBadRequest, "invalid_file", err.Error(), nil)
+		return
+	}
+	slog.Info("data reloaded from disk", "path", h.store.Path())
+	server.WriteJSON(w, http.StatusOK, h.currentInfo())
 }
 
 // maxImportBytes bounds an imported file (a family's data is a few KB).

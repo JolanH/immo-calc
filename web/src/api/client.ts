@@ -1,6 +1,8 @@
 // Typed fetch wrapper for the Go API. Errors always come back as ApiError with
 // a French message that can be shown as is.
 
+import { externalChange } from './externalChange'
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -61,6 +63,7 @@ async function send<T>(path: string, init: RequestInit): Promise<T> {
     } catch {
       // not JSON: fall through to the generic message
     }
+    if (parsed.error?.code === 'file_changed_externally') externalChange.detected = true
     throw new ApiError(
       response.status,
       parsed.error?.code ?? 'unknown_error',
