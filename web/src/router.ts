@@ -2,6 +2,7 @@ import { createRouter, type RouterHistory, type RouteRecordRaw } from 'vue-route
 import Accueil from './views/Accueil.vue'
 import BiensListe from './views/BiensListe.vue'
 import BienDetail from './views/BienDetail.vue'
+import Comparaison from './views/Comparaison.vue'
 import PretsListe from './views/PretsListe.vue'
 import PretDetail from './views/PretDetail.vue'
 import Parametres from './views/Parametres.vue'
@@ -10,6 +11,7 @@ import NotFound from './views/NotFound.vue'
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'accueil', component: Accueil },
   { path: '/biens', name: 'biens', component: BiensListe },
+  { path: '/biens/comparer', name: 'comparaison', component: Comparaison },
   // Like loans: one route for new (/biens/nouveau) and saved properties.
   { path: '/biens/:id', name: 'bien', component: BienDetail },
   { path: '/prets', name: 'prets', component: PretsListe },

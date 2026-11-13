@@ -5,9 +5,24 @@ import DpeBadge from './DpeBadge.vue'
 import type { PropertySummary } from '@/api/properties'
 import { formatEuros, formatPercent } from '@/format'
 
-// The Biens table, shared by /biens and the home page.
-const props = defineProps<{ properties: PropertySummary[] }>()
+// The Biens table, shared by /biens and the home page. With `selectable`,
+// a first column of checkboxes picks up to MAX_COMPARED biens to compare.
+const MAX_COMPARED = 4
+
+const props = defineProps<{
+  properties: PropertySummary[]
+  selectable?: boolean
+  selected?: string[]
+}>()
+const emit = defineEmits<{ 'update:selected': [ids: string[]] }>()
 const router = useRouter()
+
+const chosen = computed(() => props.selected ?? [])
+
+function toggle(id: string, on: boolean) {
+  const rest = chosen.value.filter((x) => x !== id)
+  emit('update:selected', on ? [...rest, id] : rest)
+}
 
 /** The cash-flow column only makes sense once a property has a loan. */
 const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfterTaxCents !== null))
@@ -18,6 +33,9 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
     <table class="table">
       <thead>
         <tr>
+          <th v-if="selectable" scope="col" class="check-col">
+            <span class="visually-hidden">Comparer</span>
+          </th>
           <th scope="col">Nom</th>
           <th scope="col" class="num">Prix</th>
           <th scope="col" class="num">Loyer</th>
@@ -35,6 +53,15 @@ const showCashFlow = computed(() => props.properties.some((p) => p.cashFlowAfter
           class="table__row--link"
           @click="router.push(`/biens/${p.id}`)"
         >
+          <td v-if="selectable" class="check-col" @click.stop>
+            <input
+              type="checkbox"
+              :checked="chosen.includes(p.id)"
+              :disabled="!chosen.includes(p.id) && chosen.length >= MAX_COMPARED"
+              :aria-label="`Comparer « ${p.name} »`"
+              @change="toggle(p.id, ($event.target as HTMLInputElement).checked)"
+            />
+          </td>
           <td>
             <RouterLink :to="`/biens/${p.id}`" @click.stop>{{ p.name }}</RouterLink>
           </td>

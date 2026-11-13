@@ -203,6 +203,15 @@ The home page « Accueil » (`/`) has two panes:
 
 **Borrowed amount (decided 2026-11-13, revised the same day):** the active loan applies to every bien **exactly as saved** (its amount, rate, duration, insurance and fees). So the « apport » is `A` + fees − the loan's amount (« n/a » when not positive), and the figures match what the right pane shows. The Prêt column of the home list then shows the active loan. A first version used the loan as a template borrowing each bien's acquisition cost; the user found it misleading (a 15 000 € loan silently became 36 890 €) and chose this rule instead.
 
+## Comparison (added 2026-11-13)
+
+Up to **4 biens** side by side at `/biens/comparer?biens=<id>,<id>…&prets=<loanId|>,…`.
+
+- **Selecting:** a checkbox column in the Biens list. Once 4 are ticked the others are disabled. A **Comparer (n)** button opens the comparison when at least 2 are ticked. On the comparison page a column can be removed, and a bien added while there are fewer than 4.
+- **One column per bien, one row per figure:** Prix, Coût d'acquisition, Loyer, Régime fiscal, DPE (badge); Revenus mensuels bruts, Revenus mensuels après impôts, Revenu annuel net, Rentabilité brute / nette / après impôts; Prêt (selector), Mensualité, Cash-flow avant / après impôts, Apport, Rendement sur apport; Cash-flow mensuel positif, Apport récupéré; Avertissements.
+- **A distinct loan per bien:** each column has a « Prêt » selector (« Aucun » or any saved loan), defaulting to the bien's own loan. The chosen loan applies **as saved** (rules 11–20) for that column only. It is **not saved** on the bien; it lives in the URL (`prets`), so a reload keeps the comparison.
+- Each column is computed with `POST /api/properties/evaluate?id=<bien>` and the chosen `loanId`, so the micro ceilings still count every saved bien once. A bien that no longer exists shows « Bien introuvable » in its column.
+
 ## UI
 
 - **/biens: Biens list.** Table with Nom, Prix, Loyer, DPE badge, Rentabilité nette après impôts, Revenus mensuels après impôts, Cash-flow après impôts (if there's a loan), Prêt (link). Button **Nouveau bien**. Empty state message.

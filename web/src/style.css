@@ -990,3 +990,85 @@ a.app-header__name {
 .detail > .profit-chart {
   margin-top: 1.5rem;
 }
+
+.check-col {
+  width: 2rem;
+}
+
+.compare-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.compare-add {
+  flex: 0 1 16rem;
+  min-width: 12rem;
+}
+
+.compare-table th[scope='col'] {
+  min-width: 12rem;
+}
+
+.compare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  white-space: normal;
+}
+
+.compare-section th {
+  padding-top: 1rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.compare-table tbody th[scope='row'] {
+  color: var(--muted);
+  white-space: normal;
+}
+
+.compare-table td .input {
+  min-width: 10rem;
+}
+
+.compare-warnings {
+  white-space: normal;
+}
+
+.compare-warnings .warning {
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Comparison: equal columns, values aligned with their column's name. */
+.compare-table {
+  table-layout: fixed;
+}
+
+.compare-table thead th:first-child {
+  width: 13rem;
+}
+
+.compare-table td,
+.compare-table td.num,
+.compare-table th {
+  text-align: left;
+  vertical-align: middle;
+}
+
+.compare-table td .input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* More specific than `.table td` (nowrap): warnings wrap inside their column. */
+.compare-table td.compare-warnings {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
