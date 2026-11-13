@@ -71,6 +71,21 @@ export interface RegimeComparison {
   best: boolean // lowest tax
 }
 
+/** How the annual tax is produced (« Comment est calculé l'impôt »). IR + PS = tax. */
+export interface TaxDetail {
+  regime: TaxRegime
+  marginalTaxRatePct: number
+  socialChargesPct: number
+  /** Year-1 loan costs deducted under the réel regimes (0 otherwise). */
+  loanInterestCents: number
+  loanInsuranceCents: number
+  loanCostsCents: number
+  /** Taxable base before the floor at 0 (negative = deficit). */
+  rawTaxableCents: number
+  incomeTaxCents: number
+  socialChargesCents: number
+}
+
 export interface PropertyResult {
   acquisitionCostCents: number
   collectedRentCents: number
@@ -93,6 +108,7 @@ export interface PropertyResult {
   furnitureDepreciationCents?: number
   /** The four regimes compared on this bien. */
   regimes?: RegimeComparison[]
+  taxDetail?: TaxDetail
   financing: Financing | null
   timeline?: Timeline | null
   warnings: PropertyWarning[]
