@@ -35,8 +35,9 @@ Each module gets its own spec, reviewed and approved before it is planned. This 
 | YAML | `go.yaml.in/yaml/v3` | Maintained fork of `gopkg.in/yaml.v3` |
 | Native file dialogs | `github.com/ncruces/zenity` | Pure Go: Windows native, `zenity`/`kdialog` on Linux. Used by `storage` |
 | Frontend | **Vue 3** (Composition API, `<script setup>`), **TypeScript**, **Vite**, **Vue Router** | Built to static files and embedded in the binary with `go:embed` |
-| Frontend tests | **Vitest** + **@vue/test-utils** | |
-| Lint/format | `gofmt`, `go vet`; ESLint + Prettier + `vue-tsc` | |
+| Frontend tests | **Vitest** + **@vue/test-utils** + `jsdom` | |
+| Lint/format | `gofmt`, `go vet`; ESLint + Prettier + `vue-tsc` | Supporting dev deps (approved): `@vitejs/plugin-vue`, `eslint-plugin-vue`, `@vue/eslint-config-typescript`, `@vue/eslint-config-prettier`, `@vue/tsconfig`, `@types/node`. TypeScript stays on 6.0.x while typescript-eslint doesn't support 7 |
+| Debugging | Delve (in the Go dev image only) | Approved |
 | Tooling | **Docker** + **Makefile** | Every dev operation goes through `make`, which runs inside containers. The only host requirements are Docker and make |
 | Targets | `linux/amd64`, `windows/amd64` (no console window: `-H windowsgui`) | Cross-compiled from the Linux container. amd64 only |
 
