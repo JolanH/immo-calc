@@ -3,6 +3,7 @@
 package server
 
 import (
+	"io/fs"
 	"net/http"
 	"strings"
 )
@@ -14,6 +15,8 @@ const AppName = "immo-calc"
 // Config holds what the router needs from the rest of the app.
 type Config struct {
 	Version string
+	// Static is the built frontend. When nil, only the API is served.
+	Static fs.FS
 }
 
 // New returns the root HTTP handler.
@@ -29,6 +32,9 @@ func New(cfg Config) http.Handler {
 	apiFallback := func(w http.ResponseWriter, r *http.Request) { apiNotMatched(mux, w, r) }
 	mux.HandleFunc("/api/", apiFallback)
 	mux.HandleFunc("/api", apiFallback)
+	if cfg.Static != nil {
+		mux.Handle("/", staticHandler(cfg.Static))
+	}
 	return mux
 }
 
