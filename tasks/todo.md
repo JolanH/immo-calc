@@ -51,7 +51,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/embed.go`, `internal/server/static.go`, `internal/server/static_test.go`, `cmd/immo-calc/main.go`, `Makefile`
 **Scope:** S
 
-### [ ] Task 5: Flags, `--version`, version injection, cross-compile
+### [x] Task 5: Flags, `--version`, version injection, cross-compile
 **Description:** Config parsing for `--port`, `--data` (default `<exe dir>/immo-calc.yaml`), `--no-browser`, `--debug`, `--version`, as a pure function over args + exe dir. `make build` cross-compiles `dist/immo-calc-linux-amd64` and `dist/immo-calc-windows-amd64.exe` with `CGO_ENABLED=0 -trimpath -ldflags "-s -w -X main.version=…"` (+ `-H windowsgui` for Windows). The health endpoint reports the injected version.
 **Acceptance criteria:**
 - [ ] Table-driven flag tests (defaults, each flag, invalid port)
