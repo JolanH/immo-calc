@@ -251,6 +251,56 @@ describe('BienDetail (new property)', () => {
     ])
   })
 
+  it('lays the page out in three columns: form, fiscal and financial details, synthetic cards', async () => {
+    stubApi((body) =>
+      json({
+        ...result,
+        taxDetail: undefined,
+        financing: body.loanId
+          ? {
+              monthlyPaymentCents: 28_980,
+              cashFlowBeforeTaxCents: 16_020,
+              cashFlowAfterTaxCents: 1_170,
+              ownContributionCents: 11_375_000,
+              annualCreditCostCents: 1,
+              returnOnContributionPct: 0.12,
+            }
+          : null,
+      }),
+    )
+    const wrapper = await mountNew()
+    await fillReferenceFlat(wrapper)
+    await wrapper.get('#bien-pret').setValue(loans[0].id)
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    const layout = wrapper.get('[data-test="bien-layout"]')
+    expect(
+      layout.findAll(':scope > *').map((c) => c.attributes('data-test') ?? c.element.id),
+    ).toEqual(['bien-form', 'bien-summary', 'bien-main'])
+
+    // Right: the synthetic cards, one column, key figures first.
+    const summary = wrapper.get('[data-test="bien-summary"]')
+    expect(summary.findAll('.result-card__label').map((l) => l.text())).toEqual([
+      'Rentabilité',
+      'Revenus mensuels après impôts',
+      'Revenus mensuels bruts',
+      'Revenu annuel net',
+      'Date de rentabilité',
+    ])
+    for (const inMain of ['bien-options', 'financing', 'calc-detail']) {
+      expect(summary.find(`[data-test="${inMain}"]`).exists()).toBe(false)
+    }
+
+    // Middle: gestion, fiscalité et prêt, then the financial details.
+    const main = wrapper.get('[data-test="bien-main"]')
+    const order = main
+      .findAll('[data-test="bien-options"], [data-test="financing"], [data-test="calc-detail"]')
+      .map((e) => e.attributes('data-test'))
+    expect(order).toEqual(['bien-options', 'financing', 'calc-detail'])
+    expect(main.find('[data-test="results"]').exists()).toBe(false)
+  })
+
   it('shows the warnings above the results', async () => {
     stubApi(() =>
       json({
@@ -393,12 +443,12 @@ describe('BienDetail (new property)', () => {
       expect(wrapper.find('[data-test="profit-chart"]').exists()).toBe(true)
     })
 
-    it('puts the chart in the results panel, under « Détail du calcul »', async () => {
+    it('puts the chart in the details column, under « Détail du calcul »', async () => {
       stubApi(() => json({ ...result, financing, timeline }))
       const wrapper = await mountNew()
       await fillReferenceFlat(wrapper)
 
-      const panel = wrapper.get('.bien-results').element
+      const panel = wrapper.get('[data-test="bien-main"]').element
       const chart = wrapper.get('[data-test="profit-chart"]').element
       const detail = wrapper.get('[data-test="calc-detail"]').element
       expect(panel.contains(chart)).toBe(true)
