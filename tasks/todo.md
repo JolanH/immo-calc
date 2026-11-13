@@ -297,7 +297,7 @@ Plan and rationale: `tasks/plan.md`. Specs: `SPEC.md`, `SPEC-<module>.md`.
 **Files:** `web/src/components/AmortizationTable.vue` + spec, `web/src/format.ts` + spec, `web/src/views/PretDetail.vue`
 **Scope:** S
 
-### [ ] Task 25: `LoanChart.vue`
+### [x] Task 25: `LoanChart.vue`
 **Description:** Hand-written SVG: one stacked bar per calendar year (Capital remboursé + Intérêts), overlaid line for Capital restant dû on a second axis, hover tooltip (year + 3 amounts), French legend, colours readable in light and dark, `<title>`/`aria-label` summary. Updates live with the form.
 **Acceptance criteria:**
 - [ ] Bar count = number of calendar years; bar heights proportional to the yearly sums

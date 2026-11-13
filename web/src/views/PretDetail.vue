@@ -6,6 +6,7 @@ import RateInput from '@/components/RateInput.vue'
 import MonthPicker from '@/components/MonthPicker.vue'
 import ResultCard from '@/components/ResultCard.vue'
 import AmortizationTable from '@/components/AmortizationTable.vue'
+import LoanChart from '@/components/LoanChart.vue'
 import { useDebouncedEval } from '@/composables/useDebouncedEval'
 import { UNSAVED_MESSAGE, useUnsavedGuard } from '@/composables/useUnsavedGuard'
 import { ApiError } from '@/api/client'
@@ -315,6 +316,7 @@ async function remove() {
         </p>
       </div>
     </div>
+    <LoanChart v-if="!loadError && result" :yearly="result.yearly" />
     <AmortizationTable
       v-if="!loadError && result"
       :schedule="result.schedule"
