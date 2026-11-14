@@ -384,6 +384,7 @@ a {
 .field > .input {
   display: block;
   width: 100%;
+  min-width: 0; /* .input's 16rem minimum overflows narrow columns (Bien form) */
   box-sizing: border-box;
 }
 
