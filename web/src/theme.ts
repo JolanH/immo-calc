@@ -69,3 +69,44 @@ export function applyAccent(hex: string | undefined): void {
   style.setProperty('--brand-dark', dark)
   style.setProperty('--brand-dark-text', textOn(dark))
 }
+
+/** The interface's theme (« Thème »): follow the OS, or force light or dark. */
+export type ThemeMode = 'system' | 'light' | 'dark'
+
+export const DEFAULT_THEME_MODE: ThemeMode = 'system'
+export const THEME_MODES: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Système' },
+  { value: 'light', label: 'Clair' },
+  { value: 'dark', label: 'Sombre' },
+]
+
+// The mode is saved with the settings; this copy only avoids a flash of the
+// wrong theme while they load.
+const THEME_CACHE_KEY = 'immo-calc-theme'
+
+export function isThemeMode(v: unknown): v is ThemeMode {
+  return v === 'system' || v === 'light' || v === 'dark'
+}
+
+/** The last applied mode, remembered by this browser (system when unknown). */
+export function cachedThemeMode(): ThemeMode {
+  try {
+    const v = localStorage.getItem(THEME_CACHE_KEY)
+    return isThemeMode(v) ? v : DEFAULT_THEME_MODE
+  } catch {
+    return DEFAULT_THEME_MODE
+  }
+}
+
+/** Applies the theme to the whole interface (style.css reads data-theme). */
+export function applyThemeMode(mode: string | undefined): void {
+  const m = isThemeMode(mode) ? mode : DEFAULT_THEME_MODE
+  const root = document.documentElement
+  if (m === 'system') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', m)
+  try {
+    localStorage.setItem(THEME_CACHE_KEY, m)
+  } catch {
+    // private mode or blocked storage: the saved setting still applies
+  }
+}

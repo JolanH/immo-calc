@@ -31,6 +31,8 @@ type Settings struct {
 	// AccentColor is the UI's main colour, "#rrggbb" (not a financial input;
 	// kept here so it travels with export/import).
 	AccentColor string `json:"accentColor" yaml:"accent_color,omitempty"`
+	// ThemeMode is the UI's theme: "system" (follow the OS), "light" or "dark".
+	ThemeMode string `json:"themeMode" yaml:"theme_mode,omitempty"`
 }
 
 // DefaultSettings applies when the data file has no settings section.
@@ -47,11 +49,15 @@ func DefaultSettings() Settings {
 		VacancyMonthsPerYear:      1,
 		AgencyFeePct:              7,
 		AccentColor:               DefaultAccentColor,
+		ThemeMode:                 DefaultThemeMode,
 	}
 }
 
 // DefaultAccentColor is dark red (chosen by the user, 2026-11-13).
 const DefaultAccentColor = "#8b1a1a"
+
+// DefaultThemeMode follows the operating system's light or dark preference.
+const DefaultThemeMode = "system"
 
 var accentPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
@@ -62,6 +68,9 @@ func withDefaults(s Settings) Settings {
 		s.AccentColor = DefaultAccentColor
 	}
 	s.AccentColor = strings.ToLower(s.AccentColor)
+	if s.ThemeMode == "" {
+		s.ThemeMode = DefaultThemeMode
+	}
 	return s
 }
 
@@ -76,6 +85,7 @@ var settingsFields = []struct{ json, yaml string }{
 	{"vacancyMonthsPerYear", "vacancy_months_per_year"},
 	{"agencyFeePct", "agency_fee_pct"},
 	{"accentColor", "accent_color"},
+	{"themeMode", "theme_mode"},
 }
 
 func between(v, lo, hi float64) bool { return v >= lo && v <= hi && !math.IsNaN(v) }
@@ -108,6 +118,11 @@ func ValidateSettings(s Settings) map[string]string {
 	}
 	if s.AccentColor != "" && !accentPattern.MatchString(s.AccentColor) {
 		errs["accentColor"] = "La couleur doit être au format #rrggbb"
+	}
+	switch s.ThemeMode {
+	case "", "system", "light", "dark":
+	default:
+		errs["themeMode"] = "Le thème doit être « system », « light » ou « dark »"
 	}
 	return errs
 }

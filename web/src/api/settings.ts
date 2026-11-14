@@ -9,6 +9,7 @@ export interface Settings {
   vacancyMonthsPerYear: number
   agencyFeePct: number
   accentColor: string // "#rrggbb", the interface's main colour
+  themeMode: 'system' | 'light' | 'dark'
 }
 
 export function getSettings(): Promise<Settings> {

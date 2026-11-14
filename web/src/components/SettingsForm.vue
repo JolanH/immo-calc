@@ -5,12 +5,19 @@ import RateInput from './RateInput.vue'
 import { ApiError } from '@/api/client'
 import { getSettings, updateSettings, type Settings } from '@/api/settings'
 import { formatInputRate, parseRate } from '@/parse'
-import { applyAccent, DEFAULT_ACCENT } from '@/theme'
+import {
+  applyAccent,
+  applyThemeMode,
+  DEFAULT_ACCENT,
+  DEFAULT_THEME_MODE,
+  THEME_MODES,
+  type ThemeMode,
+} from '@/theme'
 
 const TAX_BRACKETS = [0, 11, 30, 41, 45]
 const REQUIRED = 'Ce champ est obligatoire'
 
-type Form = { [K in Exclude<keyof Settings, 'accentColor'>]: number | null }
+type Form = { [K in Exclude<keyof Settings, 'accentColor' | 'themeMode'>]: number | null }
 
 const form = reactive<Form>({
   marginalTaxRatePct: null,
@@ -24,14 +31,23 @@ const form = reactive<Form>({
 const accent = ref(DEFAULT_ACCENT)
 const savedAccent = ref(DEFAULT_ACCENT)
 watch(accent, (c) => applyAccent(c))
-// Leaving without saving puts the saved colour back.
-onBeforeUnmount(() => applyAccent(savedAccent.value))
+/** « Thème »: previewed live too. */
+const themeMode = ref<ThemeMode>(DEFAULT_THEME_MODE)
+const savedThemeMode = ref<ThemeMode>(DEFAULT_THEME_MODE)
+watch(themeMode, (m) => applyThemeMode(m))
+// Leaving without saving puts the saved colour and theme back.
+onBeforeUnmount(() => {
+  applyAccent(savedAccent.value)
+  applyThemeMode(savedThemeMode.value)
+})
 
 function takeSettings(s: Settings) {
-  const { accentColor, ...numbers } = s
+  const { accentColor, themeMode: mode, ...numbers } = s
   Object.assign(form, numbers)
   accent.value = accentColor || DEFAULT_ACCENT
   savedAccent.value = accent.value
+  themeMode.value = mode || DEFAULT_THEME_MODE
+  savedThemeMode.value = themeMode.value
 }
 
 const loaded = ref(false)
@@ -68,8 +84,9 @@ async function save() {
   try {
     takeSettings(
       await updateSettings({
-        ...(form as Omit<Settings, 'accentColor'>),
+        ...(form as Omit<Settings, 'accentColor' | 'themeMode'>),
         accentColor: accent.value,
+        themeMode: themeMode.value,
       }),
     )
     status.value = 'Paramètres enregistrés'
@@ -140,6 +157,16 @@ async function save() {
         label="Frais de gestion locative (des loyers encaissés)"
         :error="errors.agencyFeePct"
       />
+      <fieldset class="field segmented" data-test="theme-mode">
+        <legend>Thème</legend>
+        <div class="segmented__options">
+          <label v-for="m in THEME_MODES" :key="m.value" class="segmented__option">
+            <input v-model="themeMode" type="radio" name="param-theme" :value="m.value" />
+            <span>{{ m.label }}</span>
+          </label>
+        </div>
+        <p v-if="errors.themeMode" role="alert" class="field-error">{{ errors.themeMode }}</p>
+      </fieldset>
       <div class="field">
         <label for="param-couleur">Couleur principale de l'interface</label>
         <div class="field__control">

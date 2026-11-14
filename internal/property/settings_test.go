@@ -42,6 +42,7 @@ func TestDefaultsApplyWithoutASettingsSection(t *testing.T) {
 	want := Settings{
 		MarginalTaxRatePct: 30, SocialChargesUnfurnishedPct: 17.2, SocialChargesFurnishedPct: 18.6,
 		NotaryFeePct: 8.5, VacancyMonthsPerYear: 1, AgencyFeePct: 7, AccentColor: "#8b1a1a",
+		ThemeMode: "system",
 	}
 	if err != nil || got != want {
 		t.Errorf("settings = %+v, err = %v", got, err)
@@ -253,5 +254,25 @@ func TestAccentColorValidationAndPersistence(t *testing.T) {
 	reset, _ := NewService(openStore(t, path), nil).UpdateSettings(s)
 	if reset.AccentColor != "#8b1a1a" {
 		t.Errorf("empty colour = %q, want the default", reset.AccentColor)
+	}
+}
+
+func TestThemeModeDefaultsToSystemAndIsValidated(t *testing.T) {
+	if DefaultSettings().ThemeMode != "system" {
+		t.Errorf("default theme = %q", DefaultSettings().ThemeMode)
+	}
+	s := DefaultSettings()
+	for _, ok := range []string{"", "system", "light", "dark"} {
+		s.ThemeMode = ok
+		if errs := ValidateSettings(s); errs["themeMode"] != "" {
+			t.Errorf("theme %q rejected: %v", ok, errs)
+		}
+	}
+	s.ThemeMode = "sepia"
+	if errs := ValidateSettings(s); errs["themeMode"] == "" {
+		t.Error("an unknown theme must be rejected")
+	}
+	if got := withDefaults(Settings{}); got.ThemeMode != "system" {
+		t.Errorf("empty theme = %q, want system", got.ThemeMode)
 	}
 }

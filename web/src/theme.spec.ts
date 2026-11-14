@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { applyAccent, contrast, DEFAULT_ACCENT, readableOn, textOn } from './theme'
+import {
+  applyAccent,
+  applyThemeMode,
+  cachedThemeMode,
+  contrast,
+  DEFAULT_ACCENT,
+  readableOn,
+  textOn,
+} from './theme'
 
 const LIGHT_SURFACE = '#ffffff'
 const DARK_SURFACE = '#1f2228'
@@ -53,5 +61,34 @@ describe('applyAccent', () => {
   it('falls back to dark red for an invalid colour', () => {
     applyAccent('nope')
     expect(document.documentElement.style.getPropertyValue('--brand')).toBe('#8b1a1a')
+  })
+})
+
+describe('applyThemeMode', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme')
+    localStorage.clear()
+  })
+
+  it('forces light or dark, and lets the OS decide for system', () => {
+    const root = document.documentElement
+    applyThemeMode('dark')
+    expect(root.getAttribute('data-theme')).toBe('dark')
+    applyThemeMode('light')
+    expect(root.getAttribute('data-theme')).toBe('light')
+    applyThemeMode('system')
+    expect(root.hasAttribute('data-theme')).toBe(false)
+  })
+
+  it('treats an unknown mode as system', () => {
+    applyThemeMode('dark')
+    applyThemeMode('sepia')
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+  })
+
+  it('remembers the mode in the browser to avoid a flash at startup', () => {
+    expect(cachedThemeMode()).toBe('system')
+    applyThemeMode('dark')
+    expect(cachedThemeMode()).toBe('dark')
   })
 })

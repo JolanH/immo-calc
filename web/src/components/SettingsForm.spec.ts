@@ -10,6 +10,7 @@ const defaults = {
   vacancyMonthsPerYear: 1,
   agencyFeePct: 7,
   accentColor: '#8b1a1a',
+  themeMode: 'system',
 }
 
 function json(body: unknown, status = 200) {
@@ -144,6 +145,35 @@ describe('SettingsForm', () => {
 
       expect(value(wrapper, 'param-couleur')).toBe('#8b1a1a')
       expect(document.documentElement.style.getPropertyValue('--brand')).toBe('#8b1a1a')
+    })
+  })
+
+  describe('Thème', () => {
+    afterEach(() => {
+      document.documentElement.removeAttribute('data-theme')
+      localStorage.clear()
+    })
+
+    it('previews the theme live, saves it, and puts the saved one back when leaving', async () => {
+      const fetchMock = stubApi((body) => json(body))
+      const wrapper = mount(SettingsForm)
+      await flushPromises()
+      expect(
+        wrapper.findAll('input[name="param-theme"]').map((i) => i.attributes('value')),
+      ).toEqual(['system', 'light', 'dark'])
+
+      await wrapper.findAll('input[name="param-theme"]')[2]!.setValue()
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+
+      await wrapper.get('form').trigger('submit')
+      await flushPromises()
+      const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')
+      expect(JSON.parse(String(put?.[1]?.body)).themeMode).toBe('dark')
+
+      await wrapper.findAll('input[name="param-theme"]')[1]!.setValue()
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+      wrapper.unmount()
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
     })
   })
 })
