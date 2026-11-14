@@ -6,6 +6,14 @@ You enter a flat (price, rent, charges, taxe foncière, DPE…) and immediately 
 
 It is built for one household, not as a public product. The interface is in French. The calculations approximate French tax and loan rules **realistically, not exactly**: it is a decision aid, not a tax return.
 
+## AI-developed
+
+This whole project, specifications, code, tests and documentation, is developed with AI agents, under human direction and review.
+
+## License
+
+immo-calc is free software, released under the [GNU General Public License v3.0](LICENSE.md).
+
 ## Using the app
 
 immo-calc is a single executable for Linux or Windows (amd64), with nothing to install.
